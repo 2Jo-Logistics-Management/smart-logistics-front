@@ -33,12 +33,14 @@ const PorderComponets = () => {
 
   const products = JSON.parse(JSON.stringify(productsData));
   const realProducts = products.data;
- 
+
 
   useEffect(() => {
     // 컴포넌트가 마운트되면 fetchProducts 액션 디스패치
     dispatch(fetchProducts());
   }, [dispatch]);
+
+
 
   const ITEMS_PER_PAGE = 5;  // 한 페이지당 표시할 아이템 개수
 
@@ -50,16 +52,23 @@ const PorderComponets = () => {
 
   // 현재 페이지에 따른 아이템들 계산
   const offset = currentPage * ITEMS_PER_PAGE;
-  const currentItems = Array.isArray(realProducts) 
-    ? realProducts.slice(offset, offset + ITEMS_PER_PAGE) 
+  const currentItems = Array.isArray(realProducts)
+    ? realProducts.slice(offset, offset + ITEMS_PER_PAGE)
     : [];
 
- // const isValidProductsData = Array.isArray(productsData) && productsData.length > 0;
-
+  
   const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
   console.log("chekcbox에 들어있는거" + selectedProducts);
-  const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item?.porderCode));
-
+  useEffect(() => {
+    // 페이지가 변경될 때마다 체크박스 상태를 초기화한다.
+    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
+    setSelectAll(false);
+  }, [currentPage]);
+  useEffect(() => {
+    // 선택된 아이템의 수가 현재 페이지의 아이템 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
+    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.porderCode));
+    setSelectAll(allSelectedOnCurrentPage);
+  }, [selectedProducts, currentItems]);
 
   useEffect(() => {
     if (selectedProducts.length === 1) {
@@ -106,7 +115,7 @@ const PorderComponets = () => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#3085',
         confirmButtonText: '삭제',
         cancelButtonText: '취소',
       })
@@ -119,6 +128,7 @@ const PorderComponets = () => {
     // 컴포넌트가 마운트되었을 때 모든 상품 선택을 해제한다.
     dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
   }, []);
+
   const [selectAll, setSelectAll] = useState(false);
 
   const handleSelectAllChange = () => {
@@ -134,24 +144,9 @@ const PorderComponets = () => {
     setSelectAll(!selectAll);
   };
 
-  useEffect(() => {
-    // 선택된 상품의 수가 현재 페이지의 상품 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
-    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.porderCode));
-    setSelectAll(allSelectedOnCurrentPage);
-  }, [selectedProducts, currentItems]);
-  
-  useEffect(() => {
-    // 선택된 상품의 수가 전체 상품의 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
-    if (selectedProducts.length === realProducts.length) {
-      setSelectAll(true);
-    } else {
-      setSelectAll(false);
-    }
-  }, [selectedProducts, realProducts]);
-
 
   return (
-  
+
     <Box>
       <DashboardCard title="발주 list" variant="poster">
         <Box sx={{ display: 'flex' }}>
@@ -215,7 +210,6 @@ const PorderComponets = () => {
                   <Checkbox
                     checked={selectAll}
                     onChange={handleSelectAllChange} />
-
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
@@ -245,52 +239,52 @@ const PorderComponets = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* currentItems.map() 함수 내부에서 괄호로 묶어서 행과 셀을 생성 */}
-                 {currentItems.map((realProduct) => (
-                  <TableRow key={realProduct.porderCode}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedProducts.includes(realProduct.porderCode)}
-                        onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {realProduct.accountNo}
-                          </Typography>
-                          <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                            물류관리자
-                          </Typography>
-                        </Box>
+              
+              {currentItems.map((realProduct) => (
+                <TableRow key={realProduct.porderCode}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProducts.includes(realProduct.porderCode)}
+                      onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          {realProduct.accountNo}
+                        </Typography>
+                        <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
+                          물류관리자
+                        </Typography>
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                        {realProduct.createDate}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        sx={{
-                          px: '4px',
-                          color: '#fff'
-                        }}
-                        size="small"
-                        label={realProduct.state}
-                      ></Chip>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="h6">${realProduct.budget}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-         
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
+                      {realProduct.createDate}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      sx={{
+                        px: '4px',
+                        color: '#fff'
+                      }}
+                      size="small"
+                      label={realProduct.state}
+                    ></Chip>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="h6">${realProduct.budget}</Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+
           </Table>
         </Box><Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
@@ -304,8 +298,8 @@ const PorderComponets = () => {
         </Box>
       </DashboardCard >
       <PorderComponets2 />
-      </Box>
-      );
+    </Box>
+  );
 };
 
-      export default PorderComponets;
+export default PorderComponets;

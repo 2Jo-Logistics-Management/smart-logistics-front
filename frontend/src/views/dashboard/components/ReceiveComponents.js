@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -15,32 +15,61 @@ import {
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
-import products from '../../data/memberData';
-import ReceiveComponents2 from './ReceiveComponents2';
-import { ADD_SELECTED_PRODUCT, REMOVE_SELECTED_PRODUCT ,REMOVE_ALL_SELECTED_PRODUCTS} from '../../../redux/slices/selectedProductsReducer';
+
+
+import { ADD_SELECTED_PRODUCT, REMOVE_SELECTED_PRODUCT, REMOVE_ALL_SELECTED_PRODUCTS } from '../../../redux/slices/selectedProductsReducer';
 import { useDispatch, useSelector } from 'react-redux';
 import porderAxios from './../../../axios/porderAxios';
 import { Delete } from '@mui/icons-material';
 import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios'
+import { receiveListAll } from '../../../redux/thunks/receiveList'
+import ReceviveComponents2 from './ReceiveComponents2';
 
 
-const ReceiveComponents = () => {
+
+const ReceviveComponents = () => {
+  const dispatch = useDispatch();
+  const productsData = useSelector((state) => state.receiveList.products);
+  console.log("++++++++++++++++++++" + productsData);
+
+  const products = JSON.parse(JSON.stringify(productsData));
+   const realProducts = products?.data || [];
+
+
+  useEffect(() => {
+    dispatch(receiveListAll());
+  }, [dispatch]);
+
+
+
   const ITEMS_PER_PAGE = 5;  // 한 페이지당 표시할 아이템 개수
 
   const [currentPage, setCurrentPage] = useState(0);  // 현재 페이지 상태
 
   const handlePageChange = (event, newPage) => {
-    setCurrentPage(newPage - 1) ;  // 페이지 변경 시 현재 페이지 상태 업데이트
+    setCurrentPage(newPage - 1);  // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
   // 현재 페이지에 따른 아이템들 계산
   const offset = currentPage * ITEMS_PER_PAGE;
-  const currentItems = products.slice(offset, offset + ITEMS_PER_PAGE);
-//*************************페이징 ***************************/
+  const currentItems = Array.isArray(realProducts)
+    ? realProducts.slice(offset, offset + ITEMS_PER_PAGE)
+    : [];
+
+  
   const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
   console.log("chekcbox에 들어있는거" + selectedProducts);
+  useEffect(() => {
+    // 페이지가 변경될 때마다 체크박스 상태를 초기화한다.
+    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
+    setSelectAll(false);
+  }, [currentPage]);
+  useEffect(() => {
+    // 선택된 아이템의 수가 현재 페이지의 아이템 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
+    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.porderCode));
+    setSelectAll(allSelectedOnCurrentPage);
+  }, [selectedProducts, currentItems]);
 
-  const dispatch = useDispatch();
   useEffect(() => {
     if (selectedProducts.length === 1) {
       porderAxios(selectedProducts, dispatch);
@@ -86,7 +115,7 @@ const ReceiveComponents = () => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#3085',
         confirmButtonText: '삭제',
         cancelButtonText: '취소',
       })
@@ -98,44 +127,28 @@ const ReceiveComponents = () => {
   useEffect(() => {
     // 컴포넌트가 마운트되었을 때 모든 상품 선택을 해제한다.
     dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
-  }, []); 
+  }, []);
+
   const [selectAll, setSelectAll] = useState(false);
 
   const handleSelectAllChange = () => {
     if (selectAll) {
-      // 이미 선택된 상태라면, 현재 페이지의 모든 상품 선택을 해제한다.
-      currentItems.forEach(product => {
-        dispatch(REMOVE_SELECTED_PRODUCT(product.id));
+      currentItems.forEach(item => {
+        dispatch(REMOVE_SELECTED_PRODUCT(item.porderCode));
       });
     } else {
-      // 선택되지 않은 상태라면, 현재 페이지의 모든 상품을 선택한다.
-      currentItems.forEach(product => {
-        dispatch(ADD_SELECTED_PRODUCT(product.id));
+      currentItems.forEach(item => {
+        dispatch(ADD_SELECTED_PRODUCT(item.porderCode));
       });
     }
-    // 전체 선택 체크박스 상태를 토글한다.
     setSelectAll(!selectAll);
   };
-  
-  useEffect(() => {
-    // 선택된 상품의 수가 현재 페이지의 상품 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
-    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.id));
-    setSelectAll(allSelectedOnCurrentPage);
-  }, [selectedProducts, currentItems]);
 
-  useEffect(() => {
-    // 선택된 상품의 수가 전체 상품의 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
-    if (selectedProducts.length === products.length) {
-      setSelectAll(true);
-    } else {
-      setSelectAll(false);
-    }
-  }, [selectedProducts, products]);
 
-  
   return (
+
     <Box>
-      <DashboardCard title="입고 대기 상품(발주)" variant="poster">
+      <DashboardCard title="입고 List" variant="poster">
         <Box sx={{ display: 'flex' }}>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
             {/* Your first box content here */}
@@ -149,7 +162,7 @@ const ReceiveComponents = () => {
               삭제
             </Button>
           </Box>
-         
+
 
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
             {/* Your second box content here */}
@@ -177,14 +190,14 @@ const ReceiveComponents = () => {
           </Box>
         </Box>
         <Box>
-        {selectedProducts.length >= 2 && (
-            <Typography 
-                variant="h6" 
-                style={{color: 'red', fontWeight: 'bold'}}
+          {selectedProducts.length >= 2 && (
+            <Typography
+              variant="h6"
+              style={{ color: 'red', fontWeight: 'bold' }}
             >
-                선택된 상품 개수: {selectedProducts.length} 입니다
+              선택된 상품 개수: {selectedProducts.length} 입니다
             </Typography>
-        )}
+          )}
         </Box>
 
         <br />
@@ -194,103 +207,99 @@ const ReceiveComponents = () => {
             <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
               <TableRow>
                 <TableCell>
-                <Checkbox
-                checked={selectAll}
-                onChange={handleSelectAllChange}
-              />
-
+                  <Checkbox
+                    checked={selectAll}
+                    onChange={handleSelectAllChange} />
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
-                    NO
+                    입고번호
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
-                    Product
+                    관리자
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
-                    Account
+                    입고물품
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
-                    State
+                    생성일
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
                   <Typography variant="subtitle2" fontWeight={600}>
-                    Price
+                    담당자
                   </Typography>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {currentItems.map((product) => (
-                <TableRow key={product.id}>
+              {/* currentItems.map() 함수 내부에서 괄호로 묶어서 행과 셀을 생성 */}
+              {currentItems.map((realProduct) => (
+                <TableRow key={realProduct.receiveCode}>
                   <TableCell>
                     <Checkbox
-                      checked={selectAll || selectedProducts.includes(product.id)}
-                      onChange={(event) => handleCheckboxChange(event, product.id)}
-                  
+                      checked={selectedProducts.includes(realProduct.receiveCode)}
+                      onChange={(event) => handleCheckboxChange(event, realProduct.receiveCode)}
                     />
                   </TableCell>
                   <TableCell>
-                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.id}</Typography>
+                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.receiveCode}</Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Box>
                         <Typography variant="subtitle2" fontWeight={600}>
-                          {product.name}
+                          {realProduct.manager}
                         </Typography>
                         <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                          {product.post}
+                          물류관리자
                         </Typography>
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                      {product.pname}
+                      {realProduct.itemName}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
                       sx={{
                         px: '4px',
-                        backgroundColor: product.pbg,
                         color: '#fff'
                       }}
                       size="small"
-                      label={product.priority}
+                      label={realProduct.state}
                     ></Chip>
                   </TableCell>
                   <TableCell align="right">
-                    <Typography variant="h6">${product.budget}k</Typography>
+                    <Typography variant="h6">${realProduct.budget}</Typography>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
+
           </Table>
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+        </Box><Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
             <Pagination
-              count={Math.ceil(products.length / ITEMS_PER_PAGE)}
+              count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
               page={currentPage + 1}
               variant="outlined"
               color="primary"
-              onChange={handlePageChange} 
-            />
+              onChange={handlePageChange} />
           </Box>
         </Box>
-      </DashboardCard>
-      <ReceiveComponents2 />
+      </DashboardCard >
+      <ReceviveComponents2 />
     </Box>
   );
 };
 
-export default ReceiveComponents;
+export default ReceviveComponents;
