@@ -4,7 +4,6 @@ import swal from 'sweetalert2';
 
 //발주리스트에서 delete하면 통신
 const pOrderItemUpdateAxios = (indexData) => {
-   
       axios.put(`/api/products/${indexData}`)
       .then((response) => {
         console.log(response.data);
@@ -13,7 +12,6 @@ const pOrderItemUpdateAxios = (indexData) => {
           text: '재고가 삭제되었습니다.',
           icon: 'success',
         });
-        
       })
       .catch((error) => {
           swal.fire({
@@ -22,7 +20,5 @@ const pOrderItemUpdateAxios = (indexData) => {
               icon: 'error',
             });
       });
-    
   };
-
 export default pOrderItemUpdateAxios;

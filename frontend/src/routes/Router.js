@@ -1,8 +1,8 @@
 import React, { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import Loadable from '../layouts/full/shared/loadable/Loadable';
-import { exact } from 'prop-types';
-import { Tune } from '@mui/icons-material';
+// import { exact } from 'prop-types';
+// import { Tune } from '@mui/icons-material';
 
 
 

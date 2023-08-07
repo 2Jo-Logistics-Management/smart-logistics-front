@@ -1,0 +1,18 @@
+// 액션 타입 정의
+import axios from "axios";
+import { fetchProductsSuccess } from '../slices/pOrderListReducer'
+;
+
+
+// 비동기로 products 데이터를 가져오는 액션 크리에이터 함수
+export const fetchProducts = () => async (dispatch) => {
+  try {
+    const response = await axios.get("http://localhost:8888/api/porder/list");
+    const products = response.data;
+    console.log(products)
+    console.log("thunk: "+products);
+    dispatch(fetchProductsSuccess(products));
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
+};
