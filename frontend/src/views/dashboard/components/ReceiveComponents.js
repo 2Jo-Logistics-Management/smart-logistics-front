@@ -1,328 +1,296 @@
-import React, { useState } from 'react';
+import React, { useEffect,useState } from 'react';
 import {
-    Typography,
-    Box,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    Chip,
-    TextField,
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions
+  Typography,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Chip,
+  TextField,
+  Button,
+  Checkbox,
+  Pagination
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
+import products from '../../data/memberData';
+import ReceiveComponents2 from './ReceiveComponents2';
+import { ADD_SELECTED_PRODUCT, REMOVE_SELECTED_PRODUCT ,REMOVE_ALL_SELECTED_PRODUCTS} from '../../../redux/slices/selectedProductsReducer';
+import { useDispatch, useSelector } from 'react-redux';
+import porderAxios from './../../../axios/porderAxios';
 import { Delete } from '@mui/icons-material';
+import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios'
 
-const Receive = () => {
-    const [editingProductId, setEditingProductId] = useState(null);
-    const [editedProduct, setEditedProduct] = useState({});
-    const [openModal, setOpenModal] = useState(false);
 
-    const handleClick = () => {
-        let timerInterval;
-        swal.fire({
-            title: '입고물품 조회중',
-            html: '잠시만 기다려주세요',
-            timer: 1000,
-            timerProgressBar: true,
-            didOpen: () => {
-                swal.showLoading();
-                const b = swal.getHtmlContainer().querySelector('b');
-                timerInterval = setInterval(() => {
-                    b.textContent = swal.getTimerLeft();
-                }, 10000);
-            },
-            willClose: () => {
-                clearInterval(timerInterval);
-            }
-        }).then((result) => {
-            if (result.dismiss === swal.DismissReason.timer) {
-                console.log('I was closed by the timer');
-            }
-        });
-    };
+const ReceiveComponents = () => {
+  const ITEMS_PER_PAGE = 5;  // 한 페이지당 표시할 아이템 개수
 
-    const products = [
-        {
-            id: "1",
-            name: "apple",
-            post: "물류 담당자",
-            pname: "짱구네 과일가게",
-            priority: "배송 대기중",
-            pbg: "primary.main",
-            budget: "3.9",
-        },
-        {
-            id: "2",
-            name: "banana",
-            post: "물류 담당자",
-            pname: "유리네 과일가게",
-            priority: "배송 중",
-            pbg: "secondary.main",
-            budget: "24.5",
-        },
-        {
-            id: "3",
-            name: "peach",
-            post: "물류 담당자",
-            pname: "훈이네 과일가게",
-            priority: "발주 처리중",
-            pbg: "error.main",
-            budget: "12.8",
-        },
-        {
-            id: "4",
-            name: "purm",
-            post: "물류 담당자",
-            pname: "철수네 과일가게",
-            priority: "입고 완료",
-            pbg: "success.main",
-            budget: "2.4",
-        },
-    ];
+  const [currentPage, setCurrentPage] = useState(0);  // 현재 페이지 상태
 
-    const handleEdit = (productId) => {
-        setEditingProductId(productId);
-        const productToEdit = products.find((product) => product.id === productId);
-        setEditedProduct({ ...productToEdit });
-        setOpenModal(true);
-    };
+  const handlePageChange = (event, newPage) => {
+    setCurrentPage(newPage - 1) ;  // 페이지 변경 시 현재 페이지 상태 업데이트
+  };
 
-    const handleSave = () => {
-        swal.fire({
-            title:'수정 완료.',         
-            text: '발주 상품이 수정되었습니다.',  
-            icon: 'success',                    
-          });
-        console.log('Save button clicked:', editedProduct);
-        const updatedProducts = products.map((product) =>
-            product.id === editingProductId ? editedProduct : product
-        );
-        
-        console.log('Updated products:', updatedProducts);
-        setEditingProductId(null);
-        setEditedProduct({});
-        setOpenModal(false);
-    };
+  // 현재 페이지에 따른 아이템들 계산
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentItems = products.slice(offset, offset + ITEMS_PER_PAGE);
+//*************************페이징 ***************************/
+  const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
+  console.log("chekcbox에 들어있는거" + selectedProducts);
 
-    const handleCancel = () => {
-        console.log('Cancel button clicked');
-        setEditingProductId(null);
-        setEditedProduct({});
-        setOpenModal(false);
-    };
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (selectedProducts.length === 1) {
+      porderAxios(selectedProducts, dispatch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProducts]);
 
-    const handleInputChange = (e) => {
-        setEditedProduct({ ...editedProduct, [e.target.name]: e.target.value });
-    };
-    const handleDelete = (productId) => {
-        swal.fire({
-            title: '정말로 삭제하시겠습니까?',
-            text: '삭제된 데이터는 복구할 수 없습니다.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: '삭제',
-            cancelButtonText: '취소',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const updatedProducts = products.filter((product) => product.id !== productId);
-                swal.fire({
-                    title: '삭제 완료',
-                    text: '발주 상품이 삭제되었습니다.',
-                    icon: 'success',
-                });
-                console.log('Deleted product ID:', productId);
-                console.log('Updated products:', updatedProducts);
-                setEditingProductId(null);
-                setEditedProduct({});
-                setOpenModal(false);
-            }
-        });
-    };
+  const handleClick = () => {
+    let timerInterval;
+    swal.fire({
+      title: '입고물품 조회중',
+      html: '잠시만 기다려주세요',
+      timer: 1000,
+      timerProgressBar: true,
+      didOpen: () => {
+        swal.showLoading();
+        const b = swal.getHtmlContainer().querySelector('b');
+        timerInterval = setInterval(() => {
+          b.textContent = swal.getTimerLeft();
+        }, 1000);
+      },
+      willClose: () => {
+        clearInterval(timerInterval);
+      }
+    });
+  };
 
-    return (
-        <DashboardCard title="Inbound Logistics System" variant="poster" >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                    거래처번호:
-                </Typography>
-                <TextField label="거래처번호" variant="outlined" size="small" sx={{ mr: 2 }} />
-                <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                    거래처명:
-                </Typography>
-                <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} />
-                <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                    거래품목:
-                </Typography>
-                <TextField label="거래 품목" variant="outlined" size="small" sx={{ mr: 2 }} />
-                <Button onClick={handleClick} variant="contained">
-                    Search
-                </Button>
-            </Box>
-            <Box sx={{ overflow: 'auto', width: { xs: '280px', sm: 'auto' } }}>
-                <Table
-                    aria-label="simple table"
-                    sx={{
-                        whiteSpace: 'nowrap',
-                        mt: 2
-                    }}
-                >
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>
-                                <Typography variant="subtitle2" fontWeight={600}>
-                                    NO
-                                </Typography>
-                            </TableCell>
-                            <TableCell>
-                                <Typography variant="subtitle2" fontWeight={600}>
-                                    Product
-                                </Typography>
-                            </TableCell>
-                            <TableCell>
-                                <Typography variant="subtitle2" fontWeight={600}>
-                                    Account
-                                </Typography>
-                            </TableCell>
-                            <TableCell>
-                                <Typography variant="subtitle2" fontWeight={600}>
-                                    State
-                                </Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                                <Typography variant="subtitle2" fontWeight={600}>
-                                    Price
-                                </Typography>
-                            </TableCell>
-                            <TableCell></TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {products.map((product) => (
-                            <TableRow key={product.name}>
-                                <TableCell>
-                                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.id}</Typography>
-                                </TableCell>
-                                <TableCell>
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                        <Box>
-                                            <Typography variant="subtitle2" fontWeight={600}>
-                                                {product.name}
-                                            </Typography>
-                                            <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                                                {product.post}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </TableCell>
-                                <TableCell>
-                                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                                        {product.pname}
-                                    </Typography>
-                                </TableCell>
-                                <TableCell>
-                                    <Chip
-                                        sx={{
-                                            px: '4px',
-                                            backgroundColor: product.pbg,
-                                            color: '#fff',
-                                        }}
-                                        size="small"
-                                        label={product.priority}
-                                    ></Chip>
-                                </TableCell>
-                                <TableCell align="right">
-                                    <Typography variant="h6">${product.budget}k</Typography>
-                                </TableCell>
-                                <TableCell>
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => handleEdit(product.id)}
-                                    >
-                                        Edit
-                                    </Button>
-                                    &nbsp;&nbsp;
-                                    <Button variant="outlined" 
-                                    size="small" 
-                                    onClick={() => handleDelete(product.id)} startIcon={<Delete/>} color='error'>
-                                    Delete
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </Box>
-            <Dialog open={openModal} onClose={handleCancel}>
-                <DialogTitle>Edit Product</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        label="ID"
-                        name="id"
-                        value={editedProduct.id || ''}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
+  const handleCheckboxChange = (event, productId) => {
+    if (event.target.checked) {
+      if (!selectedProducts.includes(productId)) {
+        dispatch(ADD_SELECTED_PRODUCT(productId));
+      }
+    } else {
+      dispatch(REMOVE_SELECTED_PRODUCT(productId));
+    }
+  };
+
+  const handleDelete = () => {
+    swal
+      .fire({
+        title: '정말로 삭제하시겠습니까?',
+        text: '삭제된 데이터는 복구할 수 없습니다.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: '삭제',
+        cancelButtonText: '취소',
+      })
+      .then(() => {
+        pOrderDeleteAxios(selectedProducts);
+      });
+  };
+  //**********************selectbox */
+  useEffect(() => {
+    // 컴포넌트가 마운트되었을 때 모든 상품 선택을 해제한다.
+    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
+  }, []); 
+  const [selectAll, setSelectAll] = useState(false);
+
+  const handleSelectAllChange = () => {
+    if (selectAll) {
+      // 이미 선택된 상태라면, 현재 페이지의 모든 상품 선택을 해제한다.
+      currentItems.forEach(product => {
+        dispatch(REMOVE_SELECTED_PRODUCT(product.id));
+      });
+    } else {
+      // 선택되지 않은 상태라면, 현재 페이지의 모든 상품을 선택한다.
+      currentItems.forEach(product => {
+        dispatch(ADD_SELECTED_PRODUCT(product.id));
+      });
+    }
+    // 전체 선택 체크박스 상태를 토글한다.
+    setSelectAll(!selectAll);
+  };
+  
+  useEffect(() => {
+    // 선택된 상품의 수가 현재 페이지의 상품 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
+    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.id));
+    setSelectAll(allSelectedOnCurrentPage);
+  }, [selectedProducts, currentItems]);
+
+  useEffect(() => {
+    // 선택된 상품의 수가 전체 상품의 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
+    if (selectedProducts.length === products.length) {
+      setSelectAll(true);
+    } else {
+      setSelectAll(false);
+    }
+  }, [selectedProducts, products]);
+
+  
+  return (
+    <Box>
+      <DashboardCard title="입고 대기 상품(발주)" variant="poster">
+        <Box sx={{ display: 'flex' }}>
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+            {/* Your first box content here */}
+            <Button
+              variant="outlined"
+              size="big"
+              startIcon={<Delete />}
+              color="error"
+              onClick={handleDelete}
+            >
+              삭제
+            </Button>
+          </Box>
+         
+
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {/* Your second box content here */}
+            <span style={{ marginRight: '1rem' }}>
+              <Typography variant="subtitle2">
+                발주번호:
+              </Typography>
+            </span>
+            <TextField label="거래처번호" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <span style={{ marginRight: '1rem' }}>
+              <Typography variant="subtitle2">
+                품목번호:
+              </Typography>
+            </span>
+            <TextField label="거래처명" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <span style={{ marginRight: '1rem' }}>
+              <Typography variant="subtitle2">
+                거래품목:
+              </Typography>
+            </span>
+            <TextField label="거래 품목" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <Button onClick={handleClick} variant="contained">
+              Search
+            </Button>
+          </Box>
+        </Box>
+        <Box>
+        {selectedProducts.length >= 2 && (
+            <Typography 
+                variant="h6" 
+                style={{color: 'red', fontWeight: 'bold'}}
+            >
+                선택된 상품 개수: {selectedProducts.length} 입니다
+            </Typography>
+        )}
+        </Box>
+
+        <br />
+
+        <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
+          <Table aria-label="simple table" sx={{ whiteSpace: 'nowrap', mt: 2 }}>
+            <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
+              <TableRow>
+                <TableCell>
+                <Checkbox
+                checked={selectAll}
+                onChange={handleSelectAllChange}
+              />
+
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    NO
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Product
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Account
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    State
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Price
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {currentItems.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectAll || selectedProducts.includes(product.id)}
+                      onChange={(event) => handleCheckboxChange(event, product.id)}
+                  
                     />
-                    <TextField
-                        label="Name"
-                        name="name"
-                        value={editedProduct.name || ''}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Post"
-                        name="post"
-                        value={editedProduct.post || ''}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Pname"
-                        name="pname"
-                        value={editedProduct.pname || ''}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Priority"
-                        name="priority"
-                        value={editedProduct.priority || ''}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Budget"
-                        name="budget"
-                        value={editedProduct.budget || ''}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCancel}>Cancel</Button>
-                    <Button onClick={handleSave} color="primary" variant="contained" > 
-                        Save
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </DashboardCard>
-    );
+                  </TableCell>
+                  <TableCell>
+                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.id}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          {product.name}
+                        </Typography>
+                        <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
+                          {product.post}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
+                      {product.pname}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      sx={{
+                        px: '4px',
+                        backgroundColor: product.pbg,
+                        color: '#fff'
+                      }}
+                      size="small"
+                      label={product.priority}
+                    ></Chip>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="h6">${product.budget}k</Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+            <Pagination
+              count={Math.ceil(products.length / ITEMS_PER_PAGE)}
+              page={currentPage + 1}
+              variant="outlined"
+              color="primary"
+              onChange={handlePageChange} 
+            />
+          </Box>
+        </Box>
+      </DashboardCard>
+      <ReceiveComponents2 />
+    </Box>
+  );
 };
 
-export default Receive;
+export default ReceiveComponents;

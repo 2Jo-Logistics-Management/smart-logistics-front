@@ -103,11 +103,13 @@ const PorderComponets = () => {
 
   const handleSelectAllChange = () => {
     if (selectAll) {
-      // 이미 선택된 상태라면, 모든 상품을 선택 취소한다.
-      dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
+      // 이미 선택된 상태라면, 현재 페이지의 모든 상품 선택을 해제한다.
+      currentItems.forEach(product => {
+        dispatch(REMOVE_SELECTED_PRODUCT(product.id));
+      });
     } else {
-      // 선택되지 않은 상태라면, 모든 상품을 선택한다.
-      products.forEach(product => {
+      // 선택되지 않은 상태라면, 현재 페이지의 모든 상품을 선택한다.
+      currentItems.forEach(product => {
         dispatch(ADD_SELECTED_PRODUCT(product.id));
       });
     }
@@ -115,6 +117,11 @@ const PorderComponets = () => {
     setSelectAll(!selectAll);
   };
   
+  useEffect(() => {
+    // 선택된 상품의 수가 현재 페이지의 상품 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
+    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.id));
+    setSelectAll(allSelectedOnCurrentPage);
+  }, [selectedProducts, currentItems]);
 
   useEffect(() => {
     // 선택된 상품의 수가 전체 상품의 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
@@ -142,6 +149,7 @@ const PorderComponets = () => {
               삭제
             </Button>
           </Box>
+         
 
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
             {/* Your second box content here */}
@@ -168,7 +176,16 @@ const PorderComponets = () => {
             </Button>
           </Box>
         </Box>
-
+        <Box>
+        {selectedProducts.length >= 2 && (
+            <Typography 
+                variant="h6" 
+                style={{color: 'red', fontWeight: 'bold'}}
+            >
+                선택된 상품 개수: {selectedProducts.length} 입니다
+            </Typography>
+        )}
+        </Box>
 
         <br />
 

@@ -16,11 +16,9 @@ import { Delete, Edit, Done} from '@mui/icons-material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
 import products from '../../data/memberData';
-import PorderModal from '../components/modal/PorderModal';
-import { open_Modal } from '../../../redux/slices/porderModalDuck';
 import pOrderItemUpdateAxios from '../../../axios/POrderItemUpdateAxios'
 
-const PorderComponets2 = () => {
+const ReceviveComponents = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [visibleProducts, setVisibleProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -46,16 +44,13 @@ const PorderComponets2 = () => {
   const porderData = useSelector((state) => state.selectedPOrder.seletedPOrder);
   console.log("밑에 컴포넌트(위에서 선택한 data):"+ porderData);
 
-  // if (!porderModalState) {
-  //   return null;
-  // }
-
-
-  
+  if (!porderModalState) {
+    return null;
+  }
 
   const handleEdit = (productId) => { 
     setEditMode((prevState) => ({ ...prevState, [productId]: !prevState[productId] }));
-    if (editMode[productId]) { // 이 부분을 수정하여 "Save" 버튼을 눌렀을 때만 axios 통신이 일어나도록 함
+    if (editMode[productId]) { 
       const index = tempProducts.findIndex((product) => product.id === productId);
       const updatedProducts = [...tempProducts];
       updatedProducts[index] = tempProducts[index];
@@ -90,9 +85,6 @@ const PorderComponets2 = () => {
       });
   };
 
-  const handleInsert = () => {
-    dispatch(open_Modal());
-  };
 
   const handleClick = () => {
     let timerInterval;
@@ -136,10 +128,6 @@ const PorderComponets2 = () => {
     <DashboardCard>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
-          <Button onClick={handleInsert} variant="contained">
-            발주등록
-          </Button>
-          &nbsp;&nbsp;
           <Button
           variant="outlined"
           size="big"
@@ -231,9 +219,8 @@ const PorderComponets2 = () => {
           </TableBody>
         </Table>
       </Box>
-      {porderModalState && <PorderModal />}
     </DashboardCard>
   );
 };
 
-export default PorderComponets2;
+export default ReceviveComponents;

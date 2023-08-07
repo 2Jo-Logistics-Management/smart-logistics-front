@@ -52,8 +52,8 @@ const PorderModal = () => {
       dispatch(close_Modal());//위에 dispatch를 사용하면 지워야함
       itemAddAxios(selectedItems);
       swal.fire({
-        title: '수정 완료.',
-        text: '창고가 수정되었습니다.',
+        title: '발주상품 등록 완료.',
+        text: '상품이 등록 되었습니다.',
         icon: 'success',
         showConfirmButton: false,
       });
