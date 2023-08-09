@@ -19,9 +19,9 @@ import { ADD_SELECTED_PRODUCT, REMOVE_SELECTED_PRODUCT, REMOVE_ALL_SELECTED_PROD
 import { useDispatch, useSelector } from 'react-redux';
 import porderAxios from './../../../axios/porderAxios';
 import { Delete } from '@mui/icons-material';
-import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios'
-import { warehouseList } from '../../../redux/thunks/warehouseList'
-
+import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios';
+import { warehouseList } from '../../../redux/thunks/warehouseList';
+import Loading from '../../../loading';
 
 
 const Warehouse = () => {
@@ -296,7 +296,7 @@ const Warehouse = () => {
                 onChange={handlePageChange}
               />
             ) : (
-              <div>Loading products...</div>
+              <Loading/>
             )}
           </Box>
         </Box>

@@ -23,7 +23,7 @@ import porderAxios from './../../../axios/porderAxios';
 import { Delete } from '@mui/icons-material';
 import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios'
 import { fetchProducts } from '../../../redux/thunks/fetchProduct'
-
+import Loading from '../../../loading';
 
 
 const PorderComponets = () => {
@@ -307,7 +307,7 @@ const PorderComponets = () => {
                 onChange={handlePageChange}
               />
             ) : (
-              <div>Loading products...</div>
+              <Loading/>
             )}
           </Box>
         </Box>
