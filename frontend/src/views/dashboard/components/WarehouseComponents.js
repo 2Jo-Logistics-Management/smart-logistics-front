@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -7,57 +7,80 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Chip,
   TextField,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Checkbox
+  Checkbox,
+  Pagination
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
+
+import { ADD_SELECTED_PRODUCT, REMOVE_SELECTED_PRODUCT, REMOVE_ALL_SELECTED_PRODUCTS } from '../../../redux/slices/selectedProductsReducer';
+import { useDispatch, useSelector } from 'react-redux';
+import porderAxios from './../../../axios/porderAxios';
 import { Delete } from '@mui/icons-material';
-import products from '../../data/memberData';
+import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios'
+import { warehouseList } from '../../../redux/thunks/warehouseList'
+
+
 
 const Warehouse = () => {
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [editedProduct, setEditedProduct] = useState({});
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const dispatch = useDispatch();
+  const productsData = useSelector((state) => state.warehouseList.products);
+  console.log("++++++++++++++++++++" + productsData);
 
-  const [visibleCount, setVisibleCount] = useState(10);
-  const [visibleProducts, setVisibleProducts] = useState([]);
+  const products = JSON.parse(JSON.stringify(productsData));
+  const realProducts = products.data;
+
 
   useEffect(() => {
-    setVisibleProducts(products.slice(0, visibleCount)); // visibleCount를 초기설정([]) 하여 의존성 배열 생성
-  }, []); 
+    // 컴포넌트가 마운트되면 fetchProducts 액션 디스패치
+    dispatch(warehouseList());
+  }, [dispatch]);
 
-  const handleScroll = (e) => {
-    const { scrollTop, clientHeight, scrollHeight } = e.target; 
+  const ITEMS_PER_PAGE = 5;  // 한 페이지당 표시할 아이템 개수
 
-    if (scrollTop + clientHeight >= scrollHeight - 10) { //젤 위에 위치 지점과 table 폭 더한게 (scroll 높이 -10) 보다 작으면
-      const newVisibleCount = visibleCount + 10;  // 10개 추가
-      //newVisibleCount를 넘겨서 10개씩 디비에서 가져온다
+  const [currentPage, setCurrentPage] = useState(0);  // 현재 페이지 상태
 
-      setVisibleCount(newVisibleCount); //10개 추가된거를 useState 변동해서 쓱
-    }
-    e.target = clientHeight;
+  const handlePageChange = (event, newPage) => {
+    setCurrentPage(newPage - 1);  // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
+  // 현재 페이지에 따른 아이템들 계산
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentItems = Array.isArray(realProducts)
+    ? realProducts.slice(offset, offset + ITEMS_PER_PAGE)
+    : [];
+
+  
+  const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
+  console.log("chekcbox에 들어있는거" + selectedProducts);
   useEffect(() => {
-    setVisibleProducts(products.slice(0, visibleCount)); //scorll이 되어 카운트가 10추가 되었을 때 해당 data를 visibleCount에 업데이트
-  }, [visibleCount]);
+    // 페이지가 변경될 때마다 체크박스 상태를 초기화한다.
+    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
+    setSelectAll(false);
+  }, [currentPage]);
+  useEffect(() => {
+    // 선택된 아이템의 수가 현재 페이지의 아이템 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
+    const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.warehouseNo));
+    setSelectAll(allSelectedOnCurrentPage);
+  }, [selectedProducts, currentItems]);
+
+  useEffect(() => {
+    if (selectedProducts.length === 1) {
+      porderAxios(selectedProducts, dispatch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProducts]);
 
   const handleClick = () => {
-    let timerInterval;  // 로딩시간을 설정을 위한 변수 선언
-    swal.fire({         //sweet alert를 임포트하여 해당 모달창 생성
-      title: '재고 조회중',  
+    let timerInterval;
+    swal.fire({
+      title: '입고물품 조회중',
       html: '잠시만 기다려주세요',
-      timer: 1000, 
+      timer: 1000,
       timerProgressBar: true,
-      didOpen: () => {  //모달이 열릴 때 사용되는 함수
+      didOpen: () => {
         swal.showLoading();
         const b = swal.getHtmlContainer().querySelector('b');
         timerInterval = setInterval(() => {
@@ -67,289 +90,218 @@ const Warehouse = () => {
       willClose: () => {
         clearInterval(timerInterval);
       }
-    })
-  };
-
-  const handleEdit = (productId) => {
-    const productToEdit = products.find((product) => product.id === productId);  //갖고온 번호로 해당 데이터 찾기
-    setEditedProduct({ ...productToEdit }); //set에다가 복사
-    setOpenModal(true); // 모달창 오픈
-  };
-
-  const handleSave = () => {
-    swal.fire({
-      title: '수정 완료.',
-      text: '재고상품이 수정되었습니다.',
-      icon: 'success',
     });
-    console.log('Save button clicked:', editedProduct);
-    // 여기서 수정한 데이터 슥 하면 됨
-
-    setEditingProductId(null); //초기화
-    setEditedProduct({});
-    setOpenModal(false);
-    setSelectedProducts([]);
   };
 
-  const handleCancel = () => {
-    console.log('모달창 닫기');
-    setEditingProductId(null); //초기화
-    setEditedProduct({});
-    setOpenModal(false);
+  const handleCheckboxChange = (event, productId) => {
+    if (event.target.checked) {
+      if (!selectedProducts.includes(productId)) {
+        dispatch(ADD_SELECTED_PRODUCT(productId));
+      }
+    } else {
+      dispatch(REMOVE_SELECTED_PRODUCT(productId));
+    }
   };
-
-   const handleInputChange = (e) => {
-   setEditedProduct({ ...editedProduct, [e.target.name]: e.target.value });
-   };
 
   const handleDelete = () => {
-    swal.fire({
-      title: '정말로 삭제하시겠습니까?',
-      text: '삭제된 데이터는 복구할 수 없습니다.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: '삭제',
-      cancelButtonText: '취소',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        
-        swal.fire({
-          title: '삭제 완료',
-          text: '재고 상품이 삭제되었습니다.',
-          icon: 'success',
-        });
-        console.log('삭제할 재고:', selectedProducts);
-
-        //여기서 삭제할 데이터 스삭하면 됨
-        setSelectedProducts([]);
-        setOpenModal(false);
-      }
-    });
+    swal
+      .fire({
+        title: '정말로 삭제하시겠습니까?',
+        text: '삭제된 데이터는 복구할 수 없습니다.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085',
+        confirmButtonText: '삭제',
+        cancelButtonText: '취소',
+      })
+      .then(() => {
+        pOrderDeleteAxios(selectedProducts);
+      });
   };
+  //**********************selectbox */
+  useEffect(() => {
+    // 컴포넌트가 마운트되었을 때 모든 상품 선택을 해제한다.
+    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
+  }, []);
 
-  const handleCheckboxChange = (productId) => {
-    const selectedIndex = selectedProducts.indexOf(productId);// check한 productId의 인덱스를 저장
-    let updatedSelectedProducts = [...selectedProducts];
-    if (selectedIndex === -1) {
-      updatedSelectedProducts.push(productId);
+  const [selectAll, setSelectAll] = useState(false);
+
+  const handleSelectAllChange = () => {
+    if (selectAll) {
+      currentItems.forEach(item => {
+        dispatch(REMOVE_SELECTED_PRODUCT(item.warehouseNo));
+      });
     } else {
-      updatedSelectedProducts.splice(selectedIndex, 1);
+      currentItems.forEach(item => {
+        dispatch(ADD_SELECTED_PRODUCT(item.warehouseNo));
+      });
     }
-    setSelectedProducts(updatedSelectedProducts);
+    setSelectAll(!selectAll);
   };
+
 
   return (
-    <DashboardCard title="Warehouse Inventory List" variant="poster">
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          창고번호:
-        </Typography>
-        <TextField label="창고번호" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          품명번호:
-        </Typography>
-        <TextField label="품명번호" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          담당자ID:
-        </Typography>
-        <TextField label="담당자ID" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Button onClick={handleClick} variant="contained">
-          Search
-        </Button>
-      </Box>
-      <br></br>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        {selectedProducts.length >  0 &&(
-          <>
+
+    <Box>
+      <DashboardCard title="재고조회" variant="poster">
+        <Box sx={{ display: 'flex' }}>
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+            {/* Your first box content here */}
             <Button
               variant="outlined"
-              size="small"
-              onClick={() => handleEdit(selectedProducts[0])}
-            >
-              Edit
-            </Button>
-            &nbsp;&nbsp;
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleDelete}
+              size="big"
               startIcon={<Delete />}
               color="error"
+              onClick={handleDelete}
             >
-              Delete
+              삭제
             </Button>
-          </>
-        )}
-      </Box>
-      <Box sx={{ overflow: 'auto', maxHeight: '400px' }} onScroll={handleScroll}>
-        <Table
-          aria-label="simple table"
-          sx={{
-            whiteSpace: 'nowrap',
-            mt: 2,
-          }}
-        >
-          <TableHead
-            sx={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-              backgroundColor: '#fff',
-            }}
-          >
-            <TableRow>
-              <TableCell>
-                <Checkbox
-                  checked={selectedProducts.length === visibleProducts.length}
-                  onChange={() =>
-                    setSelectedProducts(
-                      selectedProducts.length === visibleProducts.length
-                        ? []
-                        : visibleProducts.map((product) => product.id)
-                    )
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  NO
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  Product
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  Account
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  State
-                </Typography>
-              </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle2" fontWeight={600}>
-                  Price
-                </Typography>
-              </TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {visibleProducts.map((product) => (
-              <TableRow key={product.id}>
+          </Box>
+
+
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {/* Your second box content here */}
+            <span style={{ marginRight: '1rem' }}>
+              <Typography variant="subtitle2">
+                발주번호:
+              </Typography>
+            </span>
+            <TextField label="거래처번호" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <span style={{ marginRight: '1rem' }}>
+              <Typography variant="subtitle2">
+                품목번호:
+              </Typography>
+            </span>
+            <TextField label="거래처명" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <span style={{ marginRight: '1rem' }}>
+              <Typography variant="subtitle2">
+                거래품목:
+              </Typography>
+            </span>
+            <TextField label="거래 품목" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <Button onClick={handleClick} variant="contained">
+              Search
+            </Button>
+          </Box>
+        </Box>
+        <Box>
+          {selectedProducts.length >= 2 && (
+            <Typography
+              variant="h6"
+              style={{ color: 'red', fontWeight: 'bold' }}
+            >
+              선택된 상품 개수: {selectedProducts.length} 입니다
+            </Typography>
+          )}
+        </Box>
+
+        <br />
+
+        <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
+          <Table aria-label="simple table" sx={{ whiteSpace: 'nowrap', mt: 2 }}>
+            <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
+              <TableRow>
                 <TableCell>
                   <Checkbox
-                    checked={selectedProducts.includes(product.id)}
-                    onChange={() => handleCheckboxChange(product.id)}
-                  />
+                    checked={selectAll}
+                    onChange={handleSelectAllChange} />
                 </TableCell>
                 <TableCell>
-                  <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>
-                    {product.id}
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    창고구역
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        {product.name}
-                      </Typography>
-                      <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                        {product.post}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                    {product.pname}
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    입고번호
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    sx={{
-                      px: '4px',
-                      backgroundColor: product.pbg,
-                      color: '#fff',
-                    }}
-                    size="small"
-                    label={product.priority}
-                  ></Chip>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    수량
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    입고일
+                  </Typography>
                 </TableCell>
                 <TableCell align="right">
-                  <Typography variant="h6">${product.budget}k</Typography>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    수량
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    입고일
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
-      <Dialog open={openModal} onClose={handleCancel}>
-        <DialogTitle>Edit Product</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="ID"
-            name="id"
-            value={editedProduct.id}
-            onChange={(e) => setEditedProduct({...editedProduct, id: e.target.value})}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Name"
-            name="name"
-            value={editedProduct.name}
-           onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Post"
-            name="post"
-            value={editedProduct.post}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Pname"
-            name="pname"
-            value={editedProduct.pname}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Priority"
-            name="priority"
-            value={editedProduct.priority}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Budget"
-            name="budget"
-            value={editedProduct.budget}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleSave} color="primary" variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </DashboardCard>
+            </TableHead>
+            <TableBody>
+              
+              {currentItems.map((realProduct,index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProducts.includes(realProduct.warehouseNo)}
+                      onChange={(event) => handleCheckboxChange(event, realProduct.warehouseNo)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.sectionNo}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          {realProduct.receiveCode}
+                        </Typography>
+                        <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
+                          담당자: {realProduct.createId}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
+                      {realProduct.itemCode}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
+                      {realProduct.count}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
+                      {realProduct.createDate}
+                    </Typography>
+                  </TableCell>
+                  
+                </TableRow>
+              ))}
+            </TableBody>
+
+          </Table>
+        </Box><Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+          {realProducts ? (
+              <Pagination
+                count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
+                page={currentPage + 1}
+                variant="outlined"
+                color="primary"
+                onChange={handlePageChange}
+              />
+            ) : (
+              <div>Loading products...</div>
+            )}
+          </Box>
+        </Box>
+      </DashboardCard>
+    </Box>
   );
 };
 
