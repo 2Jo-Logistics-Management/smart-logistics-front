@@ -27,7 +27,13 @@ import { fetchProducts } from '../../../redux/thunks/fetchProduct'
 
 
 const PorderComponets = () => {
+
+
   const dispatch = useDispatch();
+  useEffect(() => {
+    // 컴포넌트가 마운트되면 fetchProducts 액션 디스패치
+    dispatch(fetchProducts());
+  }, [dispatch]);
   const productsData = useSelector((state) => state.pOrderList.products);
   //console.log("++++++++++++++++++++" + productsData);
 
@@ -35,28 +41,30 @@ const PorderComponets = () => {
   const realProducts = products.data;
 
 
-  useEffect(() => {
-    // 컴포넌트가 마운트되면 fetchProducts 액션 디스패치
-    dispatch(fetchProducts());
-  }, [dispatch]);
-
-
-
   const ITEMS_PER_PAGE = 5;  // 한 페이지당 표시할 아이템 개수
 
   const [currentPage, setCurrentPage] = useState(0);  // 현재 페이지 상태
+
+
+  const [currentItems, setCurrentItems] = useState([]);
+  const offset = currentPage * ITEMS_PER_PAGE;
+  useEffect(() => {
+    // Update currentItems when realProducts data changes
+    setCurrentItems(Array.isArray(realProducts)
+      ? realProducts.slice(offset, offset + ITEMS_PER_PAGE)
+      : []);
+  }, [realProducts, offset]);
+
+
+
 
   const handlePageChange = (event, newPage) => {
     setCurrentPage(newPage - 1);  // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
   // 현재 페이지에 따른 아이템들 계산
-  const offset = currentPage * ITEMS_PER_PAGE;
-  const currentItems = Array.isArray(realProducts)
-    ? realProducts.slice(offset, offset + ITEMS_PER_PAGE)
-    : [];
 
-  
+
   const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
   console.log("chekcbox에 들어있는거" + selectedProducts);
   useEffect(() => {
@@ -143,6 +151,8 @@ const PorderComponets = () => {
     }
     setSelectAll(!selectAll);
   };
+
+
 
 
   return (
@@ -239,7 +249,7 @@ const PorderComponets = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              
+
               {currentItems.map((realProduct) => (
                 <TableRow key={realProduct.porderCode}>
                   <TableCell>
@@ -288,12 +298,17 @@ const PorderComponets = () => {
           </Table>
         </Box><Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
-            <Pagination
-              count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
-              page={currentPage + 1}
-              variant="outlined"
-              color="primary"
-              onChange={handlePageChange} />
+            {realProducts ? (
+              <Pagination
+                count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
+                page={currentPage + 1}
+                variant="outlined"
+                color="primary"
+                onChange={handlePageChange}
+              />
+            ) : (
+              <div>Loading products...</div>
+            )}
           </Box>
         </Box>
       </DashboardCard >

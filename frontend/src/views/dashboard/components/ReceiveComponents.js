@@ -258,7 +258,7 @@ const ReceviveComponents = () => {
                           {realProduct.manager}
                         </Typography>
                         <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                          물류관리자
+                          물류관리자ㅞㅡ
                         </Typography>
                       </Box>
                     </Box>
@@ -288,12 +288,17 @@ const ReceviveComponents = () => {
           </Table>
         </Box><Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
-            <Pagination
-              count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
-              page={currentPage + 1}
-              variant="outlined"
-              color="primary"
-              onChange={handlePageChange} />
+          {realProducts ? (
+              <Pagination
+                count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
+                page={currentPage + 1}
+                variant="outlined"
+                color="primary"
+                onChange={handlePageChange}
+              />
+            ) : (
+              <div>Loading products...</div>
+            )}
           </Box>
         </Box>
       </DashboardCard >
