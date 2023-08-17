@@ -6,7 +6,6 @@ const loginRepsonse = (memberId, password) => async (dispatch) => {
     try {
         axios.post('http://localhost:8888/api/member/login', { memberId, password })
         .then((response) => {
-            console.log("response : ",response.data);
             dispatch(success(response.data));
         })
         .catch((error) => {

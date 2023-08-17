@@ -7,7 +7,6 @@ const logoutResponse = () => async (dispatch) => {
         axios.post('http://localhost:8888/api/member/logout')
         .then((response) => {
             dispatch(success(response.data));
-            console.log(response.data)
         })
     } catch(error) {
     }

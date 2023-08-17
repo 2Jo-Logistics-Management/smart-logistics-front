@@ -52,8 +52,6 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
         } else if (loginData.success == false) {
             setAlertMessage('아이디와 비밀번호를 확인해주세요.');
             setShowAlert(true); // 로그인 실패 시 showAlert를 true로 설정하여 알림 표시
-            console.log("로그인실패")
-            console.log(loginData.success)
         }
     }, [dispatch, loginData, navigate]);
 
@@ -76,7 +74,6 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
         try {
             dispatch(loginAxios(userId, password));
         } catch (error) {
-            console.log("로그인 실패:", error);
             alert(error);
         }
     };

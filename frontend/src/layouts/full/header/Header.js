@@ -17,8 +17,6 @@ const Header = (props) => {
   const loginData = useSelector((state) => state.loginResponse.data);
   const logoutData = useSelector((state) => state.logoutResponse.data);
   const navigate = useNavigate();
-  const memberName = sessionStorage.getItem('userName');
-  console.log("loginData : " + loginData);
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: '10px',
@@ -37,9 +35,7 @@ const Header = (props) => {
 
   useEffect(() => {
     if(logoutData.success) {
-      console.log("logoutData.success : " + logoutData.success)
       navigate("/auth/login");
-      console.log("logoutData : "+logoutData.success)
 
     }else {
       console.log("로그아웃이 실패했습니다!");
@@ -49,10 +45,8 @@ const Header = (props) => {
   const handleLogout = async () => {
     try {
       dispatch(logoutAxios());
-      // 로그아웃 요청 후에 일어나는 일들을 처리하는 로직 추가
     } catch (error) {
       console.error("로그아웃 중 오류 발생:", error);
-      // 로그아웃 중에 오류가 발생했을 때 처리할 로직 추가
     }
   };
 
