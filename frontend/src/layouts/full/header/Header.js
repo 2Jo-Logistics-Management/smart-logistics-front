@@ -5,8 +5,21 @@ import PropTypes from 'prop-types';
 // components
 import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons';
+import logoutAxios from '../../../redux/thunks/logoutResponse';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+
 
 const Header = (props) => {
+  const dispatch = useDispatch();
+  const loginData = useSelector((state) => state.loginResponse.data);
+  const logoutData = useSelector((state) => state.logoutResponse.data);
+  const navigate = useNavigate();
+  const memberName = sessionStorage.getItem('userName');
+  console.log("loginData : " + loginData);
+
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: '10px',
     background: theme.palette.background.paper,
@@ -21,6 +34,27 @@ const Header = (props) => {
     width: '100%',
     color: theme.palette.text.secondary,
   }));
+
+  useEffect(() => {
+    if(logoutData.success) {
+      console.log("logoutData.success : " + logoutData.success)
+      navigate("/auth/login");
+      console.log("logoutData : "+logoutData.success)
+
+    }else {
+      console.log("로그아웃이 실패했습니다!");
+    }
+  },[logoutData])
+
+  const handleLogout = async () => {
+    try {
+      dispatch(logoutAxios());
+      // 로그아웃 요청 후에 일어나는 일들을 처리하는 로직 추가
+    } catch (error) {
+      console.error("로그아웃 중 오류 발생:", error);
+      // 로그아웃 중에 오류가 발생했을 때 처리할 로직 추가
+    }
+  };
 
   return (
     <AppBarStyled position="sticky" color="default">
@@ -60,9 +94,14 @@ const Header = (props) => {
 
         <Stack spacing={1} direction="row" alignItems="center">
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mr: 1 }}>
-            192.26.10.01 이원진님
+            {loginData}
+            로그아웃
           </Typography>
-          <Button variant="contained" color="primary" href="/auth/login">
+          <Button 
+          variant="contained" 
+          color="primary" 
+          type="submit"
+          onClick={handleLogout}>
             Logout
           </Button>
           <Profile />
