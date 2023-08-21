@@ -24,7 +24,7 @@ import { Delete } from '@mui/icons-material';
 import pOrderDeleteAxios from '../../../axios/pOrderDeleteAxios'
 import { receiveListAll } from '../../../redux/thunks/receiveList'
 import ReceviveComponents2 from './ReceiveComponents2';
-
+import Loading from '../../../loading';
 
 
 const ReceviveComponents = () => {
@@ -50,7 +50,8 @@ const ReceviveComponents = () => {
     setCurrentPage(newPage - 1);  // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
-  // 현재 페이지에 따른 아이템들 계산
+
+  // 현재 페이지에 따른 아이템들 계산v
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentItems = Array.isArray(realProducts)
     ? realProducts.slice(offset, offset + ITEMS_PER_PAGE)
@@ -64,6 +65,7 @@ const ReceviveComponents = () => {
     dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
     setSelectAll(false);
   }, [currentPage]);
+
   useEffect(() => {
     // 선택된 아이템의 수가 현재 페이지의 아이템 수와 동일하다면, 전체 선택 체크박스를 선택 상태로 설정한다.
     const allSelectedOnCurrentPage = currentItems.every(item => selectedProducts.includes(item.porderCode));
@@ -239,7 +241,7 @@ const ReceviveComponents = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* currentItems.map() 함수 내부에서 괄호로 묶어서 행과 셀을 생성 */}
+          
               {currentItems.map((realProduct) => (
                 <TableRow key={realProduct.receiveCode}>
                   <TableCell>
@@ -258,7 +260,7 @@ const ReceviveComponents = () => {
                           {realProduct.manager}
                         </Typography>
                         <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                          물류관리자ㅞㅡ
+                          물류관리자
                         </Typography>
                       </Box>
                     </Box>
@@ -286,7 +288,8 @@ const ReceviveComponents = () => {
             </TableBody>
 
           </Table>
-        </Box><Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           {realProducts ? (
               <Pagination
@@ -297,7 +300,7 @@ const ReceviveComponents = () => {
                 onChange={handlePageChange}
               />
             ) : (
-              <div>Loading products...</div>
+              <Loading/>
             )}
           </Box>
         </Box>

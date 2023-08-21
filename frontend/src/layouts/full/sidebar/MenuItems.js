@@ -23,16 +23,11 @@ const Menuitems = [
 
   {
     id: uniqueId(),
-    title: '재고관리',
+    title: '메인페이지',
     icon: IconLayoutDashboard,
     href: '/dashboard',
   },
-  {
-    id: uniqueId(),
-    title: '창고 등록/수정/삭제',
-    icon: IconLayoutDashboard,
-    href: '/WarehouseSection/list',
-  },
+  
   {
     id: uniqueId(),
     title: '재고 등록/수정/삭제',

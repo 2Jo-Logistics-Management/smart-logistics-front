@@ -15,10 +15,13 @@ const MainWrapper = styled('div')(() => ({
 const PageWrapper = styled('div')(() => ({
   display: 'flex',
   flexGrow: 1,
+  padding: 0,
   paddingBottom: '60px',
   flexDirection: 'column',
   zIndex: 1,
   backgroundColor: 'transparent',
+  
+
 }));
 
 const FullLayout = () => {
@@ -41,30 +44,24 @@ const FullLayout = () => {
       {/* Main Wrapper */}
       {/* ------------------------------------------- */}
       <PageWrapper
-        className="page-wrapper"
-      >
-        {/* ------------------------------------------- */}
-        {/* Header */}
-        {/* ------------------------------------------- */}
+        //className="page-wrapper" 
+        sx = {{padding : 0,width: '100%'}}>
         <Header toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
-        {/* ------------------------------------------- */}
-        {/* PageContent */}
-        {/* ------------------------------------------- */}
-        <Container sx={{
+        <div sx={{
           paddingTop: "20px",
-          maxWidth: '1200px',
+          width: "100%",
+          //margin: "0px",
+          //padding:0,
+          
         }}
         >
-          {/* ------------------------------------------- */}
-          {/* Page Route */}
-          {/* ------------------------------------------- */}
-          <Box sx={{ minHeight: 'calc(100vh - 170px)' }}>
+          <Box sx={{ minHeight: 'calc(100vh - 170px)', 
+          width:'100%',
+          padding:0 ,margin:0,
+          }}>
             <Outlet />
           </Box>
-          {/* ------------------------------------------- */}
-          {/* End Page */}
-          {/* ------------------------------------------- */}
-        </Container>
+        </div>
       </PageWrapper>
     </MainWrapper>
   );

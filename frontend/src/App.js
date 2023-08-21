@@ -8,12 +8,12 @@ function App() {
   const routing = useRoutes(Router);
   const theme = baselightTheme;
   return (
-    // <Suspense fallback={<Loading />}>
+     <Suspense fallback={<Loading />}>
     <ThemeProvider theme={theme}>     
       <CssBaseline />
       {routing}
     </ThemeProvider>
-    // </Suspense>
+     </Suspense>
   );
 }
 

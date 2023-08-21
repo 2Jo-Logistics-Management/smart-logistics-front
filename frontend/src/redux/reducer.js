@@ -5,13 +5,15 @@ import selectedPOrderReducer from './slices/selectedPOrderReducer'
 import pOrderListReducer from './slices/pOrderListReducer'
 import receiveListReducer from './slices/receiveListReducer'
 import warehouseListReducer  from './slices/warehouseListReducer';
+import SelectedPOrderListReducer from './slices/SelectedPOrderListReducer';
 const rootReducer = combineReducers({
     porderModal: porderModalDuck,
     selectedProduct: selectedProductsReducer,
     selectedPOrder: selectedPOrderReducer, 
     pOrderList: pOrderListReducer,
     receiveList: receiveListReducer,
-    warehouseList: warehouseListReducer
+    warehouseList: warehouseListReducer,
+    selectedPOrderList: SelectedPOrderListReducer
 });
 
 

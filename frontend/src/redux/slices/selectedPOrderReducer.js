@@ -14,7 +14,6 @@ export const pOrderItemUpdateThunk = createAsyncThunk(
   }
 );
 
-// 초기 상태
 const initialState = {
     seletedPOrder: [],
     indexData: [],
@@ -31,19 +30,10 @@ const selectedPOrderReducer = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(pOrderItemUpdateThunk.pending, (state) => {
-        // 여기에 비동기 액션 시작 시 처리할 로직을 작성
-        // 예: 로딩 상태 변경
-      })
+
       .addCase(pOrderItemUpdateThunk.fulfilled, (state, action) => {
-        // 비동기 액션 성공 시 처리할 로직을 작성
-        // 예: 데이터 업데이트
-        state.indexData.push(action.payload);
+         state.indexData.push(action.payload);
       })
-      .addCase(pOrderItemUpdateThunk.rejected, (state, action) => {
-        // 비동기 액션 실패 시 처리할 로직을 작성
-        // 예: 오류 메시지 설정
-      });
   }
 });
 
