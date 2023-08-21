@@ -1,44 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import Select from 'react-select';
 import swal from 'sweetalert2';
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TableFooter, TextField } from '@mui/material';
 import { close_Modal } from '../../../../redux/slices/porderModalDuck';
-import {Delete} from '@mui/icons-material';
+import { Delete } from '@mui/icons-material';
+import SearchIcon from '@mui/icons-material/Search';
 import itemAddAxios from '../../../../axios/ItemAddAxios'
+import axios from 'axios';
+import { Pagination } from '@mui/material';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import ko from 'date-fns/locale/ko';
+
 
 const PorderModal = () => {
   const dispatch = useDispatch();
   const porderModalState = useSelector((state) => state.porderModal.openModal);
 
-  const [selectedNumber, setSelectedNumber] = useState(null);
-  const [selectedName, setSelectedName] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
+
+
+  // 디비에서 selectbox 데이터 가져오기
+
   const [editedData, setEditedData] = useState({});
-  const [selectedItems, setSelectedItems] = useState([]); 
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [manageName, setManageName] = useState("");
+  const [items, setItems] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+  const [accountList, setAccountList] = useState([]);
+  const [selectedCompanyName, setSelectedCompanyName] = useState("")
+  //거래처 페이징처리
+  const [currentAccountPage, setCurrentAccountPage] = useState(1);
+  const [accountsPerPage] = useState(6);
+  const indexOfLastAccount = currentAccountPage * accountsPerPage;
+  const indexOfFirstAccount = indexOfLastAccount - accountsPerPage;
+  const currentAccountList = accountList.slice(indexOfFirstAccount, indexOfLastAccount);
+  const [selectedAccountContactNumber, setSelectedAccountContactNumber] = useState("");
+  const [selectedItemName, setSeletedItemName] = useState("");
+  
 
-  const handleSelectNumber = (selectedOption) => {
-    setSelectedNumber(selectedOption);
+
+
+  useEffect(() => {
+    axios.get('http://localhost:8888/api/item/list')
+      .then(response => {
+        const fetchedItems = response.data.data;
+        setItems(fetchedItems);
+      })
+      .catch(error => {
+        console.error('첫번째 options에서 에러 발생', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:8888/api/account/list')
+      .then(response => {
+        const accountList = response.data.data;
+        setAccountList(accountList);
+      })
+      .catch(error => {
+        console.error('에러발생', error);
+      });
+  }, []);
+  const handleAccountRowClick = (clickedItem) => {
+    // 클릭한 거래처의 contactNumber를 선택한 거래처번호 상태 변수에 저장
+    setSelectedAccountContactNumber(clickedItem.contactNumber);
+
   };
 
-  const handleSelectName = (selectedOption) => {
-    setSelectedName(selectedOption);
-  };
-
-  const handleSelectSize = (selectedOption) => {
-    setSelectedSize(selectedOption);
-  };
-
-  const handleFilterData = () => {
-    // Add the selected data to the selectedItems array
-    const selectedData = {
-      number: selectedNumber?.value || null,
-      name: selectedName?.value || null,
-      size: selectedSize?.value || null,
-      quantity: '0', // 초기에는 수량을 0으로 설정합니다.
-    };
-    setSelectedItems([...selectedItems, selectedData]);
-  };
 
   const handleCancel = () => {
     dispatch(close_Modal());
@@ -50,6 +82,7 @@ const PorderModal = () => {
       //await axios.post('/api/saveData', selectedItems);
       //dispatch(SAVE_MODAL_DATA(selectedItems)); ->selectItems를 사용하지 않을꺼면 지워도 됨
       dispatch(close_Modal());//위에 dispatch를 사용하면 지워야함
+      console.log(selectedItems);
       itemAddAxios(selectedItems);
       swal.fire({
         title: '발주상품 등록 완료.',
@@ -58,7 +91,7 @@ const PorderModal = () => {
         showConfirmButton: false,
       });
     } catch (error) {
- 
+
       swal.fire({
         title: '오류 발생',
         text: '데이터 저장 중 오류가 발생했습니다.',
@@ -67,97 +100,238 @@ const PorderModal = () => {
       });
     }
   };
+  const handleRowClick = (clickedItem) => {
+    // 이미 선택된 로우는 중복 추가하지 않습니다.
+    if (!selectedItems.some(item => item.number === clickedItem.itemCode)) {
+      console.log(clickedItem)
+      const newItem = {
+        number: clickedItem.itemCode,
+        name: clickedItem.itemName,
+        size: clickedItem.spec, // 이 필드의 이름이 맞는지 확인해주세요
+        quantity: '0', // 초기에는 수량을 0으로 설정합니다.
+        price: clickedItem.itemPrice,
+        date: new Date(),
+
+      };
+      setSelectedItems(prevItems => [...prevItems, newItem]);
+    }
+  };
+
+
 
   const handleConfirmEdit = () => {
     // editedData에 저장된 변경된 행을 selectedItems에 반영
     setSelectedItems((prevData) => {
       const newData = prevData.map((item) =>
-        item.number === editedData.number ? { ...item, quantity: editedData.quantity } : item
+        item.number === editedData.number ? { ...item, quantity: editedData.quantity, price: editedData.price } : item
       );
+      console.log(newData);
       return newData;
     });
     // editedData 초기화
     setEditedData({});
   };
+
   const handleDelete = (itemNumber) => {
     setSelectedItems((prevData) => prevData.filter((item) => item.number !== itemNumber));
   };
 
-  const options = [
-    { value: 'all', label: 'All' }, // Option for "All" selection
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-    { value: '3', label: '3' },
-    { value: '4', label: '4' },
-    { value: '5', label: '5' },
-    { value: '6', label: '6' },
-    { value: '7', label: '7' },
-    { value: '8', label: '8' },
-    { value: '9', label: '9' },
-    { value: '10', label: '10' },
-    // Add more options here
-  ];
 
-  const productOptions = [
-    { value: 'all', label: 'All' }, // Option for "All" selection
-    { value: 'Product 1', label: 'Product 1' },
-    { value: 'Product 2', label: 'Product 2' },
-    { value: 'Product 3', label: 'Product 3' },
-    { value: 'Product 4', label: 'Product 4' },
-    { value: 'Product 5', label: 'Product 5' },
-    // Add more options here for product names
-  ];
 
-  const sizeOptions = [
-    { value: 'all', label: 'All' }, // Option for "All" selection
-    { value: 'Size A', label: 'Size A' },
-    { value: 'Size B', label: 'Size B' },
-    { value: 'Size C', label: 'Size C' },
-    { value: 'Size D', label: 'Size D' },
-    // Add more options here for sizes
-  ];
+  const handleAccountSearchClick = (searchData) => {
+    console.log(searchData);
+    axios.get(`http://localhost:8888/api/account/list?accountName=${searchData}`)
+      .then(response => {
+        const AccountSearchData = response.data.data;
+        setAccountList(AccountSearchData);
+      })
+  }
+  const handleItemSearchClick = (searchData) => {
+    axios.get(`http://localhost:8888/api/item/list?itemName=${searchData}`)
+      .then(response => {
+        const itemSearchData = response.data.data
+        setItems(itemSearchData);
+      })
+  }
+ 
+
+
+  const handleDateChange = (index, date) => {
+    console.log("순서" + index + "날짜" + date)
+    setSelectedItems(prevItems => {
+      const updatedItems = [...prevItems];
+      updatedItems[index].date = date;
+      return updatedItems;
+    });
+  };
+
 
   return (
     <Dialog
       open={porderModalState}
       PaperProps={{
         sx: {
-          width: '80%',
-          maxWidth: 'md',
+          width: '100%',
+          maxWidth: 'xl',
+          display: 'flex',
         },
       }}
     >
 
-      <DialogTitle>발주품목 등록</DialogTitle>
+      <DialogTitle>발주 작성</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          품목명
-          <Select options={options} value={selectedNumber} onChange={handleSelectNumber} styles={{ width: '130px' }} />
-          
-          <Select options={productOptions} value={selectedName} onChange={handleSelectName} styles={{ width: '130px' }} />
-          규격
-          <Select options={sizeOptions} value={selectedSize} onChange={handleSelectSize} styles={{ width: '130px' }} />
-          <Button variant="contained" onClick={handleFilterData}>조회</Button>
+        <Box sx ={{display: 'flex'}}>
+        <Box sx = {{flex: 1, padding: '16px'}}> 
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
+          <p style={{ marginRight: '8px' }}>거래처명:</p>
+          <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
+            value={selectedCompanyName} onChange={(e) => setSelectedCompanyName(e.target.value)} />
+          <Button Icon={<SearchIcon />} onClick={() => handleAccountSearchClick(selectedCompanyName)}>거래처 조회</Button>
         </Box>
 
-        {/* Table */}
+        <Table title="거래처선택" style={{ textAlign: 'center' }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>거래처번호</TableCell>
+              <TableCell>거래처명</TableCell>
+              <TableCell>대표자</TableCell>
+              <TableCell>거래처번호</TableCell>
+              <TableCell>사업자번호</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {currentAccountList.map((accountList, index) => (
+              <TableRow key={index} sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                }
+              }}
+                onClick={() => handleAccountRowClick(accountList)}
+              >
+                <TableCell sx={{ height: '10px' }}>{accountList.accountName}</TableCell>
+                <TableCell sx={{ height: '10px' }}>{accountList.accountNo}</TableCell>
+                <TableCell sx={{ height: '10px' }}>{accountList.representative}</TableCell>
+                <TableCell sx={{ height: '10px' }}>{accountList.contactNumber}</TableCell>
+                <TableCell sx={{ height: '10px' }}>{accountList.businessNumber}</TableCell>
+              </TableRow>
+            ))}
+
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={5}>
+                <Pagination
+                  count={Math.ceil(accountList.length / accountsPerPage)}
+                  variant="outlined"
+                  color="primary"
+                  page={currentAccountPage}
+                  onChange={(event, value) => setCurrentAccountPage(value)}
+                />
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+        <hr />
+        <h2>품목선택리스트</h2>
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
+          <p style={{ marginRight: '8px' }}>품목명:</p>
+          <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
+            value={selectedItemName} onChange={(e) => setSeletedItemName(e.target.value)} />
+          <Button Icon={<SearchIcon />} onClick={() => handleItemSearchClick(selectedItemName)}>품목명 조회</Button>
+        </Box>
+        <Table style={{ textAlign: 'center' }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>품목코드</TableCell>
+              <TableCell>명칭</TableCell>
+              <TableCell>규격</TableCell>
+              <TableCell>단위</TableCell>
+              <TableCell>금액</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {currentItems.map((item, index) => (
+              <TableRow key={index} onClick={() => handleRowClick(item)} sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                }
+              }}>
+                <TableCell sx={{ height: '10px !important' }}>{item.itemCode}</TableCell>
+                <TableCell sx={{ height: '10px !important' }}>{item.itemName}</TableCell>
+                <TableCell sx={{ height: '10px !important' }}>{item.spec}</TableCell>
+                <TableCell sx={{ height: '10px !important' }}>{item.unit}</TableCell>
+                <TableCell sx={{ height: '10px !important' }}>{item.itemPrice}</TableCell>
+              </TableRow>
+            ))}
+
+          </TableBody>
+
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={5}>
+                <Pagination
+                  count={Math.ceil(items.length / itemsPerPage)}
+                  variant="outlined"
+                  color="primary"
+                  page={currentPage}
+                  onChange={(event, value) => setCurrentPage(value)}
+                />
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+
+        </Table>
+        </Box>
+        <Box sx={{ flex: 1, padding: '16px' }}>      
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
+          <p style={{ marginRight: '8px' }}>거래처번호:</p>
+          <TextField
+            sx={{ width: '150px', marginRight: '16px' }}
+            variant="outlined"
+            size="small"
+            value={selectedAccountContactNumber}
+            onChange={(e) => setSelectedAccountContactNumber(e.target.value)}
+          />
+          <p style={{ marginRight: '8px' }}>담당자:</p>
+          <TextField sx={{ width: '150px' }} variant="outlined" size="small" 
+            onChange={(e) => setManageName(e.target.value)}
+          />
+        </Box>
+
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>품번</TableCell>
               <TableCell>품명</TableCell>
-              <TableCell>size</TableCell>
+              <TableCell>규격</TableCell>
+              <TableCell>단가</TableCell>
+              <TableCell>금액</TableCell>
               <TableCell>quantity</TableCell>
+              <TableCell>납기일</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* Render the selected items */}
             {selectedItems.map((item, index) => (
               <TableRow key={`selected-${index}`}>
                 <TableCell>{item.number}</TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.size}</TableCell>
+                <TableCell>
+                  {editedData.number === item.number ? (
+                    <input
+                      type="number"
+                      value={editedData.price}
+                      onChange={(e) =>
+                        setEditedData((prevData) => ({ ...prevData, price: e.target.value }))
+                      }
+                    />
+                  ) : (
+                    item.price
+                  )}
+                </TableCell>
+
+                <TableCell>{item.price}</TableCell>
                 <TableCell>
                   {editedData.number === item.number ? ( // 현재 행이 수정 중인 행이라면
                     <input
@@ -172,11 +346,33 @@ const PorderModal = () => {
                   )}
                 </TableCell>
                 <TableCell>
+                  <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
+                    <Box display="flex" justifyContent="center" alignItems="center">
+                      <DatePicker
+                        renderInput={(props) => <TextField {...props} />}
+                        label="마감 일자"
+                        value={item.date} // Use the date from the item
+                        onChange={(date) => {
+                          console.log("날짜" + date)
+                          handleDateChange(index, date)
+                        }} // Add this handler
+                        views={['year', 'month', 'day']}
+                        format='yyyy-MM'
+                        slotProps={{ textField: { variant: 'outlined', size: "small" } }}
+                        minDate={new Date('2022-07-01')}
+                        maxDate={new Date("2100-01-01")}
+                      />
+                    </Box>
+                  </LocalizationProvider>
+
+                </TableCell>
+                <TableCell>
                   {editedData.number === item.number ? ( // 현재 행이 수정 중인 행이라면
                     <>
                       <Button variant="outlined" color="primary" onClick={handleConfirmEdit}>
                         확인
                       </Button>
+                      &nbsp;&nbsp;&nbsp;&nbsp;
                       <Button
                         variant="outlined"
                         color="secondary"
@@ -187,27 +383,30 @@ const PorderModal = () => {
                     </>
                   ) : (
                     <>
-                    <Button
-                      variant="outlined"
-                      onClick={() => setEditedData({ ...item })} // 행을 수정하기 위해 editedData에 복사
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      variant='outlined'
-                      onClick={() => handleDelete(item.number)}
-                      startIcon={<Delete />}
-                    >
-                      삭제
+                      <Button
+                        variant="outlined"
+                        onClick={() => setEditedData({ ...item })} // 행을 수정하기 위해 editedData에 복사
+                      >
+                        Edit
                       </Button>
-                      </>
+                      &nbsp;&nbsp;&nbsp;&nbsp;
+                      <Button
+                        variant='outlined'
+                        onClick={() => handleDelete(item.number)}
+                        startIcon={<Delete />}
+                      >
+                      </Button>
+                    </>
                   )}
-                  
+
                 </TableCell>
               </TableRow>
+
             ))}
           </TableBody>
         </Table>
+        </Box>
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCancel}>Cancel</Button>

@@ -146,7 +146,7 @@ const ReceviveComponents = () => {
           <Button onClick={handleClick} variant="contained">
             Search
           </Button>
-        </Box>
+      </Box>  
       </Box>
       <br />
       <Box sx={{ overflow: 'auto', maxHeight: '400px' }} onScroll={handleScroll}>
