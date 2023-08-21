@@ -1,11 +1,10 @@
 
-
 import axios from 'axios';
 
 //발주등록에서 insert
-const itemAddAxios = (selectedItems) => {
-    console.log(selectedItems);
-      axios.post(`/api/porder/${selectedItems}`)
+const itemAddAxios = (pOrderInsertDto) => {
+    console.log("비동기 통신"+pOrderInsertDto);
+      axios.post('http://localhost:8888/api/porder/insert',pOrderInsertDto)
         .then((response) => {
           console.log(response.data);
         })

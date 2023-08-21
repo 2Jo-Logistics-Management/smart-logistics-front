@@ -1,12 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import localStorage from 'redux-persist/lib/storage';
 import createSagaMiddleware from 'redux-saga';
 import rootReducer from './reducer'; // rootReducer 파일 경로에 맞게 수정해야 합니다.
 
 const persistConfig = {
   key: 'root',
-  storage: storage,
+  storage: localStorage,
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
