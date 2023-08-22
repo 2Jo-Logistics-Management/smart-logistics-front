@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import {
   Typography,
@@ -7,185 +8,121 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Chip,
   TextField,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Checkbox
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
-import swal from 'sweetalert2';
-import { Delete } from '@mui/icons-material';
-import products from '../../data/memberData';
-import Member2 from './member2';
+axios.defaults.withCredentials = true;
 
 const Member = () => {
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [editedProduct, setEditedProduct] = useState({});
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [currentMember, setCurrentMember] = useState([]);
+  const [memberList, setMemberList] = useState([]);
 
-  const [visibleCount, setVisibleCount] = useState(10);
-  const [visibleProducts, setVisibleProducts] = useState([]);
+  const [searchName, setSearchName] = useState('');
+  const [searchId, setSearchId] = useState('');
 
-  useEffect(() => {
-    setVisibleProducts(products.slice(0, visibleCount)); // visibleCount를 초기설정([]) 하여 의존성 배열 생성
-  }, []); 
-
-  const handleScroll = (e) => {
-    const { scrollTop, clientHeight, scrollHeight } = e.target; 
-
-    if (scrollTop + clientHeight >= scrollHeight - 10) { //젤 위에 위치 지점과 table 폭 더한게 (scroll 높이 -10) 보다 작으면
-      const newVisibleCount = visibleCount + 10;  // 10개 추가
-      //newVisibleCount를 넘겨서 10개씩 디비에서 가져온다
-
-      setVisibleCount(newVisibleCount); //10개 추가된거를 useState 변동해서 쓱
-    }
-    e.target = clientHeight;
-  };
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isAlertOpen, setIsAlertOpen] = useState(false); // Alert 창을 표시할지 여부
 
   useEffect(() => {
-    setVisibleProducts(products.slice(0, visibleCount)); //scorll이 되어 카운트가 10추가 되었을 때 해당 data를 visibleCount에 업데이트
-  }, [visibleCount]);
+    axios.get('http://localhost:8888/api/member/list')
+      .then(response => {
+        setMemberList(response.data.data);
+        setCurrentMember(response.data.data);
+      })
+      .catch(error => {
+        if (error.response && error.response.data) {
+          const errorMessage = error.response.data;
 
-  const handleClick = () => {
-    let timerInterval;  // 로딩시간을 설정을 위한 변수 선언
-    swal.fire({         //sweet alert를 임포트하여 해당 모달창 생성
-      title: '입고물품 조회중',  
-      html: '잠시만 기다려주세요',
-      timer: 1000, 
-      timerProgressBar: true,
-      didOpen: () => {  //모달이 열릴 때 사용되는 함수
-        swal.showLoading();
-        const b = swal.getHtmlContainer().querySelector('b');
-        timerInterval = setInterval(() => {
-          b.textContent = swal.getTimerLeft();
-        }, 1000);
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
-      }
-    })
-  };
+          if (errorMessage.includes('not logged in')) {
+            setAlertMessage('로그인이 필요합니다.');
+            setIsAlertOpen(true); // Alert 창 표시
+          } else if (errorMessage.includes('do not have permission')) {
+            setAlertMessage('허가되지 않는 이용자입니다.');
+            setIsAlertOpen(true); // Alert 창 표시
+          }
+        } else {
+          console.error('Error fetching member list:', error);
+        }
+      });
+  }, []);
 
-  const handleEdit = (productId) => {
-    const productToEdit = products.find((product) => product.id === productId);  //갖고온 번호로 해당 데이터 찾기
-    setEditedProduct({ ...productToEdit }); //set에다가 복사
-    setOpenModal(true); // 모달창 오픈
-  };
-
-  const handleSave = () => {
-    swal.fire({
-      title: '수정 완료.',
-      text: '발주 상품이 수정되었습니다.',
-      icon: 'success',
+  const handleSearch = () => {
+    const filteredMembers = memberList.filter((member) => {
+      const nameMatches = member.memberName.includes(searchName);
+      const idMatches = member.memberId.includes(searchId);
+      return nameMatches && idMatches;
     });
-    console.log('Save button clicked:', editedProduct);
-    // 여기서 수정한 데이터 슥 하면 됨
-
-    setEditingProductId(null); //초기화
-    setEditedProduct({});
-    setOpenModal(false);
-    setSelectedProducts([]);
+  
+    setCurrentMember(filteredMembers);
   };
 
-  const handleCancel = () => {
-    console.log('모달창 닫기');
-    setEditingProductId(null); //초기화
-    setEditedProduct({});
-    setOpenModal(false);
-  };
-
-   const handleInputChange = (e) => {
-   setEditedProduct({ ...editedProduct, [e.target.name]: e.target.value });
-   };
-
-  const handleDelete = () => {
-    swal.fire({
-      title: '정말로 삭제하시겠습니까?',
-      text: '삭제된 데이터는 복구할 수 없습니다.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: '삭제',
-      cancelButtonText: '취소',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        
-        swal.fire({
-          title: '삭제 완료',
-          text: '발주 상품이 삭제되었습니다.',
-          icon: 'success',
-        });
-        console.log('삭제할 재고:', selectedProducts);
-
-        //여기서 삭제할 데이터 스삭하면 됨
-        setSelectedProducts([]);
-        setOpenModal(false);
-      }
-    });
-  };
-
-  const handleCheckboxChange = (productId) => {
-    const selectedIndex = selectedProducts.indexOf(productId);// check한 productId의 인덱스를 저장
-    let updatedSelectedProducts = [...selectedProducts];
-    if (selectedIndex === -1) {
-      updatedSelectedProducts.push(productId);
-    } else {
-      updatedSelectedProducts.splice(selectedIndex, 1);
-    }
-    setSelectedProducts(updatedSelectedProducts);
+  const handleAlertClose = () => {
+    setIsAlertOpen(false);
+    window.location.href = '/';
   };
 
   return (
     <>
+
+    {/* Alert 창 */}
+    {isAlertOpen && (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999, // 모달을 최상위로 배치
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '5px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center',
+            zIndex: 99999, // 모달 내용을 최상위로 배치
+          }}
+        >
+          <p>{alertMessage}</p>
+          <Button variant="contained" onClick={handleAlertClose}>
+            홈으로
+          </Button>
+        </div>
+      </div>
+    )}
+
+    <DashboardCard title="검색조건" variant="poster">
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+          <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            이름
+          </Typography>
+          <TextField label="이름" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}/>
+          <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            아이디
+          </Typography>
+          <TextField label="아이디" variant="outlined" size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} />
+          <Button variant="contained" onClick={handleSearch}>
+            Search
+          </Button>
+        </Box>
+    </DashboardCard>
+
+    <div style={{ marginBottom: '20px' }}></div> {/* 간격 추가 */}
+
     <DashboardCard title="Member list" variant="poster">
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          거래처번호:
-        </Typography>
-        <TextField label="거래처번호" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          거래처명:
-        </Typography>
-        <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          거래품목:
-        </Typography>
-        <TextField label="거래 품목" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Button onClick={handleClick} variant="contained">
-          Search
-        </Button>
-      </Box>
+      
       <br></br>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        {selectedProducts.length >  0 &&(
-          <>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => handleEdit(selectedProducts[0])}
-            >
-              Edit
-            </Button>
-            &nbsp;&nbsp;
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleDelete}
-              startIcon={<Delete />}
-              color="error"
-            >
-              Delete
-            </Button>
-          </>
-        )}
-      </Box>
-      <Box sx={{ overflow: 'auto', maxHeight: '400px' }} onScroll={handleScroll}>
+
+      <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
         <Table
           aria-label="simple table"
           sx={{
@@ -203,157 +140,79 @@ const Member = () => {
           >
             <TableRow>
               <TableCell>
-                <Checkbox
-                  checked={selectedProducts.length === visibleProducts.length}
-                  onChange={() =>
-                    setSelectedProducts(
-                      selectedProducts.length === visibleProducts.length
-                        ? []
-                        : visibleProducts.map((product) => product.id)
-                    )
-                  }
-                />
-              </TableCell>
-              <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  NO
+                  No
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  Product
+                  사원이름
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  Account
+                  아이디
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  State
+                  역할
                 </Typography>
               </TableCell>
-              <TableCell align="right">
+              <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  Price
+                  생성일자
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  IP주소
                 </Typography>
               </TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
+          
           <TableBody>
-            {visibleProducts.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedProducts.includes(product.id)}
-                    onChange={() => handleCheckboxChange(product.id)}
-                  />
-                </TableCell>
+            {currentMember.map((realMember) => (
+              <TableRow key={realMember.memberNo}>
                 <TableCell>
                   <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>
-                    {product.id}
+                    {realMember.memberNo}
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Box>
                       <Typography variant="subtitle2" fontWeight={600}>
-                        {product.name}
+                        {realMember.memberName}
                       </Typography>
-                      <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                        {product.post}
-                      </Typography>
+
+
+
                     </Box>
                   </Box>
                 </TableCell>
                 <TableCell>
                   <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                    {product.pname}
+                    {realMember.memberId}
                   </Typography>
                 </TableCell>
-                <TableCell>
-                  <Chip
-                    sx={{
-                      px: '4px',
-                      backgroundColor: product.pbg,
-                      color: '#fff',
-                    }}
-                    size="small"
-                    label={product.priority}
-                  ></Chip>
+                <TableCell color="textSecondary" variant="subtitle2" fontWeight={400}>
+                    {realMember.memberRole}
                 </TableCell>
-                <TableCell align="right">
-                  <Typography variant="h6">${product.budget}k</Typography>
+                <TableCell color="textSecondary" variant="subtitle2" fontWeight={400}>
+                    {realMember.createDate}
+                </TableCell>
+                <TableCell color="textSecondary" variant="subtitle2" fontWeight={400}>
+                    {realMember.ipaddress}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
-          
         </Table>
       </Box>
-      <Dialog open={openModal} onClose={handleCancel}>
-        <DialogTitle>Edit Product</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="ID"
-            name="id"
-            value={editedProduct.id}
-            onChange={(e) => setEditedProduct({...editedProduct, id: e.target.value})}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Name"
-            name="name"
-            value={editedProduct.name}
-           onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Post"
-            name="post"
-            value={editedProduct.post}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Pname"
-            name="pname"
-            value={editedProduct.pname}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Priority"
-            name="priority"
-            value={editedProduct.priority}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Budget"
-            name="budget"
-            value={editedProduct.budget}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleSave} color="primary" variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
     </DashboardCard>
-      <Member2/>
       <style>
         {`
           /* TableCell 높이 조정 */
