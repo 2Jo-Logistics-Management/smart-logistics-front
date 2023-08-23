@@ -7,8 +7,7 @@ import axios from 'axios';
 import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons';
 import { useNavigate } from 'react-router-dom';
-
-
+axios.defaults.withCredentials = true;
 
 const Header = (props) => {
   const navigate = useNavigate();
@@ -30,7 +29,7 @@ const Header = (props) => {
 
   const handleLogout = async () => {
     try {
-      axios.post('http://localhost:8888/api/member/logout')
+      axios.post('/api/member/logout')
       .then((response) => {
         if(response.data.success) {
           navigate("/auth/login");  
@@ -38,7 +37,10 @@ const Header = (props) => {
       })
 
     } catch (error) {
-      console.error("로그아웃 중 오류 발생:", error);
+      if(error.response && error.response.status === 401){
+        alert("로그인세션만료");
+        navigate("/auth/login");
+      }
     }
   };
 
