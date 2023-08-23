@@ -6,7 +6,6 @@ import pOrderListReducer from './slices/pOrderListReducer'
 import receiveListReducer from './slices/receiveListReducer'
 import warehouseListReducer  from './slices/warehouseListReducer';
 import loginResponseReducer from './slices/loginResponseReducer';
-import memberListReducer from './slices/memberListReducer';
 
 const rootReducer = combineReducers({
     porderModal: porderModalDuck,
@@ -16,7 +15,6 @@ const rootReducer = combineReducers({
     receiveList: receiveListReducer,
     warehouseList: warehouseListReducer,
     loginResponse: loginResponseReducer,
-    memberList: memberListReducer
 });
 
 
