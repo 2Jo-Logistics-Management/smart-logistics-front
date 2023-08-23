@@ -1,21 +1,15 @@
 import React from 'react';
 import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button, Typography } from '@mui/material';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 // components
 import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons';
-import logoutAxios from '../../../redux/thunks/logoutResponse';
-import { useDispatch, useSelector } from 'react-redux';
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-
+axios.defaults.withCredentials = true;
 
 const Header = (props) => {
-  const dispatch = useDispatch();
-  const loginData = useSelector((state) => state.loginResponse.data);
-  const logoutData = useSelector((state) => state.logoutResponse.data);
   const navigate = useNavigate();
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
@@ -33,20 +27,20 @@ const Header = (props) => {
     color: theme.palette.text.secondary,
   }));
 
-  useEffect(() => {
-    if(logoutData.success) {
-      navigate("/auth/login");
-
-    }else {
-      console.log("로그아웃이 실패했습니다!");
-    }
-  },[logoutData])
-
   const handleLogout = async () => {
     try {
-      dispatch(logoutAxios());
+      axios.post('/api/member/logout')
+      .then((response) => {
+        if(response.data.success) {
+          navigate("/auth/login");  
+        }
+      })
+
     } catch (error) {
-      console.error("로그아웃 중 오류 발생:", error);
+      if(error.response && error.response.status === 401){
+        alert("로그인세션만료");
+        navigate("/auth/login");
+      }
     }
   };
 
@@ -88,7 +82,6 @@ const Header = (props) => {
 
         <Stack spacing={1} direction="row" alignItems="center">
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mr: 1 }}>
-            {loginData}
             로그아웃
           </Typography>
           <Button 

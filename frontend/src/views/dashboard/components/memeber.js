@@ -1,4 +1,6 @@
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
+import { MenuItem } from '@mui/material'; // Select와 MenuItem 추가
 import {
   Typography,
   Box,
@@ -7,185 +9,311 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Chip,
   TextField,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Checkbox
+  Checkbox,
+  Modal,
+  Paper,
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
-import swal from 'sweetalert2';
-import { Delete } from '@mui/icons-material';
-import products from '../../data/memberData';
-import Member2 from './member2';
+axios.defaults.withCredentials = true;
 
 const Member = () => {
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [editedProduct, setEditedProduct] = useState({});
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [currentMember, setCurrentMember] = useState([]);
+  const [memberList, setMemberList] = useState([]);
 
-  const [visibleCount, setVisibleCount] = useState(10);
-  const [visibleProducts, setVisibleProducts] = useState([]);
+  const [searchName, setSearchName] = useState('');
+  const [searchId, setSearchId] = useState('');
 
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isAlertOpen, setIsAlertOpen] = useState(false); // Alert 창을 표시할지 여부
+
+  const [selectAll, setSelectAll] = useState(false); // 아이템 전체선택
+  const [selectedItems, setSelectedItems] = useState([]); // 아이템 단일선택
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [selectedItemsForDeletion, setSelectedItemsForDeletion] = useState([]);
+
+  const [newMember, setNewMember] = useState({
+    memberName: '',
+    memberId: '',
+    password: '',
+    memberRole: '',
+  });
+
+  // LIST axios
   useEffect(() => {
-    setVisibleProducts(products.slice(0, visibleCount)); // visibleCount를 초기설정([]) 하여 의존성 배열 생성
-  }, []); 
+    axios.get('http://localhost:8888/api/member/list')
+      .then(response => {
+        setMemberList(response.data.data);
+        setCurrentMember(response.data.data);
+      })
+      .catch(handleError);
+  }, []);
 
-  const handleScroll = (e) => {
-    const { scrollTop, clientHeight, scrollHeight } = e.target; 
-
-    if (scrollTop + clientHeight >= scrollHeight - 10) { //젤 위에 위치 지점과 table 폭 더한게 (scroll 높이 -10) 보다 작으면
-      const newVisibleCount = visibleCount + 10;  // 10개 추가
-      //newVisibleCount를 넘겨서 10개씩 디비에서 가져온다
-
-      setVisibleCount(newVisibleCount); //10개 추가된거를 useState 변동해서 쓱
-    }
-    e.target = clientHeight;
-  };
-
-  useEffect(() => {
-    setVisibleProducts(products.slice(0, visibleCount)); //scorll이 되어 카운트가 10추가 되었을 때 해당 data를 visibleCount에 업데이트
-  }, [visibleCount]);
-
-  const handleClick = () => {
-    let timerInterval;  // 로딩시간을 설정을 위한 변수 선언
-    swal.fire({         //sweet alert를 임포트하여 해당 모달창 생성
-      title: '입고물품 조회중',  
-      html: '잠시만 기다려주세요',
-      timer: 1000, 
-      timerProgressBar: true,
-      didOpen: () => {  //모달이 열릴 때 사용되는 함수
-        swal.showLoading();
-        const b = swal.getHtmlContainer().querySelector('b');
-        timerInterval = setInterval(() => {
-          b.textContent = swal.getTimerLeft();
-        }, 1000);
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
+  // Error 함수
+  const handleError = error => {
+    if (error.response && error.response.data) {
+      const errorMessage = error.response.data;
+      if (errorMessage.includes('not logged in')) {
+        setAlertMessage('로그인이 필요합니다.');
+        setIsAlertOpen(true);
+      } else if (errorMessage.includes('do not have permission')) {
+        setAlertMessage('허가되지 않는 이용자입니다.');
+        setIsAlertOpen(true);
       }
-    })
-  };
-
-  const handleEdit = (productId) => {
-    const productToEdit = products.find((product) => product.id === productId);  //갖고온 번호로 해당 데이터 찾기
-    setEditedProduct({ ...productToEdit }); //set에다가 복사
-    setOpenModal(true); // 모달창 오픈
-  };
-
-  const handleSave = () => {
-    swal.fire({
-      title: '수정 완료.',
-      text: '발주 상품이 수정되었습니다.',
-      icon: 'success',
-    });
-    console.log('Save button clicked:', editedProduct);
-    // 여기서 수정한 데이터 슥 하면 됨
-
-    setEditingProductId(null); //초기화
-    setEditedProduct({});
-    setOpenModal(false);
-    setSelectedProducts([]);
-  };
-
-  const handleCancel = () => {
-    console.log('모달창 닫기');
-    setEditingProductId(null); //초기화
-    setEditedProduct({});
-    setOpenModal(false);
-  };
-
-   const handleInputChange = (e) => {
-   setEditedProduct({ ...editedProduct, [e.target.name]: e.target.value });
-   };
-
-  const handleDelete = () => {
-    swal.fire({
-      title: '정말로 삭제하시겠습니까?',
-      text: '삭제된 데이터는 복구할 수 없습니다.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: '삭제',
-      cancelButtonText: '취소',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        
-        swal.fire({
-          title: '삭제 완료',
-          text: '발주 상품이 삭제되었습니다.',
-          icon: 'success',
-        });
-        console.log('삭제할 재고:', selectedProducts);
-
-        //여기서 삭제할 데이터 스삭하면 됨
-        setSelectedProducts([]);
-        setOpenModal(false);
-      }
-    });
-  };
-
-  const handleCheckboxChange = (productId) => {
-    const selectedIndex = selectedProducts.indexOf(productId);// check한 productId의 인덱스를 저장
-    let updatedSelectedProducts = [...selectedProducts];
-    if (selectedIndex === -1) {
-      updatedSelectedProducts.push(productId);
     } else {
-      updatedSelectedProducts.splice(selectedIndex, 1);
+      console.error('오류 발생:', error);
     }
-    setSelectedProducts(updatedSelectedProducts);
+  };
+
+  const handlerSetInputData = (state, data) => {
+    setNewMember(prevMember => ({
+      ...prevMember,
+      [state]: data
+    }));
+  };
+
+  // INSERT axios
+  const handleSaveNewMember = () => {
+    if (newMember.memberName && newMember.memberId && newMember.password && newMember.memberRole) {
+      axios.post('http://localhost:8888/api/member/insert', newMember)
+        .then(response => {
+          axios.get('http://localhost:8888/api/member/list')
+            .then(updateMemberList)
+            .catch(handleError);
+          setIsModalOpen(false);
+        })
+        .catch(handleError);
+    } else {
+      console.log("모든 필드를 입력하세요.");
+    }
+  };
+
+  const handleDeleteSelectedItems = () => {
+    selectedItemsForDeletion.forEach((item) => {
+      axios.delete(`http://localhost:8888/api/member/delete/${item.memberNo}`)
+        .then(() => {
+          // 삭제된 아이템을 멤버 목록에서 제거
+          setMemberList((prevList) => prevList.filter((member) => member.memberNo !== item.memberNo));
+        })
+        .catch(handleError);
+    });
+  
+    // 선택한 아이템 배열 초기화
+    setSelectedItemsForDeletion([]);
+  };
+
+
+  const updateMemberList = response => {
+    setMemberList(response.data.data);
+    setCurrentMember(response.data.data);
+  };
+
+  const openAddNewMemberForm = () => {
+    setNewMember({
+      memberName: '',
+      memberId: '',
+      password: '',
+      memberRole: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+  
+  // 이름, 아이디 검색기능
+  const handleSearch = () => {
+    const filteredMembers = memberList.filter((member) => {
+      const nameMatches = member.memberName.includes(searchName);
+      const idMatches = member.memberId.includes(searchId);
+      return nameMatches && idMatches;
+    });
+  
+    setCurrentMember(filteredMembers);
+  };
+
+  // 권한 부여(접근제한)
+  const handleAlertClose = () => {
+    setIsAlertOpen(false);
+    window.location.href = '/';
+  };
+  
+  // thead - 체크박스 전체선택
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems([...currentMember]);
+    }
+    setSelectAll(!selectAll);
+  };
+
+  // tbody - 체크박스 단일선택
+  // const handleSelectItem = (item) => {
+  //   if (selectedItems.includes(item)) {
+  //     setSelectedItems(selectedItems.filter((selectedItem) => selectedItem !== item));
+  //   } else {
+  //     setSelectedItems([...selectedItems, item]);
+  //   }
+  // };
+
+  const handleSelectItem = (item) => {
+    if (selectedItemsForDeletion.includes(item)) {
+      setSelectedItemsForDeletion(selectedItemsForDeletion.filter((selectedItem) => selectedItem !== item));
+    } else {
+      setSelectedItemsForDeletion([...selectedItemsForDeletion, item]);
+    }
   };
 
   return (
     <>
+
+    
+
+    {/* 모달 */}
+    <Modal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        aria-labelledby="simple-modal-title"
+        aria-describedby="simple-modal-description"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
+          <div style={{ width: '400px' }}>
+            <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 회원 추가</Typography>
+            <TextField
+              label="이름"
+              variant="outlined"
+              type='text'
+              onChange={(e) => handlerSetInputData('memberName',e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="아이디"
+              variant="outlined"
+              type='text'
+              onChange={(e) => handlerSetInputData('memberId',e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="비밀번호"
+              variant="outlined"
+              type="password"
+              onChange={(e) => handlerSetInputData('password',e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="역할"
+              variant="outlined"
+              select // Select 컴포넌트로 변경
+              fullWidth
+              margin="normal"
+              value={newMember.memberRole} // 선택한 역할 표시
+              onChange={(e) => handlerSetInputData('memberRole', e.target.value)}
+              required
+            >
+              <MenuItem value="ADMIN">관리자</MenuItem>
+              <MenuItem value="MEMBER">회원</MenuItem>
+            </TextField>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+              <Button variant="contained" color="primary" onClick={handleSaveNewMember}>
+                추가
+              </Button>
+              <Button variant="contained" color="error" onClick={handleCloseModal}>
+                취소
+              </Button>
+            </Box>
+          </div>
+        </Paper>
+      </Modal>
+
+    {/* Alert 창 */}
+    {isAlertOpen && (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999, // 모달을 최상위로 배치
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '5px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center',
+            zIndex: 99999, // 모달 내용을 최상위로 배치
+          }}
+        >
+          <p>{alertMessage}</p>
+          <Button variant="contained" onClick={handleAlertClose}>
+            홈으로
+          </Button>
+        </div>
+      </div>
+    )}
+
+    <DashboardCard >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" component="div">
+            회원관리
+          </Typography>
+          <Box>
+            <Button variant="contained" color="primary" onClick={handleSearch} sx={{ mr: 2 }}>
+              조회
+            </Button>
+            <Button variant="contained" color="info" sx={{ mr: 2 }}>
+              수정
+            </Button>
+            <Button variant="contained" color="error" onClick={handleDeleteSelectedItems} sx={{ mr: 2 }}>
+              삭제
+            </Button>
+            <Button variant="contained" color="primary" onClick={openAddNewMemberForm} >
+              신규
+            </Button>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+          <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            이름
+          </Typography>
+          <TextField label="이름" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}/>
+          <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            아이디
+          </Typography>
+          <TextField label="아이디" variant="outlined" size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} />
+        </Box>
+      </DashboardCard>
+
+    <div style={{ marginBottom: '20px' }}></div> {/* 간격 추가 */}
+
     <DashboardCard title="Member list" variant="poster">
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          거래처번호:
-        </Typography>
-        <TextField label="거래처번호" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          거래처명:
-        </Typography>
-        <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Typography variant="subtitle2" sx={{ mr: 1 }}>
-          거래품목:
-        </Typography>
-        <TextField label="거래 품목" variant="outlined" size="small" sx={{ mr: 2 }} />
-        <Button onClick={handleClick} variant="contained">
-          Search
-        </Button>
-      </Box>
+      
       <br></br>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-        {selectedProducts.length >  0 &&(
-          <>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => handleEdit(selectedProducts[0])}
-            >
-              Edit
-            </Button>
-            &nbsp;&nbsp;
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleDelete}
-              startIcon={<Delete />}
-              color="error"
-            >
-              Delete
-            </Button>
-          </>
-        )}
-      </Box>
-      <Box sx={{ overflow: 'auto', maxHeight: '400px' }} onScroll={handleScroll}>
+
+      <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
         <Table
           aria-label="simple table"
           sx={{
@@ -203,157 +331,98 @@ const Member = () => {
           >
             <TableRow>
               <TableCell>
-                <Checkbox
-                  checked={selectedProducts.length === visibleProducts.length}
-                  onChange={() =>
-                    setSelectedProducts(
-                      selectedProducts.length === visibleProducts.length
-                        ? []
-                        : visibleProducts.map((product) => product.id)
-                    )
-                  }
-                />
+                  <Checkbox
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    color="primary"
+                  />
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  NO
+                  No
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  Product
+                  사원이름
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  Account
+                  아이디
                 </Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  State
+                  역할
                 </Typography>
               </TableCell>
-              <TableCell align="right">
+              <TableCell>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  Price
+                  생성일자
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  IP주소
                 </Typography>
               </TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
+          
           <TableBody>
-            {visibleProducts.map((product) => (
-              <TableRow key={product.id}>
+            {currentMember.map((realMember) => (
+              <TableRow key={realMember.memberNo}>
                 <TableCell>
-                  <Checkbox
-                    checked={selectedProducts.includes(product.id)}
-                    onChange={() => handleCheckboxChange(product.id)}
-                  />
+                    <Checkbox
+                      checked={selectedItems.includes(realMember)}
+                      onChange={() => handleSelectItem(realMember)}
+                      color="primary"
+                    />
                 </TableCell>
                 <TableCell>
-                  <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>
-                    {product.id}
+                  <Typography variant="subtitle2" fontWeight={400}>
+                      {realMember.memberNo}
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Box>
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        {product.name}
-                      </Typography>
-                      <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                        {product.post}
+                      <Typography variant="subtitle2" fontWeight={400}>
+                        {realMember.memberName}
                       </Typography>
                     </Box>
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                    {product.pname}
+                  <Typography variant="subtitle2" fontWeight={400}>
+                    {realMember.memberId}
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    sx={{
-                      px: '4px',
-                      backgroundColor: product.pbg,
-                      color: '#fff',
-                    }}
-                    size="small"
-                    label={product.priority}
-                  ></Chip>
+                  <Typography variant="subtitle2" fontWeight={400}>
+                    {realMember.memberRole}
+                  </Typography>
                 </TableCell>
-                <TableCell align="right">
-                  <Typography variant="h6">${product.budget}k</Typography>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={400}>
+                    {realMember.createDate}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={400}>
+                    {realMember.ipaddress}
+                  </Typography>
                 </TableCell>
               </TableRow>
+              
             ))}
           </TableBody>
-          
         </Table>
       </Box>
-      <Dialog open={openModal} onClose={handleCancel}>
-        <DialogTitle>Edit Product</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="ID"
-            name="id"
-            value={editedProduct.id}
-            onChange={(e) => setEditedProduct({...editedProduct, id: e.target.value})}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Name"
-            name="name"
-            value={editedProduct.name}
-           onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Post"
-            name="post"
-            value={editedProduct.post}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Pname"
-            name="pname"
-            value={editedProduct.pname}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Priority"
-            name="priority"
-            value={editedProduct.priority}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Budget"
-            name="budget"
-            value={editedProduct.budget}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleSave} color="primary" variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
     </DashboardCard>
-      <Member2/>
+
       <style>
         {`
           /* TableCell 높이 조정 */
