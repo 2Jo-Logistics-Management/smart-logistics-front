@@ -29,7 +29,7 @@ const Header = (props) => {
 
   const handleLogout = async () => {
     try {
-      axios.post('/api/member/logout')
+      axios.post('http://localhost:8888/api/member/logout')
       .then((response) => {
         if(response.data.success) {
           navigate("/auth/login");  
