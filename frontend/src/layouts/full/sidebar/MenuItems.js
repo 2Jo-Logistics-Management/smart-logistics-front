@@ -63,12 +63,6 @@ const Menuitems = [
   },
   {
     id: uniqueId(),
-    title: '사원 등록 시스템',
-    icon: IconLogin,
-    href: '/auth/register',
-  },
-  {
-    id: uniqueId(),
     title: '사원 관리 시스템',
     icon: IconCopy,
     href: '/member/list',
