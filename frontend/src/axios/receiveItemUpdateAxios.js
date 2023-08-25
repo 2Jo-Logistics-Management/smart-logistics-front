@@ -1,24 +1,24 @@
 import axios from "axios";
 import swal from "sweetalert2";
 axios.defaults.withCredentials = true;
-//발주리스트에서 delete하면 통신
-const pOrderItemUpdateAxios = (indexData) => {
+//입고품목 수정하면 통신
+const receiveItemUpdateAxios = (indexData) => {
   axios
-    .put(`/api/products/${indexData}`)
+    .put(`http://localhost:8888/api/receive-item/delete/${indexData}`)
     .then((response) => {
       console.log(response.data);
       swal.fire({
-        title: "삭제 완료",
-        text: "재고가 삭제되었습니다.",
+        title: "수정 완료",
+        text: "입고품목이 수정되었습니다.",
         icon: "success",
       });
     })
     .catch((error) => {
       swal.fire({
-        title: "삭제 실패",
+        title: "수정 실패",
         text: `Error: ${error.message}`,
         icon: "error",
       });
     });
 };
-export default pOrderItemUpdateAxios;
+export default receiveItemUpdateAxios;
