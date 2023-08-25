@@ -1,10 +1,12 @@
 import axios from "axios";
 import swal from "sweetalert2";
-axios.defaults.withCredentials = true;
-//발주리스트에서 delete하면 통신
-const pOrderItemUpdateAxios = (indexData) => {
+
+//입고리스트에서 delete하면 통신
+const memberDeleteAxios = (selectedMember) => {
   axios
-    .put(`/api/products/${indexData}`)
+    .delete("http://localhost:8888/api/member/delete", {
+      data: selectedMember,
+    })
     .then((response) => {
       console.log(response.data);
       swal.fire({
@@ -21,4 +23,5 @@ const pOrderItemUpdateAxios = (indexData) => {
       });
     });
 };
-export default pOrderItemUpdateAxios;
+
+export default memberDeleteAxios;
