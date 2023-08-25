@@ -1,8 +1,8 @@
 import axios from "axios";
 import swal from "sweetalert2";
-
+axios.defaults.withCredentials = true;
 //입고리스트에서 delete하면 통신
-const pOrderDeleteAxios = (selectedProducts) => {
+const receiveDeleteAxios = (selectedProducts) => {
   axios
     .delete("http://localhost:8888/api/receive/delete", {
       data: selectedProducts,
@@ -24,4 +24,4 @@ const pOrderDeleteAxios = (selectedProducts) => {
     });
 };
 
-export default pOrderDeleteAxios;
+export default receiveDeleteAxios;

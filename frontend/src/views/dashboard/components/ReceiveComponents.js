@@ -15,7 +15,8 @@ import {
 } from "@mui/material";
 import DashboardCard from "../../../components/shared/DashboardCard";
 import swal from "sweetalert2";
-
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import {
   ADD_SELECTED_PRODUCT,
   REMOVE_SELECTED_PRODUCT,
@@ -30,6 +31,7 @@ import ReceviveComponents2 from "./ReceiveComponents2";
 import axios from "axios";
 import { open_Modal } from "../../../redux/slices/receiveModalDuck";
 import ReceiveModal from "./modal/ReceiveModal";
+axios.defaults.withCredentials = true;
 
 const ReceviveComponents = () => {
   const dispatch = useDispatch();
@@ -38,7 +40,7 @@ const ReceviveComponents = () => {
 
   const products = JSON.parse(JSON.stringify(productsData));
   const realProducts = products?.data || [];
-
+  const [selectedDate, setSelectedDate] = useState(null);
   const receiveModalState = useSelector((state) => state.receiveModal);
 
   useEffect(() => {
@@ -173,43 +175,53 @@ const ReceviveComponents = () => {
       <DashboardCard title="입고 List" variant="poster">
         <Box sx={{ display: "flex" }}>
           <Box
-            sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-start" }}
+            sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
           >
-            {/* Your first box content here */}
+            <span style={{ marginRight: "1rem" }}>
+              <Typography variant="subtitle2">입고번호:</Typography>
+            </span>
+            <TextField label="입고번호" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <span style={{ marginRight: "1rem" }}>
+              <Typography variant="subtitle2">담당자:</Typography>
+            </span>
+            <TextField label="담당자명" variant="outlined" size="small" sx={{ marginRight: 2 }} />
+            <span style={{ marginRight: "1rem" }}>
+              <Typography variant="subtitle2">입고일:</Typography>
+            </span>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="조회 시작일"
+                value={new Date()}
+                onChange={(newDate) => setSelectedDate(newDate)}
+                renderInput={(props) => <TextField {...props} />} // TextField 등을 사용해 사용자 정의 입력 요소를 렌더링
+              />
+              <DatePicker
+                label="조회 종료일"
+                value={new Date()}
+                onChange={(newDate) => setSelectedDate(newDate)}
+                renderInput={(props) => <TextField {...props} />} // TextField 등을 사용해 사용자 정의 입력 요소를 렌더링
+              />
+            </LocalizationProvider>
+            {/* <TextField label="거래 품목" variant="outlined" size="small" sx={{ marginRight: 2 }} /> */}
+            <Button onClick={handleClick} variant="contained">
+              Search
+            </Button>
             <Button onClick={handleInsert} variant="contained">
               입고등록
             </Button>
-            &nbsp;&nbsp;
             <Button
               variant="outlined"
               size="big"
               startIcon={<Delete />}
               color="error"
               onClick={handleDelete}
+              disabled={selectedProducts.length === 0} // 선택된 상품이 없을 때 버튼 비활성화
             >
               삭제
             </Button>
           </Box>
-
-          <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-            {/* Your second box content here */}
-            <span style={{ marginRight: "1rem" }}>
-              <Typography variant="subtitle2">발주번호:</Typography>
-            </span>
-            <TextField label="거래처번호" variant="outlined" size="small" sx={{ marginRight: 2 }} />
-            <span style={{ marginRight: "1rem" }}>
-              <Typography variant="subtitle2">품목번호:</Typography>
-            </span>
-            <TextField label="거래처명" variant="outlined" size="small" sx={{ marginRight: 2 }} />
-            <span style={{ marginRight: "1rem" }}>
-              <Typography variant="subtitle2">거래품목:</Typography>
-            </span>
-            <TextField label="거래 품목" variant="outlined" size="small" sx={{ marginRight: 2 }} />
-            <Button onClick={handleClick} variant="contained">
-              Search
-            </Button>
-          </Box>
         </Box>
+
         <Box>
           {selectedProducts.length >= 2 && (
             <Typography variant="h6" style={{ color: "red", fontWeight: "bold" }}>
@@ -247,7 +259,10 @@ const ReceviveComponents = () => {
             <TableBody>
               {/* currentItems.map() 함수 내부에서 괄호로 묶어서 행과 셀을 생성 */}
               {currentItems.map((realProduct) => (
-                <TableRow key={realProduct.receiveCode}>
+                <TableRow
+                  key={realProduct.receiveCode}
+                  onClick={() => handleProductClick(realProduct.receiveCode)}
+                >
                   <TableCell>
                     <Checkbox
                       checked={selectedProducts.includes(realProduct.receiveCode)}
@@ -255,10 +270,7 @@ const ReceviveComponents = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Typography
-                      sx={{ fontSize: "15px", fontWeight: "500" }}
-                      onClick={() => handleProductClick(realProduct.receiveCode)}
-                    >
+                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
                       {realProduct.receiveCode}
                     </Typography>
                   </TableCell>

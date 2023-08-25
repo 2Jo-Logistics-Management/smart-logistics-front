@@ -1,6 +1,6 @@
 import axios from "axios";
 import swal from "sweetalert2";
-
+axios.defaults.withCredentials = true;
 //입고품목 수정하면 통신
 const receiveItemUpdateAxios = (indexData) => {
   axios

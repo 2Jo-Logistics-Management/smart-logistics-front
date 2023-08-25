@@ -148,7 +148,7 @@ const ReceiveComponents = (props) => {
   // };
 
   const handleChange = (productId, property, value) => {
-    if (editMode[productId] && (property === "receiveCount" || property === "warehouseSectionNo")) {
+    if (editMode[productId] && (property === "receiveCount" || property === "warehouseNo")) {
       const index = receiveProducts.findIndex((product) => product.receiveItemNo === productId);
       const updatedProducts = [...receiveProducts];
       updatedProducts[index][property] = value;
@@ -292,7 +292,7 @@ const ReceiveComponents = (props) => {
                 </TableCell>
                 <TableCell>
                   {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                  (product.receiveCount !== null || product.warehouseSectionNo !== null) ? (
+                  (product.receiveCount !== null || product.warehouseNo !== null) ? (
                     <TextField
                       value={product.receiveCount}
                       onChange={(e) =>
@@ -311,20 +311,20 @@ const ReceiveComponents = (props) => {
                 </TableCell>
                 <TableCell>
                   {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                  (product.receiveCount !== null || product.warehouseSectionNo !== null) ? (
+                  (product.receiveCount !== null || product.warehouseNo !== null) ? (
                     <TextField
-                      value={product.warehouseSectionNo}
+                      value={product.warehouseNo}
                       onChange={(e) =>
                         handleChange(
                           `${product.receiveCode}-${product.receiveItemNo}`,
-                          "warehouseSectionNo",
+                          "warehouseNo",
                           e.target.value
                         )
                       }
                     />
                   ) : (
                     <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.warehouseSectionNo}
+                      {product.warehouseNo}
                     </Typography>
                   )}
                 </TableCell>

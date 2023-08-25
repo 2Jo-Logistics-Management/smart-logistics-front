@@ -1,6 +1,6 @@
 import axios from "axios";
 import swal from "sweetalert2";
-
+axios.defaults.withCredentials = true;
 // 입고품목 리스트에서 delete하면 통신
 const receiveItemDeleteAxios = (selectedProducts) => {
   console.log("선택된데이터 : " + JSON.stringify(selectedProducts));
