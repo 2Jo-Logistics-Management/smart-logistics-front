@@ -12,7 +12,7 @@ import receiveModalDuck from "./slices/receiveModalDuck";
 const rootReducer = combineReducers({
   porderModal: porderModalDuck,
   selectedProduct: selectedProductsReducer,
-  selectedPOrder: selectedPOrderReducer,
+  selectedPOrder: selectedPOrderReducer, 
   pOrderList: pOrderListReducer,
   receiveList: receiveListReducer,
   warehouseList: warehouseListReducer,

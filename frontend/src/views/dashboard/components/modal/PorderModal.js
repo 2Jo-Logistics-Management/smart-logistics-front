@@ -10,14 +10,14 @@ import axios from 'axios';
 import { Pagination } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import ko from 'date-fns/locale/ko';
 
+axios.defaults.withCredentials = true;
 
 const PorderModal = () => {
   const dispatch = useDispatch();
   const porderModalState = useSelector((state) => state.porderModal.openModal);
 
-  
+
 
   // 디비에서 selectbox 데이터 가져오기
 
@@ -40,7 +40,7 @@ const PorderModal = () => {
   const currentAccountList = accountList.slice(indexOfFirstAccount, indexOfLastAccount);
   const [selectedAccountContactNumber, setSelectedAccountContactNumber] = useState("");
   const [selectedItemName, setSeletedItemName] = useState("");
-
+  const [selectedDateTime, setSelectedDateTime] = useState("");
 
 
 
@@ -49,6 +49,7 @@ const PorderModal = () => {
       .then(response => {
         const fetchedItems = response.data.data;
         setItems(fetchedItems);
+       
       })
       .catch(error => {
         console.error('첫번째 options에서 에러 발생', error);
@@ -66,7 +67,7 @@ const PorderModal = () => {
       });
   }, []);
   const handleAccountRowClick = (clickedItem) => {
-    // 클릭한 거래처의 contactNumber를 선택한 거래처번호 상태 변수에 저장
+
     setSelectedAccountContactNumber(clickedItem.accountNo);
 
   };
@@ -75,26 +76,28 @@ const PorderModal = () => {
   const handleCancel = () => {
     dispatch(close_Modal());
   };
-
+  function formatDate(pOrderDate) {
+    const { format } = require('date-fns');
+    const formattedDate = format(pOrderDate, 'yyyy-MM-dd HH:mm:ss')
+    return formattedDate
+  }
   const handleSave = () => {
     try {
-     
-      const itemsWithManageName = selectedItems.map(item => ({ ...item, manageName: manageName }));
+      const itemsWithManageName = selectedItems.map(item => {
+        const { spec, ...rest } = item; // spec 키와 값을 제외한 나머지 속성들
+        return { ...rest };
+      });
       const saveData = {
-        createIp: null,
-        createId: null,
         pOrderItems: itemsWithManageName,
         accountNo: selectedAccountContactNumber,
         pOrderCode: null,
-        pOrderDate: new Date().toLocaleDateString('en-CA')
-        
+        pOrderDate: formatDate(new Date()),
+        manager: manageName,
       }
-      console.log(saveData)
-    
       itemAddAxios(saveData);
       dispatch(close_Modal());//위에 dispatch를 사용하면 지워야함
+      setSelectedItems([]);
 
-      
       swal.fire({
         title: '발주상품 등록 완료.',
         text: '상품이 등록 되었습니다.',
@@ -114,17 +117,14 @@ const PorderModal = () => {
   const handleRowClick = (clickedItem) => {
     // 이미 선택된 로우는 중복 추가하지 않습니다.
     if (!selectedItems.some(item => item.itemCode === clickedItem.itemCode)) {
-      console.log(clickedItem)
       const newItem = {
         itemCode: clickedItem.itemCode,
         pOrderCount: '0', // 초기에는 수량을 0으로 설정합니다.
         pOrderPrice: clickedItem.itemPrice,
-        receiveDeadLine: new Date(),
         pOrderItemPrice: clickedItem.itemPrice,
-        manager: manageName,
-        createIp: null,
-        createId: null,
-        pOrderCode: null
+        pOrderCode: null,
+        spec: clickedItem.spec,
+        itemName: clickedItem.itemName
 
       };
       setSelectedItems(prevItems => [...prevItems, newItem]);
@@ -139,7 +139,7 @@ const PorderModal = () => {
       const newData = prevData.map((item) =>
         item.itemCode === editedData.itemCode ? { ...item, pOrderCount: editedData.pOrderCount, pOrderPrice: editedData.pOrderPrice } : item
       );
-      console.log(newData);
+    
 
       return newData;
     });
@@ -169,15 +169,15 @@ const PorderModal = () => {
       })
   }
 
-  
 
 
-  const handleDateChange = (index, receiveDeadLine) => {
-    const formattedDate = receiveDeadLine.toLocaleDateString('en-CA'); // "yyyy-MM-dd" 형식으로 변환
+
+  const handleDateChange = (index, receiveDeadline) => {
+    const { format } = require('date-fns');
+    const formattedDate = format(receiveDeadline, 'yyyy-MM-dd HH:mm:ss'); // "yyyy-MM-dd HH:mm:ss" 형식으로 변환
     setSelectedItems(prevItems => {
       const updatedItems = [...prevItems];
-      console.log("Formatted Date:", formattedDate);
-      updatedItems[index].receiveDeadLine = formattedDate;
+      updatedItems[index].receiveDeadline = formattedDate;
       return updatedItems;
     });
   };
@@ -240,7 +240,7 @@ const PorderModal = () => {
                     <Pagination
                       count={Math.ceil(accountList.length / accountsPerPage)}
                       variant="outlined"
-                      color="primary"
+                      color="primary" dxcxz
                       page={currentAccountPage}
                       onChange={(event, value) => setCurrentAccountPage(value)}
                     />
@@ -318,22 +318,22 @@ const PorderModal = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>품번</TableCell>
-                  <TableCell>품명</TableCell>
-                  <TableCell>규격</TableCell>
-                  <TableCell>단가</TableCell>
-                  <TableCell>금액</TableCell>
-                  <TableCell>count</TableCell>
-                  <TableCell>납기일</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell style={{ minWidth: '80px' }}>품번</TableCell>
+                  <TableCell style={{ minWidth: '80px' }}>품명</TableCell>
+                  <TableCell style={{ minWidth: '120px' }}>규격</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>단가</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>금액</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>count</TableCell>
+                  <TableCell style={{ minWidth: '200px' }}>납기일</TableCell>
+                  <TableCell style={{ minWidth: '150px' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {selectedItems.map((item, index) => (
                   <TableRow key={`selected-${index}`}>
                     <TableCell>{item.itemCode}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.size}</TableCell>
+                    <TableCell>{item.itemName}</TableCell>
+                    <TableCell>{item.spec}</TableCell>
                     <TableCell>
                       {editedData.itemCode === item.itemCode ? (
                         <input
@@ -363,23 +363,21 @@ const PorderModal = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-                        <Box display="flex" justifyContent="center" alignItems="center">
-                          <DatePicker
-                            renderInput={(props) => <TextField {...props} />}
-                            label="마감 일자"
-                            value={item.receiveDeadLine}
-                            onChange={(receiveDeadLine) => {
-                              handleDateChange(index, receiveDeadLine);
-                            }}
-                            views={['year', 'month', 'day']}
-                            format='yyyy-MM-dd' // 날짜 형식을 변경
-                            slotProps={{ textField: { variant: 'outlined', size: "small" } }}
-                            minDate={new Date('2022-07-01')}
-                            maxDate={new Date("2100-01-01")}
-                          />
-                        </Box>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+
+                        <DatePicker
+                          label="조회 기간"
+                          value={selectedDateTime}
+                          onChange={(newDate) => handleDateChange(index, newDate)}
+                          views={['year', 'month', 'day']}
+                          format='yyyy-MM-dd'
+                          slotProps={{ textField: { variant: 'outlined', size: "small" } }}
+                          minDate={new Date()}
+                          maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                        />
+
                       </LocalizationProvider>
+
 
                     </TableCell>
                     <TableCell>

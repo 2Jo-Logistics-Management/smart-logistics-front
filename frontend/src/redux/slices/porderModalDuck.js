@@ -15,7 +15,6 @@ const porderModalReducer = createSlice({
   reducers: {
     open_Modal: (state) => {
       state.openModal = true;
-      console.log('모달오픈()')
     },
     close_Modal: (state) => {
       state.openModal = false;
