@@ -94,8 +94,6 @@ const PorderModal = () => {
         pOrderDate: formatDate(new Date()),
         manager: manageName,
       }
-      console.log("피오더데이트" + saveData.pOrderDate);
-      console.log("pOrderComponent2" + JSON.stringify(saveData))
       itemAddAxios(saveData);
       dispatch(close_Modal());//위에 dispatch를 사용하면 지워야함
       setSelectedItems([]);
@@ -119,7 +117,6 @@ const PorderModal = () => {
   const handleRowClick = (clickedItem) => {
     // 이미 선택된 로우는 중복 추가하지 않습니다.
     if (!selectedItems.some(item => item.itemCode === clickedItem.itemCode)) {
-      console.log(clickedItem)
       const newItem = {
         itemCode: clickedItem.itemCode,
         pOrderCount: '0', // 초기에는 수량을 0으로 설정합니다.
@@ -142,7 +139,7 @@ const PorderModal = () => {
       const newData = prevData.map((item) =>
         item.itemCode === editedData.itemCode ? { ...item, pOrderCount: editedData.pOrderCount, pOrderPrice: editedData.pOrderPrice } : item
       );
-      console.log(newData);
+    
 
       return newData;
     });
@@ -180,7 +177,6 @@ const PorderModal = () => {
     const formattedDate = format(receiveDeadline, 'yyyy-MM-dd HH:mm:ss'); // "yyyy-MM-dd HH:mm:ss" 형식으로 변환
     setSelectedItems(prevItems => {
       const updatedItems = [...prevItems];
-      console.log("Formatted Date:", formattedDate);
       updatedItems[index].receiveDeadline = formattedDate;
       return updatedItems;
     });

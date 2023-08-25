@@ -90,7 +90,6 @@ const PorderComponets2 = () => {
     return formattedDate
   }
   const pOrderitemInsert = () => {
-    console.log("발주코드" + pOrderCode);
     const data = {
       itemCode: itemCode,
       receiveDeadline: formatDate(selectedDateTime),
@@ -204,7 +203,6 @@ const PorderComponets2 = () => {
       receiveDeadline: formatDate(editReceiveDeadLine),
       pOrderPrice: editPOrderItemPrice
     }
-    console.log(pOrderItemStateModifyDto)
 
     axios.patch(`http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`, pOrderItemStateModifyDto)
       .then(() => {
