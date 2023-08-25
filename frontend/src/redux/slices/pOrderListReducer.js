@@ -10,11 +10,14 @@ const pOrderListReducer = createSlice({
   reducers: {
     fetchProductsSuccess: (state, action) => {
       state.products = action.payload;
-      //console.log("reducer:"+JSON.stringify(state.products));
 
     },
+    searchPOrder: (state, action) =>{
+      console.log("reducer"+JSON.stringify(action.payload))
+      state.products = action.payload;
+    }
   }
 });
 
-export const { fetchProductsSuccess } = pOrderListReducer.actions;
+export const { fetchProductsSuccess,searchPOrder } = pOrderListReducer.actions;
 export default pOrderListReducer.reducer;

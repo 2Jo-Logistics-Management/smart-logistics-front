@@ -10,7 +10,7 @@ const SelectedPOrderListReducer = createSlice({
   reducers: {
     selectedPOrderList: (state, action) => {
       state.selectedPOrderList = action.payload;
-      console.log("reducer:"+JSON.stringify(state.selectedPOrderList));
+
     },
   }
 });

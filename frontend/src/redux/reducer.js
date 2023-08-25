@@ -16,7 +16,7 @@ const rootReducer = combineReducers({
     pOrderList: pOrderListReducer,
     receiveList: receiveListReducer,
     warehouseList: warehouseListReducer,
-    selectedPOrderList: SelectedPOrderListReducer
+    selectedPOrderList: SelectedPOrderListReducer,
     loginResponse: loginResponseReducer,
     logoutResponse: logoutResponseReducer
 });
