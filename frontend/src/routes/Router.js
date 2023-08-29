@@ -17,6 +17,7 @@ const Account = Loadable(lazy( () => import('../views/dashboard/components/Accou
 const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberComponents")))
 const Warehouse = Loadable(lazy(() => import("../views/dashboard/components/WarehouseComponents")))
 const WarehouseSection = Loadable(lazy(() => import("../views/dashboard/components/WarehouseSection")))
+const Item = Loadable(lazy(() => import('../views/dashboard/components/ItemsComponents')));
 const Router = [
   {
     path: '/',
@@ -24,8 +25,7 @@ const Router = [
     children: [
       { path: '/', element: <Navigate to="/dashboard" /> },
       { path: '/dashboard', exact: true, element: <Dashboard /> },
-
-
+      { path: '/item/list', exact:true, element: <Item/>},
       { path: '/Logistic/POrder',exact:true, element:<POrder/>},
       { path: '/Logistic/Receive', exact:true, element:<Receieve/>},
       { path: '/Logistic/Account', exact:true, element:<Account/>},
