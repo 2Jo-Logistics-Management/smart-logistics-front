@@ -18,11 +18,16 @@ import {
   Pagination,
 } from "@mui/material";
 import DashboardCard from "../../../components/shared/DashboardCard";
+import ItemInsertModal from "../components/modal/item/ItemInsertModal";
+import ItemModifyModal from "../components/modal/item/ItemModifyModal";
 
 const Item = () => {
   const ITEMS_PER_PAGE = 5; // 한 페이지당 표시할 아이템 개수
   const [initItems, setInitItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(0); // 현재 페이지 상태
+  const [insertModalOpen, setInsertModalOpen] = useState(false);
+  const [modifyModalOpen, setModifyModalOpen] = useState(false); 
+  const [selectedItem, setSelectedItem] = useState([]);
 
   useEffect(() => {
     axios
@@ -40,15 +45,32 @@ const Item = () => {
   };
 
   const itemInsertButtonClick = () => {
-
+    setInsertModalOpen(true);
   }
 
   const itemModifyButtonClick = () => {
-
+    if (selectedItem.length === 1) {
+      setModifyModalOpen(true);
+    } else if (selectedItem.length >= 2) {
+        alert('수정은 데이터 하나만 가능합니다!');
+    } else {
+        alert('수정할 데이터를 선택해주세요!');
+    }
   }
 
   const itemDeleteButtonClick = () => {
 
+  }
+
+  const handleSingleSelect = (item) => {
+    if (selectedItem.includes(item)) { // 이미 체크박스에 선택 됐으면 해당 로직 수행
+        setSelectedItem(selectedItem.filter((m) => m !== item));
+        return;
+    }
+    
+    // 체크박스에 체크 되어 있으면 selectedItem의 State를 바꾼다.
+    setSelectedItem((preSelectedItems) => [...preSelectedItems, item]);
+   
   }
 
   // 현재 페이지에 따른 아이템들 계산
@@ -179,16 +201,20 @@ const Item = () => {
             >
               {currentItems.map((item) => (
                 <TableRow
-                  key={currentItems.itemCode}
+                  key={item.itemCode}
                   sx={{
                     "&:hover": {
                       backgroundColor: "#f5f5f5",
                       cursor: "pointer",
                     },
                   }}
+                  onClick={() => handleSingleSelect(item)}
                 >
                   <TableCell>
-                    <Checkbox />
+                    <Checkbox 
+                        checked={selectedItem.includes(item)}
+                        onChange={(event) => event.stopPropagation()} // 이벤트 전파 차단
+                    />
                   </TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight={400}>
@@ -252,6 +278,9 @@ const Item = () => {
         </Box>
         {/* 페이지 네이션 */}
       </DashboardCard>
+      {/* 모달 창 출력 여부 */}
+      <ItemInsertModal open={insertModalOpen} onClose={() => setInsertModalOpen(false)} />
+      <ItemModifyModal open={modifyModalOpen} onClose={() => setModifyModalOpen(false)} selectedItem={selectedItem} />
     </>
   );
 };
