@@ -10,10 +10,6 @@ import {
   TableRow,
   TextField,
   Button,
-  Modal,
-  Paper,
-  Snackbar,
-  Alert,
   Checkbox,
   Pagination,
 } from "@mui/material";
@@ -30,6 +26,9 @@ const Item = () => {
   const [insertModalOpen, setInsertModalOpen] = useState(false);
   const [modifyModalOpen, setModifyModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState([]);
+  const [searchItemCode, setSearchItemCode] = useState("");
+  const [searchItemName, setSearchItemName] = useState("");
+  const [searchItemPrice, setSearchItemPrice] = useState("");
 
   useEffect(() => {
     axios
@@ -98,6 +97,35 @@ const Item = () => {
     ? initItems.slice(offset, offset + ITEMS_PER_PAGE)
     : [];
 
+  const handleSearch = () => {
+    axios
+      .get("http://localhost:8888/api/item/list", {
+        params: {
+          itemCode: searchItemCode,
+          itemName: searchItemName,
+          itemPrice: searchItemPrice,
+        },
+      })
+      .then((response) => {
+        // 요청이 성공하면 응답 데이터를 처리
+        // 처리된 데이터를 상태에 저장하거나 표시하는 로직을 작성
+        setInitItems(response.data.data);
+      })
+      .catch((error) => {
+        // 요청이 실패한 경우 에러 처리 로직을 작성
+        swal.fire({
+          title: "해당 데이터는 찾을 수 없습니다.",
+          icon: "warning",
+          showConfirmButton: true, // OK 버튼만 보이도록 설정
+        });
+      })
+      .finally(() => {
+        setSearchItemCode("");
+        setSearchItemName("");
+        setSearchItemPrice("");
+      });
+  };
+
   return (
     <>
       <DashboardCard>
@@ -155,6 +183,8 @@ const Item = () => {
             variant="outlined"
             size="small"
             sx={{ mr: 2 }}
+            value={searchItemCode}
+            onChange={(e) => setSearchItemCode(e.target.value)}
           />
           <Typography variant="subtitle2" sx={{ mr: 1 }}>
             물품명
@@ -164,6 +194,8 @@ const Item = () => {
             variant="outlined"
             size="small"
             sx={{ mr: 2 }}
+            value={searchItemName}
+            onChange={(e) => setSearchItemName(e.target.value)}
           />
           <Typography variant="subtitle2" sx={{ mr: 1 }}>
             물품가격
@@ -173,8 +205,15 @@ const Item = () => {
             variant="outlined"
             size="small"
             sx={{ mr: 2 }}
+            value={searchItemPrice}
+            onChange={(e) => setSearchItemPrice(e.target.value)}
           />
-          <Button variant="contained" color="primary" sx={{ mr: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ mr: 2 }}
+            onClick={handleSearch}
+          >
             조회
           </Button>
         </Box>
