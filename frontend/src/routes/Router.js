@@ -22,7 +22,7 @@ const Login = Loadable(lazy(() => import('../views/authentication/Login')));
 const POrder = Loadable(lazy(() => import('../views/dashboard/components/PorderComponets')))
 const Receieve = Loadable(lazy(() => import('../views/dashboard/components/ReceiveComponents')))
 const Account = Loadable(lazy( () => import('../views/dashboard/components/AccountComponents')))
-const Member = Loadable(lazy(() => import("../views/dashboard/components/memeber")))
+const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberComponents")))
 const Warehouse = Loadable(lazy(() => import("../views/dashboard/components/WarehouseComponents")))
 const WarehouseSection = Loadable(lazy(() => import("../views/dashboard/components/WarehouseSection")))
 const Router = [

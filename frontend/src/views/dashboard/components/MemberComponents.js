@@ -1,6 +1,7 @@
   import axios from 'axios';
   import React, { useState, useEffect } from 'react';
-  import { Alert, Checkbox, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
+  import CloseIcon from '@mui/icons-material/Close';
+  import { Alert, Checkbox, IconButton, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
   import {
     Typography,
     Box,
@@ -98,6 +99,7 @@
     const handleError = error => {
       if (error.response && error.response.data) {
         const errorMessage = error.response.data;
+        console.log("에러 +++++++++++++ : " + errorMessage)
         if (errorMessage.includes('not logged in')) {
           setAlertMessage('로그인이 필요합니다.');
           setIsAlertOpen(true);
@@ -344,49 +346,52 @@
 
       {/* DELETE 모달 */}
       <Modal
-        open={deleteConfirmationOpen}
-        onClose={cancelDeleteMembers}
-        aria-labelledby="delete-confirmation-modal-title"
-        aria-describedby="delete-confirmation-modal-description"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+          open={deleteConfirmationOpen}
+          onClose={cancelDeleteMembers}
+          aria-labelledby="delete-confirmation-modal-title"
+          aria-describedby="delete-confirmation-modal-description"
+          style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+          }}
       >
-        <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
-          <div style={{ width: '400px' }}>
-            <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
-              선택한 회원 삭제
-            </Typography>
-            {deletionInProgress ? (
-              <Typography variant="body1" style={{ marginBottom: '20px' }}>
-                삭제 진행 중...
-              </Typography>
-            ) : selectedMembers.some(member => member.memberId === 'admin') ? (
-              <Typography variant="body1" style={{ marginBottom: '20px', color: 'red' }}>
-                관리자 계정은 삭제할 수 없습니다.
-              </Typography>
-            ) : (
-              <Typography variant="body1" style={{ marginBottom: '20px' }}>
-                선택한 회원을 삭제하시겠습니까?
-              </Typography>
-            )}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-              {!selectedMembers.some(member => member.memberId === 'admin') && (
-                <Button variant="contained" color="primary" onClick={confirmDeleteMembers} disabled={deletionInProgress}>
-                  삭제
-                </Button>
-              )}
-              <Button variant="contained" color="error" onClick={cancelDeleteMembers} disabled={deletionInProgress}>
-                취소
-              </Button>
-            </Box>
-          </div>
-        </Paper>
+          <Paper className="modal-paper" style={{ padding: '20px', width: '400px' }}>
+              <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <Typography variant="h6" style={{ fontSize: '18px' }}>
+                          회원 삭제
+                      </Typography>
+                      <IconButton aria-label="닫기" onClick={cancelDeleteMembers}>
+                          <CloseIcon />
+                      </IconButton>
+                  </div>
+                  {deletionInProgress ? (
+                      <Typography variant="body1" style={{ marginBottom: '20px' }}>
+                          삭제 진행 중...
+                      </Typography>
+                  ) : selectedMembers.some(member => member.memberId === 'admin') ? (
+                      <Typography variant="body1" style={{ marginBottom: '20px', color: 'red', fontWeight: 'bold' }}>
+                          관리자 계정은 삭제할 수 없습니다.
+                      </Typography>
+                  ) : (
+                      <>
+                          <Typography variant="body1" style={{ marginBottom: '20px' }}>
+                              선택한 회원을 삭제하시겠습니까?
+                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                              {!selectedMembers.some(member => member.memberId === 'admin') && (
+                                  <Button variant="contained" color="primary" onClick={confirmDeleteMembers} disabled={deletionInProgress}>
+                                      삭제
+                                  </Button>
+                              )}
+                          </Box>
+                      </>
+                  )}
+              </div>
+          </Paper>
       </Modal>
-        
-        
+      
       {/* INSERT 모달 */}
       <Modal
           open={isModalOpen}
@@ -519,7 +524,7 @@
       </Snackbar>
 
       <DashboardCard >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, padding: '10px'}}>
             <Typography variant="h4" component="div">
               회원관리
             </Typography>
@@ -556,7 +561,10 @@
             aria-label="simple table"
             sx={{
               whiteSpace: 'nowrap',
-              mt: 2,
+              '& td': {
+                padding: '9px 16px', // 전체 td의 padding 값을 변경
+              },
+              
             }}
           >
             <TableHead
