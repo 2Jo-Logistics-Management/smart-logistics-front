@@ -7,11 +7,14 @@ import axios from 'axios';
 import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { close } from '../../../redux/slices/loginResponseReducer'
 axios.defaults.withCredentials = true;
 
 const Header = (props) => {
   const navigate = useNavigate();
-
+  const dispatch =  useDispatch();
+  const memberData = useSelector((state) => state.memberData.memberData);
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: '10px',
     background: theme.palette.background.paper,
@@ -32,7 +35,9 @@ const Header = (props) => {
       axios.post('http://localhost:8888/api/member/logout')
       .then((response) => {
         if(response.data.success) {
+          dispatch(close())
           navigate("/auth/login");  
+          
         }
       })
 
@@ -81,14 +86,20 @@ const Header = (props) => {
         <Box flexGrow={1} />
 
         <Stack spacing={1} direction="row" alignItems="center">
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mr: 1 }}>
-            로그아웃
-          </Typography>
+          {memberData && memberData.data && memberData.data.memberName ? (
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mr: 1 }}>
+              {memberData.data.memberName}님
+            </Typography>
+          ) : (
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mr: 1 }}>
+
+            </Typography>
+          )}
           <Button 
-          variant="contained" 
-          color="primary" 
-          type="submit"
-          onClick={handleLogout}>
+            variant="contained" 
+            color="primary"   
+            type="submit"
+            onClick={handleLogout}>
             Logout
           </Button>
           <Profile />
