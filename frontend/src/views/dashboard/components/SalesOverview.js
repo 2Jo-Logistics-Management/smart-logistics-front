@@ -133,7 +133,7 @@ const SalesOverview = () => {
         }}
         series={chartData.series}
         type="bar"
-        height="500px"
+        height="613px"
       />
     </DashboardCard>
   );

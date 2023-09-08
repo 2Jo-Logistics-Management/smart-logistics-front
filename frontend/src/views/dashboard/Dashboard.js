@@ -4,7 +4,7 @@ import PageContainer from 'src/components/container/PageContainer';
 
 // components
 import SalesOverview from './components/SalesOverview';
-import YearlyBreakup from './components/YearlyBreakup';
+import WarehouseTopRank from './components/WarehouseTopRank';
 import StateOverviewComponents from './components/StateOverviewComponents';
 
 
@@ -22,7 +22,7 @@ const Dashboard = () => {
           <Grid item xs={12} lg={4}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <YearlyBreakup />
+                <WarehouseTopRank />
               </Grid>
               <Grid item xs={12}>
                 <StateOverviewComponents />
