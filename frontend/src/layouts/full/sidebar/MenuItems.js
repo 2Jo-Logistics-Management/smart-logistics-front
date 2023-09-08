@@ -1,5 +1,5 @@
 import {
-  IconAperture, IconCopy, IconLayoutDashboard, IconLogin, IconMoodHappy, IconTypography, IconUserPlus
+   IconCopy, IconLayoutDashboard, IconTypography, IconSun
 } from '@tabler/icons';
 import { uniqueId } from 'lodash';
 //사이드바 종류(주소 바꾸고싶으면 여기서 바꾸면 됨)
@@ -13,21 +13,23 @@ const subheaderStyle = {
   textTransform: 'uppercase',
 };
 
-
-
 const Menuitems = [
   {
     navlabel: true,
     subheader: <div style= {subheaderStyle} >재고관리시스템</div>,
   },
-
   {
     id: uniqueId(),
     title: '메인페이지',
     icon: IconLayoutDashboard,
     href: '/dashboard',
   },
-  
+  {
+    id: uniqueId(),
+    title: '품목 관리시스템',
+    icon: IconSun,
+    href: '/item/list',
+  },
   {
     id: uniqueId(),
     title: '재고 등록/수정/삭제',

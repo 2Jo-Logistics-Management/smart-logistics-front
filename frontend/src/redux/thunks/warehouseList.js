@@ -7,7 +7,7 @@ import { fetchProductsSuccess } from '../slices/warehouseListReducer';
 // 비동기로 products 데이터를 가져오는 액션 크리에이터 함수
 export const warehouseList = () => async (dispatch) => {
   try {
-    const response = await axios.get("http://localhost:8888/api/warehouse/list");
+    const response = await axios.get("http://localhost:8888/api/warehouse-stock/list");
     const products = response.data;
     console.log("thunk: "+products);
     dispatch(fetchProductsSuccess(products));
