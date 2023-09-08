@@ -1,116 +1,142 @@
-import React from 'react';
-import { Select, MenuItem } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Select, MenuItem, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import Chart from 'react-apexcharts';
-// 메인페이지 그래프
+import axios from 'axios';
 
 const SalesOverview = () => {
+  const [chartData, setChartData] = useState({
+    categories: [],
+    series: [],
+  });
 
-    // select
-    const [month, setMonth] = React.useState('1');
+  const [selectedYear, setSelectedYear] = useState('2023'); // 연도 선택 상태 변수
 
-    const handleChange = (event) => {
-        setMonth(event.target.value);
-    };
+  const handleChange = async (event) => {
+    const year = event.target.value; // 선택한 연도
+    setSelectedYear(year); // 선택한 연도를 상태 변수에 저장
+  
+    try {
+      // Axios를 사용하여 데이터 가져오기
+      const response = await axios.get('http://localhost:8888/api/mainPage/totalReceivesOrders', {
+        params: {
+          year, // 직접 year 변수를 사용
+        },
+      });
+  
+      const data = response.data.data;
+  
+      // 가져온 데이터를 차트 데이터로 설정
+      setChartData({
+        categories: data.map((item) => item.yearMonth),
+        series: [
+          {
+            name: '발주물량',
+            data: data.map((item) => item.totalOrders),
+          },
+          {
+            name: '입고물량',
+            data: data.map((item) => item.totalReceives),
+          },
+        ],
+      });
+    } catch (error) {
+      // 오류 처리
+      console.error('데이터 가져오기 오류:', error);
+    }
+  };
 
-    // chart color
-    const theme = useTheme();
-    const primary = theme.palette.primary.main;
-    const secondary = theme.palette.secondary.main;
+  // useEffect를 사용하여 컴포넌트가 마운트될 때 한 번 데이터를 가져오도록 설정
+  useEffect(() => {
+    handleChange({ target: { value: selectedYear } });
+  }, [selectedYear]);
 
-    // chart
-    const optionscolumnchart = {
-        chart: {
+  const theme = useTheme();
+
+  return (
+    <DashboardCard
+      title="POrder/Receieve Graph"
+      action={
+        <Select
+          labelId="month-dd"
+          id="month-dd"
+          value={selectedYear}
+          size="small"
+          onChange={handleChange}
+        >
+          <MenuItem value="2021">2021</MenuItem>
+          <MenuItem value="2022">2022</MenuItem>
+          <MenuItem value="2023">2023</MenuItem>
+        </Select>
+      }
+    >
+    <Typography variant="h3" fontWeight="600" mt={4} mb={4}>
+        입고&발주 수량
+    </Typography>
+      <Chart
+        options={{
+          chart: {
             type: 'bar',
             fontFamily: "'Plus Jakarta Sans', sans-serif;",
             foreColor: '#adb0bb',
             toolbar: {
-                show: true,
+              show: true,
             },
             height: 370,
-        },
-        colors: [primary, secondary],
-        plotOptions: {
+          },
+          colors: [theme.palette.primary.main, theme.palette.secondary.main],
+          plotOptions: {
             bar: {
-                horizontal: false,
-                barHeight: '60%',
-                columnWidth: '42%',
-                borderRadius: [6],
-                borderRadiusApplication: 'end',
-                borderRadiusWhenStacked: 'all',
+              horizontal: false,
+              barHeight: '60%',
+              columnWidth: '42%',
+              borderRadius: [6],
+              borderRadiusApplication: 'end',
+              borderRadiusWhenStacked: 'all',
             },
-        },
-
-        stroke: {
+          },
+          stroke: {
             show: true,
             width: 5,
-            lineCap: "butt",
-            colors: ["transparent"],
+            lineCap: 'butt',
+            colors: ['transparent'],
           },
-        dataLabels: {
+          dataLabels: {
             enabled: false,
-        },
-        legend: {
+          },
+          legend: {
             show: false,
-        },
-        grid: {
+          },
+          grid: {
             borderColor: 'rgba(0,0,0,0.1)',
             strokeDashArray: 3,
             xaxis: {
-                lines: {
-                    show: false,
-                },
-            },
-        },
-        yaxis: {
-            tickAmount: 4,
-        },
-        xaxis: {
-            categories: ['16/08', '17/08', '18/08', '19/08', '20/08', '21/08', '22/08', '23/08'],
-            axisBorder: {
+              lines: {
                 show: false,
+              },
             },
-        },
-        tooltip: {
+          },
+          yaxis: {
+            tickAmount: 4,
+          },
+          xaxis: {
+            categories: chartData.categories,
+            axisBorder: {
+              show: false,
+            },
+          },
+          tooltip: {
             theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
             fillSeriesColor: false,
-        },
-    };
-    const seriescolumnchart = [
-        {
-            name: '발주물량',
-            data: [355, 390, 300, 350, 390, 180, 355, 390],
-        },
-        {
-            name: '입고물량',
-            data: [280, 250, 325, 215, 250, 310, 280, 250],
-        },
-    ];
-
-    return (
-
-        <DashboardCard title="POrder/Receieve Graph" action={
-            <Select
-                labelId="month-dd"
-                id="month-dd"
-                value={month}
-                size="small"
-                onChange={handleChange}
-            >
-                <MenuItem value={1}>March 2023</MenuItem>
-                <MenuItem value={2}>April 2023</MenuItem>
-                <MenuItem value={3}>May 2023</MenuItem>
-            </Select>
-        }>
-            <Chart
-                options={optionscolumnchart}
-                series={seriescolumnchart}
-                type="bar"
-                height="370px"
-            />
-        </DashboardCard>
-    );
+          },
+        }}
+        series={chartData.series}
+        type="bar"
+        height="500px"
+      />
+    </DashboardCard>
+  );
 };
 
 export default SalesOverview;

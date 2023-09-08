@@ -2,7 +2,6 @@ import React, { useEffect, useState  } from 'react';
 import Chart from 'react-apexcharts';
 import { useTheme } from '@mui/material/styles';
 import { Grid, Stack, Typography, Avatar } from '@mui/material';
-import { IconArrowUpLeft } from '@tabler/icons';
 import axios from 'axios';
 // 메인페이지 도넛그래프
 
@@ -14,9 +13,6 @@ import DashboardCard from '../../../components/shared/DashboardCard';
 const YearlyBreakup = () => {
   // chart color
   const theme = useTheme();
-  const primary = theme.palette.primary.main;
-  const primarylight = '#ecf2ff';
-  const successlight = theme.palette.success.light;
 
   const [warehouseData, setWarehouseData] = useState([]);
 
@@ -87,61 +83,28 @@ const YearlyBreakup = () => {
   };
 
   return (
-    <DashboardCard title="Warehouse Loading Rate ">
+    <DashboardCard title="Warehouse Top Rate ">
       <Grid container spacing={3}>
         <Grid item xs={5} sm={5}>
-          <Typography variant="h3" fontWeight="700">
+          {/* 좌측 컨텐츠 */}
+          <Typography variant="h3" fontWeight="700" mt={2}>
             창고 Top5
           </Typography>
-          <Stack direction="row" spacing={1} mt={1} alignItems="center">
-            <Avatar sx={{ bgcolor: successlight, width: 27, height: 27 }}>
-              <IconArrowUpLeft width={20} color="#39B69A" />
-            </Avatar>
-            <Typography variant="subtitle2" fontWeight="600">
-              +9%
-            </Typography>
-            <Typography variant="subtitle2" color="textSecondary">
-              last year
-            </Typography>
-          </Stack>
-          <Stack spacing={3} mt={5} direction="row">
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar
-                sx={{ width: 9, height: 9, bgcolor: 'rgba(93, 135, 255, 0.85)', svg: { display: 'none' } }}
-              ></Avatar>
-              <Typography variant="subtitle2" color="textSecondary">
-                B-2
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar
-                sx={{ width: 9, height: 9, bgcolor: primarylight, svg: { display: 'none' } }}
-              ></Avatar>
-              <Typography variant="subtitle2" color="textSecondary">
-                A-1
-              </Typography>
-            </Stack>
-          </Stack>
-          <Stack spacing={3} mt={5} direction="row">
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar
-                sx={{ width: 9, height: 9, bgcolor: primary, svg: { display: 'none' } }}
-              ></Avatar>
-              <Typography variant="subtitle2" color="textSecondary">
-                B-1
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar
-                sx={{ width: 9, height: 9, bgcolor: primarylight, svg: { display: 'none' } }}
-              ></Avatar>
-              <Typography variant="subtitle2" color="textSecondary">
-                2023
-              </Typography>
-            </Stack>
+          <Stack spacing={1} mt={2} direction="column">
+            {warehouseData.map((item) => (
+              <Stack key={item.warehouseName} direction="row" spacing={1} alignItems="center">
+                <Avatar
+                  sx={{ width: 9, height: 9, bgcolor: colors[warehouseData.indexOf(item) % colors.length], svg: { display: 'none' } }}
+                ></Avatar>
+                <Typography variant="subtitle2" color="textSecondary">
+                  {item.warehouseName}
+                </Typography>
+              </Stack>
+            ))}
           </Stack>
         </Grid>
-        <Grid item xs={5} sm={5} >
+        <Grid item xs={5} sm={5}>
+          {/* 우측 컨텐츠 */}
           <Chart
             options={optionsDonutChart}
             series={totalCounts}

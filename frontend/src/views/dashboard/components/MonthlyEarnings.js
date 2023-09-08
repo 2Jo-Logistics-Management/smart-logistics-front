@@ -24,7 +24,7 @@ const MonthlyEarnings = () => {
       toolbar: {
         show: false,
       },
-      height: 60,
+      height: 80,
       sparkline: {
         enabled: true,
       },
@@ -63,7 +63,7 @@ const MonthlyEarnings = () => {
         </Fab>
       }
       footer={
-        <Chart options={optionscolumnchart} series={seriescolumnchart} type="area" height="60px" />
+        <Chart options={optionscolumnchart} series={seriescolumnchart} type="area" height="120px" />
       }
     >
       <>
