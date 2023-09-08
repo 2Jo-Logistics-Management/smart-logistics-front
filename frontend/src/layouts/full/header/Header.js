@@ -30,14 +30,14 @@ const Header = (props) => {
   const handleLogout = async () => {
     try {
       axios.post('http://localhost:8888/api/member/logout')
-      .then((response) => {
-        if(response.data.success) {
-          navigate("/auth/login");  
-        }
-      })
+        .then((response) => {
+          if (response.data.success) {
+            navigate("/auth/login");
+          }
+        })
 
     } catch (error) {
-      if(error.response && error.response.status === 401){
+      if (error.response && error.response.status === 401) {
         alert("로그인세션만료");
         navigate("/auth/login");
       }
@@ -50,17 +50,13 @@ const Header = (props) => {
         <IconButton
           color="inherit"
           aria-label="menu"
-          onClick={props.toggleMobileSidebar}
-          sx={{
-            display: {
-              lg: "none",
-              xs: "inline",
-            },
+          onClick={() => {
+            props.toggleMobileSidebar();
+            props.toggleSidebar();
           }}
         >
           <IconMenu width="20" height="20" />
         </IconButton>
-
         <IconButton
           size="large"
           aria-label="show 11 new notifications"
@@ -84,11 +80,11 @@ const Header = (props) => {
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mr: 1 }}>
             로그아웃
           </Typography>
-          <Button 
-          variant="contained" 
-          color="primary" 
-          type="submit"
-          onClick={handleLogout}>
+          <Button
+            variant="contained"
+            color="primary"
+            type="submit"
+            onClick={handleLogout}>
             Logout
           </Button>
           <Profile />

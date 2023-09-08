@@ -10,6 +10,8 @@ import loginResponseReducer from "./slices/loginResponseReducer";
 import receiveModalDuck from "./slices/receiveModalDuck";
 import ItemsReducer from "./slices/ItemsReducer";
 import selectedItemsReducer from "./slices/selectedItemsReducer";
+import warehouseSectionListReducer from "./slices/warehouseSectionListReducer";
+import searchRecentPOrderNumber from "./slices/searchRecentPOrderNumber";
 
 const rootReducer = combineReducers({
   porderModal: porderModalDuck,
@@ -23,6 +25,8 @@ const rootReducer = combineReducers({
   receiveModal: receiveModalDuck,
   items: ItemsReducer,
   selectedItems: selectedItemsReducer,
+  warehouseSectionList : warehouseSectionListReducer,
+  recentPOrderNumber:searchRecentPOrderNumber
 });
 
 export default rootReducer;

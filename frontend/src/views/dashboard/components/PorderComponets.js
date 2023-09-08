@@ -11,6 +11,7 @@ import {
   TextField,
   Button,
   Checkbox,
+  Pagination,
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
@@ -26,24 +27,53 @@ import PorderModal from './modal/PorderModal';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import ko from 'date-fns/locale/ko';
-import  {searchPOrderList } from '../../../redux/thunks/searchPOrderList';
+import { searchPOrderList } from '../../../redux/thunks/searchPOrderList';
+import Loading from '../../../loading';
+
+
 const PorderComponets = () => {
   const dispatch = useDispatch();
   const [selectAll, setSelectAll] = useState(false);
+  const porderModalState = useSelector((state) => state.porderModal.openModal);
+
 
   useEffect(() => {
-    dispatch(fetchProducts()); // fetchProducts 액션 디스패치
-  }, [dispatch]);
+    if (!porderModalState) {
+      dispatch(fetchProducts());
+    }
+  }, [porderModalState, dispatch]);
+
+
 
   const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
   const productsData = useSelector((state) => state.pOrderList.products);
   const products = JSON.parse(JSON.stringify(productsData));
   const realProducts = products?.data || [];;
+  const recentPOrderNumber = useSelector((state) =>
+  state.recentPOrderNumber && state.recentPOrderNumber.recentPOrderNumber
+    ? state.recentPOrderNumber.recentPOrderNumber
+    : []
+);
+ 
+  const [porderCodeState, setPorderCodeState] = useState("");
+
+  useEffect(() => {
+    if (recentPOrderNumber.data && recentPOrderNumber.data[0]) {
+      console.log("Setting porderCodeState with", recentPOrderNumber.data[0].porderCode); // for debugging
+      setPorderCodeState(recentPOrderNumber.data[0].porderCode);
+  
+      // 페이지를 맨 마지막 페이지로 이동
+      const totalPages = Math.ceil(realProducts.length / ITEMS_PER_PAGE);
+      setCurrentPage(totalPages - 1);
+    }
+  }, [recentPOrderNumber]);
+  
+
 
   const handleInsert = () => {
     dispatch(open_Modal());
   };
-  
+
   const handleCheckboxChange = (event, productId) => {
     if (event.target.checked) {
       dispatch(ADD_SELECTED_PRODUCT(productId));
@@ -66,10 +96,11 @@ const PorderComponets = () => {
       })
       .then(() => {
         pOrderDeleteAxios(selectedProducts);
+        localStorage.clear();
       });
   };
 
-  
+
 
   useEffect(() => {
     if (selectedProducts.length === 1) {
@@ -95,19 +126,18 @@ const PorderComponets = () => {
   const [accountNo, setAccountNo] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // const { format } = require('date-fns');
-  // function startDateFormat(startDate) {
-  //   const formattedDate = format(startDate, 'yyyy-MM-dd');
-  //   return formattedDate
-  // }
-  // function endDateFormat(endDate){
-  //   const formattedDate = format(endDate, 'yyyy-MM-dd')
-  //   return formattedDate
-  // }
+
+
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const handlePageChange = (event, newPage) => {
+    setCurrentPage(newPage - 1);
+  };
 
   const handleClick = () => {
     let timerInterval;
-     dispatch(searchPOrderList(accountNo,pOrderCode,startDate,endDate))
+    dispatch(searchPOrderList(accountNo, pOrderCode, startDate, endDate))
     swal.fire({
       title: '입고물품 조회중',
       html: '잠시만 기다려주세요',
@@ -123,10 +153,10 @@ const PorderComponets = () => {
       willClose: () => {
         clearInterval(timerInterval);
       }
-  
+
     });
   };
-  
+
   return (
     <Box style={{ width: '100%' }}>
       <DashboardCard title="발주 list" variant="poster" sx={{ Width: '100%' }}>
@@ -134,11 +164,11 @@ const PorderComponets = () => {
           <span style={{ marginRight: '0.5rem' }}>
             <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>발주번호:</Typography>
           </span>
-          <TextField label="발주번호" variant="outlined" size="small"  value = {pOrderCode} onChange = {(e) => setPOrderCode(e.target.value)}sx={{ width: '10rem', marginRight: 1 }} />
+          <TextField label="발주번호" variant="outlined" size="small" value={pOrderCode} onChange={(e) => setPOrderCode(e.target.value)} sx={{ width: '10rem', marginRight: 1 }} />
           <span style={{ marginRight: '0.5rem' }}>
             <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>거래처번호:</Typography>
           </span>
-          <TextField label="거래품목 품목" variant="outlined" size="small" value = {accountNo} onChange = {(e) => setAccountNo(e.target.value)}sx={{ width: '10rem', marginRight: 1 }} />
+          <TextField label="거래품목 품목" variant="outlined" size="small" value={accountNo} onChange={(e) => setAccountNo(e.target.value)} sx={{ width: '10rem', marginRight: 1 }} />
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
             <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>발주생성일:</Typography>
             <DatePicker
@@ -173,16 +203,7 @@ const PorderComponets = () => {
           <Button onClick={handleInsert} variant="contained" size="small" sx={{ marginRight: 1 }}>
             발주생성
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Delete />}
-            color="error"
-            onClick={handleDelete}
-            disabled={selectedProducts.length === 0}
-          >
-            삭제
-          </Button>
+
         </Box>
 
         <Box>
@@ -225,21 +246,26 @@ const PorderComponets = () => {
                     담당자
                   </Typography>
                 </TableCell>
+                <TableCell align="right">
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    삭제
+                  </Typography>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {realProducts.map((realProduct) => (
-                <TableRow key={realProduct.porderCode}>
-                  <TableCell>
+              {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct) => (
+                <TableRow key={realProduct.porderCode} style={{ backgroundColor: realProduct.porderCode === porderCodeState ? 'lightyellow' : 'white' }}>
+                  <TableCell sx={{ padding: 0 }}>
                     <Checkbox
                       checked={selectedProducts.includes(realProduct.porderCode)}
                       onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ padding: 0 }}>
                     <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ padding: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Box>
                         <Typography variant="subtitle2" fontWeight={600}>
@@ -251,7 +277,7 @@ const PorderComponets = () => {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ padding: 0 }}>
                     <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
                       {realProduct.createDate}
                     </Typography>
@@ -266,13 +292,50 @@ const PorderComponets = () => {
                       label={realProduct.state}
                     />
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={{ padding: 0 }}>
                     <Typography variant="h6">{realProduct.createId}</Typography>
+                  </TableCell>
+                  <TableCell align="right" sx={{ padding: 0 }}>
+                    {realProduct.state === "WAIT" ? (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Delete />}
+                        color="error"
+                        onClick={handleDelete}
+                        disabled={selectedProducts.length === 0}
+                      >
+                        삭제
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Delete />}
+                        color="error"
+                        disabled
+                      >
+                        삭제
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+          {realProducts.length ? (
+            <Pagination
+              count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
+              page={currentPage + 1}
+              variant="outlined"
+              color="primary"
+              onChange={handlePageChange}
+            />
+          ) : (
+            <Loading />
+          )}
         </Box>
       </DashboardCard>
       <PorderModal></PorderModal>
