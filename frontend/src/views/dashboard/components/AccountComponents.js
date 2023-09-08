@@ -1,5 +1,6 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
+import CloseIcon from '@mui/icons-material/Close';
 import {
     Typography,
     Box,
@@ -7,14 +8,13 @@ import {
     TableBody,
     TableCell,
     TableHead,
-    TableRow,
     TextField,
+    TableRow,
     Button,
     Modal,
     Paper,
-    Snackbar,
-    Alert,
     Checkbox,
+    IconButton,
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 
@@ -41,9 +41,32 @@ const Account = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
 
-    // 수정 중복선택 경고 alert창
-    const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
+    // 글자수 초과 에러
+    const [accountNameError, setAccountNameError] = useState(false);        // 거래처명
+    const [representativeError, setRepresentativeError] = useState(false);  // 대표자
+    const [contactNumberError, setContactNumberError] = useState(false);    // 전화번호
+    const [businessNumberError, setBusinessNumberError] = useState(false);  // 사업자번호
 
+    const handleInputValidation = (value, maxLength) => {
+      if (value.length > maxLength) {
+          return true; // 길이 초과 시 true 반환
+      } else {
+          return false; // 길이 초과하지 않을 시 false 반환
+      }
+    };
+  
+    // 공통 전화번호 유효성 검사 함수
+    const handlePhoneNumberValidation = (input, setFunction) => {
+        const formattedInput = input.replace(/[^0-9-]/g, ''); // 숫자와 "-" 이외의 문자 제거
+        if (formattedInput.length === 11) {
+            const formattedNumber = `${formattedInput.slice(0, 3)}-${formattedInput.slice(3, 7)}-${formattedInput.slice(7)}`;
+            setFunction(formattedNumber);
+            return false; // 형식이 맞을 경우 false 반환
+        } else {
+            setFunction(formattedInput);
+            return true; // 형식이 맞지 않을 경우 true 반환
+        }
+    };
 
     const [newAccount, setNewAccount] = useState({
         accountName: '',
@@ -52,32 +75,30 @@ const Account = () => {
         businessNumber: '',
     });
 
-    // 거래처번호, 거래처명 검색기능
-    const handleSearch = () => {
-        const filteredAccount = accountList.filter((account) => {
-          const nameMatches = account.accountName.includes(searchName);
-          const noMatches = account.accountNo.includes(searchNo);
-          return nameMatches && noMatches;
-        });
-      
-        setCurrentAccount(filteredAccount);
+    // INSERT 취소버튼시 함수
+    const handleCloseModal = () => {
+      setIsModalOpen(false);
+      setSelectedAccount([]); // 선택된 거래처들을 모두 해제
+      window.location.reload();
       };
-
-    const handleCloseEditModal = () => {
-        setSelectedAccount([]); // 선택된 멤버들을 모두 해제
+  
+      // MODIFY 취소버튼시 함수
+      const handleCloseEditModal = () => {
         setIsEditModalOpen(false);
+        setSelectedAccount([]); // 선택된 멤버들을 모두 해제
     };
- 
+      
+      // DELETE 취소버튼시 함수
+      const cancelDeleteAccount = () => {
+        setDeleteConfirmationOpen(false);
+        setSelectedAccount([]); // 선택된 거래처들을 모두 해제
+    };
 
-    // 수정 중복선택 경고 alert창    
-    const handleEditAccount = () => {
-        if (selectedAccount.length !== 1) {
-          setIsSnackbarVisible(true); // Show the snackbar
-          return;
-        }
-    
-        setEditingAccount({ ...selectedAccount[0] });
-        setIsEditModalOpen(true);
+    // Enter시 검색
+    const handleEnterKeyPress = (event) => {
+      if (event.key === 'Enter') {
+          handleSearch();
+      }
     };
 
     // LIST axios
@@ -97,17 +118,27 @@ const Account = () => {
 
     // INSERT axios
     const handleSaveNewAccount = () => {
-        if (newAccount.accountName && newAccount.representative && newAccount.contactNumber && newAccount.businessNumber) {
-          axios.post('http://localhost:8888/api/account/insert', newAccount)
-            .then(response => {
-              axios.get('http://localhost:8888/api/account/list')
-                .then(updateAccountList)
-              setIsModalOpen(false);
-            })
-            .catch();
+      if (newAccount.accountName && newAccount.representative && newAccount.contactNumber && newAccount.businessNumber) {
+        
+        if (newAccount.accountName.length > 20) {
+          setAccountNameError(true);
+          return;
         } else {
-          console.log("모든 필드를 입력하세요.");
+          setAccountNameError(false); // 에러 상태 초기화
         }
+    
+        axios.post('http://localhost:8888/api/account/insert', newAccount)
+          .then(response => {
+            axios.get('http://localhost:8888/api/account/list')
+              .then(updateAccountList)
+            setIsModalOpen(false);
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      } else {
+        console.log("모든 필드를 입력하세요.");
+      }
     };
 
     // DELETE axios
@@ -144,6 +175,29 @@ const Account = () => {
         }
     };
 
+    // 조회조건 axios
+    const handleSearch = () => {
+      const queryParams = [];
+  
+      if (searchNo) {
+          queryParams.push(`accountNo=${searchNo}`);
+      }
+      if (searchName) {
+          queryParams.push(`accountName=${searchName}`);
+      }
+  
+      const queryString = queryParams.join('&');
+  
+      axios.get(`http://localhost:8888/api/account/list?${queryString}`)
+          .then(response => {
+              setAccountList(response.data.data);
+              setCurrentAccount(response.data.data);
+          })
+          .catch(error => {
+              // 처리할 에러 핸들링 코드 추가
+          });
+  };
+
     const handleDeleteAccount = () => {
         if (selectedAccount.length === 0) {
           console.log("선택된 거래처가 없습니다.");
@@ -164,20 +218,6 @@ const Account = () => {
         setIsModalOpen(true);
     };
     
-    const handlerSetInputData = (state, data) => {
-        setNewAccount(prevAccount => ({
-          ...prevAccount,
-          [state]: data
-        }));
-    };
-
-    const cancelDeleteAccount = () => {
-        setDeleteConfirmationOpen(false);
-    };
-
-    const handleCloseModal = () => {
-    setIsModalOpen(false);
-    };
 
     // 체크박스 전체 선택 또는 해제
     const handleSelectAll = () => {
@@ -217,14 +257,14 @@ const Account = () => {
               거래처 정보 수정
             </Typography>
             <TextField
-              label="거래처명"
-              variant="outlined"
-              type='text'
-              value={editingAccount?.accountName || ''}
-              onChange={(e) => setEditingAccount({ ...editingAccount, accountName: e.target.value })}
-              fullWidth
-              margin="normal"
-              required
+                label="거래처명"
+                variant="outlined"
+                type='text'
+                value={editingAccount?.accountName || ''}
+                onChange={(e) => setEditingAccount({ ...editingAccount, accountName: e.target.value })}
+                fullWidth
+                margin="normal"
+                required
             />
             <TextField
               label="대표자"
@@ -237,7 +277,7 @@ const Account = () => {
               required
             />
             <TextField
-              label="거래처번호"
+              label="전화번호"
               variant="outlined"
               type='text'
               value={editingAccount?.contactNumber || ''}
@@ -263,7 +303,7 @@ const Account = () => {
               <Button variant="contained" color="primary" onClick={handleUpdateAccount}>
                 수정
               </Button>
-              <Button variant="contained" color="error" onClick={() => setIsEditModalOpen(false)}>
+              <Button variant="contained" color="error" onClick ={handleCloseEditModal}>
                 취소
               </Button>
             </Box>
@@ -283,20 +323,22 @@ const Account = () => {
         justifyContent: 'center',
         }}
     >
-        <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
-        <div style={{ width: '400px' }}>
+        <Paper className="modal-paper" style={{ padding: '20px', width: '400px' }}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
-            선택한 거래처 삭제
+            거래처 삭제
             </Typography>
+            <IconButton aria-label="닫기" onClick={cancelDeleteAccount}>
+              <CloseIcon />
+            </IconButton>
+          </div>
             <Typography variant="body1" style={{ marginBottom: '20px' }}>
             선택한 거래처를 삭제하시겠습니까?
             </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
             <Button variant="contained" color="primary" onClick={confirmDeleteAccount}>
                 삭제
-            </Button>
-            <Button variant="contained" color="error" onClick={cancelDeleteAccount}>
-                취소
             </Button>
             </Box>
         </div>
@@ -320,40 +362,81 @@ const Account = () => {
           <div style={{ width: '400px' }}>
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 거래처 추가</Typography>
             <TextField
-              label="거래처명"
-              variant="outlined"
-              type='text'
-              onChange={(e) => handlerSetInputData('accountName',e.target.value)}
-              fullWidth
-              margin="normal"
-              required
+                label="거래처명"
+                variant="outlined"
+                type='text'
+                onChange={(e) => {
+                    const value = e.target.value;
+                    setNewAccount((prevAccount) => ({
+                        ...prevAccount,
+                        accountName: value
+                    }));
+                    setAccountNameError(handleInputValidation(value, 20));
+                }}
+                fullWidth
+                margin="normal"
+                required
+                error={accountNameError}
+                helperText={accountNameError ? "20글자를 넘길 수 없습니다." : ""}
+            />
+
+            <TextField
+                label="대표자"
+                variant="outlined"
+                type='text'
+                onChange={(e) => {
+                    const value = e.target.value;
+                    setNewAccount((prevAccount) => ({
+                        ...prevAccount,
+                        representative: value
+                    }));
+                    setRepresentativeError(handleInputValidation(value, 10));
+                }}
+                fullWidth
+                margin="normal"
+                required
+                error={representativeError}
+                helperText={representativeError ? "10글자를 넘길 수 없습니다." : ""}
+            />
+
+            <TextField
+                label="전화번호"
+                variant="outlined"
+                type="text"
+                onChange={(e) => {
+                    const value = e.target.value;
+                    const isError = handlePhoneNumberValidation(value, (formattedNumber) => {
+                        setNewAccount((prevAccount) => ({
+                            ...prevAccount,
+                            contactNumber: formattedNumber
+                        }));
+                        setContactNumberError(false);
+                    });
+                    setContactNumberError(isError);
+                }}
+                fullWidth
+                margin="normal"
+                required
+                error={contactNumberError}
+                helperText={contactNumberError ? "전화번호를 다시 확인해주세요." : ""}
             />
             <TextField
-              label="대표자"
-              variant="outlined"
-              type='text'
-              onChange={(e) => handlerSetInputData('representative',e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="거래처번호"
-              variant="outlined"
-              type="text"
-              onChange={(e) => handlerSetInputData('contactNumber',e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="사업자번호"
-              variant="outlined"
-              type="text"
-              onChange={(e) => handlerSetInputData('businessNumber',e.target.value)}
-              fullWidth
-              margin="normal"
-              required
+                label="사업자번호"
+                variant="outlined"
+                type="text"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewAccount((prevAccount) => ({
+                      ...prevAccount,
+                      businessNumber: value
+                  }));
+                  setBusinessNumberError(handleInputValidation(value, 20));
+              }}
+                fullWidth
+                margin="normal"
+                required
+                error={businessNumberError}
+                helperText={businessNumberError ? "15글자를 넘길 수 없습니다." : ""}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
               <Button variant="contained" color="primary" onClick={handleSaveNewAccount}>
@@ -367,33 +450,9 @@ const Account = () => {
         </Paper>
     </Modal>
 
-      {/* 수정시 다중 선택 alert창 */}
-    <Snackbar
-        open={isSnackbarVisible}
-        autoHideDuration={4000}
-        onClose={() => setIsSnackbarVisible(false)}
-        anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
-        >
-        <Alert
-            severity="warning"
-            variant="filled"
-            onClose={() => setIsSnackbarVisible(false)}
-            sx={{
-            width: '400px', // 너비 조정
-            padding: '15px', // 패딩 조정
-            }}
-        >
-            <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-                중복으로 선택할 수 없습니다.
-            </Typography>
-            <Typography variant="body1">
-                하나의 거래처만 선택해주세요.
-            </Typography>
-        </Alert>
-    </Snackbar>
-
+        {/* 화면단 코드 start */}
         <DashboardCard>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, padding: '10px' }}>
                 <Typography variant="h4" component="div">
                     거래처관리
                 </Typography>
@@ -401,26 +460,25 @@ const Account = () => {
                     <Button variant="contained" color="primary" onClick={handleSearch} sx={{ mr: 2 }}>
                         조회
                     </Button>
-                    <Button variant="contained" color="info" onClick={handleEditAccount} sx={{ mr: 2 }}>
-                        수정
+                    <Button variant="contained" color="primary" onClick={openAddNewAccountForm} sx={{ mr: 2 }}>
+                        신규등록
                     </Button>
-                    <Button variant="contained" color="error" onClick={handleDeleteAccount} sx={{ mr: 2 }}>
+                    <Button variant="contained" color="error" onClick={handleDeleteAccount}>
                         삭제
-                    </Button>
-                    <Button variant="contained" color="primary" onClick={openAddNewAccountForm}>
-                        신규
                     </Button>
                 </Box>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                 <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                    거래처번호
+                    거래처코드
                 </Typography>
-                <TextField label="거래처번호" variant="outlined" size="small" sx={{ mr: 2 }} value={searchNo} onChange={(e) => setSearchNo(e.target.value)} />
+                <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchNo} onChange={(e) => setSearchNo(e.target.value)}
+                onKeyDown={handleEnterKeyPress} />
                 <Typography variant="subtitle2" sx={{ mr: 1 }}>
                     거래처명
                 </Typography>
-                <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)} />
+                <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)} 
+                onKeyDown={handleEnterKeyPress} />
             </Box>
         </DashboardCard>
 
@@ -430,7 +488,9 @@ const Account = () => {
                 aria-label="simple table"
                 sx={{
                     whiteSpace: 'nowrap',
-                    mt: 2
+                    '& td': {
+                      padding: '9px 16px', // 전체 td의 padding 값을 변경
+                    },
                 }}
                 >
                     <TableHead
@@ -447,7 +507,7 @@ const Account = () => {
                             </TableCell>
                             <TableCell>
                                 <Typography variant="h6" fontWeight={600}>
-                                    거래처번호
+                                    거래처코드
                                 </Typography>
                             </TableCell>
                             <TableCell>
@@ -462,7 +522,7 @@ const Account = () => {
                             </TableCell>
                             <TableCell>
                                 <Typography variant="h6" fontWeight={600}>
-                                    거래처번호
+                                    전화번호
                                 </Typography>
                             </TableCell>
                             <TableCell>
@@ -470,7 +530,11 @@ const Account = () => {
                                     사업자번호
                                 </Typography>
                             </TableCell>
-                            <TableCell></TableCell>
+                            <TableCell>
+                              <Typography variant="h6" fontWeight={600}>
+                                생성일자
+                              </Typography>
+                            </TableCell>
                         </TableRow>
                     </TableHead>
 
@@ -483,12 +547,18 @@ const Account = () => {
                                     cursor: 'pointer'
                                 }
                             }}
-                            onClick={() => handleSingleSelect(realAccount)}>
+                            onClick={() => {
+                              setEditingAccount({ ...realAccount }); // 선택한 거래처 데이터를 설정합니다.
+                              setIsEditModalOpen(true); // 수정 모달을 엽니다.
+                          }}>
                                 <TableCell>
-                                    <Checkbox
-                                    checked={selectedAccount.includes(realAccount)}
-                                    onChange={() => handleSingleSelect(realAccount)}
-                                    />
+                                  <Checkbox
+                                      checked={selectedAccount.includes(realAccount)}
+                                      onClick={(event) => {
+                                          event.stopPropagation();
+                                          handleSingleSelect(realAccount);
+                                      }}
+                                  />
                                 </TableCell>
                                 <TableCell>
                                     <Typography variant="subtitle2" fontWeight={400}>
@@ -518,6 +588,11 @@ const Account = () => {
                                 <TableCell>
                                     <Typography variant="subtitle2" fontWeight={400}>
                                         {realAccount.businessNumber}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="subtitle2" fontWeight={400}>
+                                        {realAccount.createDate}
                                     </Typography>
                                 </TableCell>
                             </TableRow>

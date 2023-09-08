@@ -5,8 +5,8 @@ import PageContainer from 'src/components/container/PageContainer';
 // components
 import SalesOverview from './components/SalesOverview';
 import YearlyBreakup from './components/YearlyBreakup';
-import RecentTransactions from './components/RecentTransactions';
-import PorderComponets from './components/PorderComponets';
+import StateOverviewComponents from './components/StateOverviewComponents';
+
 
 import MonthlyEarnings from './components/MonthlyEarnings';
 
@@ -25,17 +25,13 @@ const Dashboard = () => {
                 <YearlyBreakup />
               </Grid>
               <Grid item xs={12}>
-                <MonthlyEarnings />
+                <StateOverviewComponents />
               </Grid>
+              {/* <Grid item xs={12}>
+                <MonthlyEarnings />
+              </Grid> */}
             </Grid>
           </Grid>
-          <Grid item xs={12} lg={4}>
-            <RecentTransactions />
-          </Grid>
-          <Grid item xs={12} lg={8}>
-            <PorderComponets />
-          </Grid>
-       
         </Grid>
       </Box>
     </PageContainer>

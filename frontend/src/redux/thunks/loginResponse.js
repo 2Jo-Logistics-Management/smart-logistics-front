@@ -1,22 +1,22 @@
 import axios from 'axios';
 
 import { success } from '../slices/loginResponseReducer';
+axios.defaults.withCredentials = true;
 
-const loginRepsonse = (memberId, password) => async (dispatch) => {
+const loginResponse = (memberId, password) => async (dispatch) => {
     try {
-        axios.post('http://localhost:8888/api/member/login', { memberId, password })
-        .then((response) => {
-            dispatch(success(response.data));
-        })
-        .catch((error) => {
-          console.log("login Processing Error : ",error);
-        });
-    } catch(error) {
+        const response = await axios.post('http://localhost:8888/api/member/login', { memberId, password });
+        // 로그인 성공 시 세션 정보 저장
+        if (response.data.success) {
+            const getMemberData = response.data;
+            dispatch(success(getMemberData));          
+        }
+    } catch (error) {
         console.error('Error login processing:', error);
     }
 };
 
-export default loginRepsonse;
+export default loginResponse;
 
 
 

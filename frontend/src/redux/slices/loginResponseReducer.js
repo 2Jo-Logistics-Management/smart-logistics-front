@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  data: [], // 초기 상태는 빈 배열로 설정
+  memberData: [], // 초기 상태는 빈 배열로 설정
 };
 
 const loginResponseReducer = createSlice({
@@ -9,10 +9,11 @@ const loginResponseReducer = createSlice({
   initialState,
   reducers: {
     success: (state, action) => {
-      state.data = action.payload;
-    },
+      console.log(action.payload);
+      state.memberData = action.payload;
+    }, 
     close: (state) => {
-        state.data = [];
+        state.memberData = [];
     }
   }
 });

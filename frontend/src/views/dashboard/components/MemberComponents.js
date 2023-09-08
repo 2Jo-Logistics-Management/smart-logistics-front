@@ -1,6 +1,7 @@
   import axios from 'axios';
   import React, { useState, useEffect } from 'react';
-  import { Alert, Checkbox, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
+  import CloseIcon from '@mui/icons-material/Close';
+  import { Alert, Checkbox, IconButton, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
   import {
     Typography,
     Box,
@@ -45,6 +46,9 @@
     // 수정 중복선택 경고 alert창
     const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
 
+    // 관리자 삭제 금지 기능
+    const [deletionInProgress, setDeletionInProgress] = useState(false);
+
     const [newMember, setNewMember] = useState({
       memberName: '',
       memberId: '',
@@ -52,8 +56,21 @@
       memberRole: '',
     });
 
+    // INSERT 취소버튼시 함수
+    const handleCloseModal = () => {
+      setIsModalOpen(false);
+      setSelectedMembers([]); // 선택된 멤버들을 모두 해제
+      window.location.reload();
+    };
+    // MODIFY 취소버튼시 함수
     const handleCloseEditModal = () => {
-      setIsEditModalOpen(false);
+      setIsEditModalOpen(false); // 수정 모달을 닫습니다.
+      setSelectedMembers([]); // 선택된 멤버들을 모두 해제
+    };
+
+    // DELETE 취소버튼시 함수
+    const cancelDeleteMembers = () => {
+      setDeleteConfirmationOpen(false);
       setSelectedMembers([]); // 선택된 멤버들을 모두 해제
     };
 
@@ -82,6 +99,7 @@
     const handleError = error => {
       if (error.response && error.response.data) {
         const errorMessage = error.response.data;
+        console.log("에러 +++++++++++++ : " + errorMessage)
         if (errorMessage.includes('not logged in')) {
           setAlertMessage('로그인이 필요합니다.');
           setIsAlertOpen(true);
@@ -105,12 +123,22 @@
     // INSERT axios
     const handleSaveNewMember = () => {
       if (newMember.memberName && newMember.memberId && newMember.password && newMember.memberRole) {
-        axios.post('http://localhost:8888/api/member/insert', newMember)
+        axios.get(`http://localhost:8888/api/member/checkId/${newMember.memberId}`)
           .then(response => {
-            axios.get('http://localhost:8888/api/member/list')
-              .then(updateMemberList)
-              .catch(handleError);
-            setIsModalOpen(false);
+            const isDuplicate = response.data.data;
+            if (isDuplicate) {
+              setAlertMessage('이미 존재하는 아이디입니다.');
+            } else {
+              axios.post('http://localhost:8888/api/member/insert', newMember)
+                .then(response => {
+                  axios.get('http://localhost:8888/api/member/list')
+                    .then(updateMemberList)
+                    .catch(handleError);
+                  setIsModalOpen(false);
+                  window.location.reload(); // 회원 추가 후 페이지 새로고침
+                })
+                .catch(handleError);
+            }
           })
           .catch(handleError);
       } else {
@@ -120,6 +148,14 @@
     
     // DELETE axios
     const confirmDeleteMembers = () => {
+      // Check if the admin member is selected for deletion
+      if (selectedMembers.some(member => member.memberId === 'admin')) {
+        setAlertMessage('관리자 계정은 삭제할 수 없습니다.');
+        return;
+      }
+    
+      setDeletionInProgress(true); // Mark deletion process as initiated
+        
       let memberNoArr = selectedMembers.map(item => item.memberNo);
       axios.delete('http://localhost:8888/api/member/delete', {
         data: memberNoArr
@@ -129,6 +165,7 @@
           axios.get('http://localhost:8888/api/member/list')
             .then(updateMemberList)
             .catch(handleError);
+          setDeletionInProgress(false); // Mark deletion process as completed
           setDeleteConfirmationOpen(false);
           window.location.reload(); // 삭제가 완료되면 페이지 새로고침
         })
@@ -151,7 +188,22 @@
         console.log("모든 필드를 입력하세요.");
       }
     };
-
+    
+    // 중복체크 axios
+    const handleCheckDuplicateId = () => {
+      axios.get(`http://localhost:8888/api/member/checkId/${newMember.memberId}`)
+        .then(response => {
+          const isDuplicate = response.data.data;
+          if (isDuplicate) {
+            // 중복된 아이디가 존재하는 경우
+            setAlertMessage('이미 존재하는 아이디입니다.');
+          } else {
+            // 중복된 아이디가 존재하지 않는 경우
+            setAlertMessage('사용 가능한 아이디입니다.');
+          }
+        })
+        .catch();
+    };
 
     const handleDeleteMembers = () => {
       if (selectedMembers.length === 0) {
@@ -162,10 +214,6 @@
       setDeleteConfirmationOpen(true);
     };
     
-    
-    const cancelDeleteMembers = () => {
-      setDeleteConfirmationOpen(false);
-    };
 
     const updateMemberList = response => {
       setMemberList(response.data.data);
@@ -182,9 +230,6 @@
       setIsModalOpen(true);
     };
 
-    const handleCloseModal = () => {
-      setIsModalOpen(false);
-    };
     
     // 이름, 아이디 검색기능
     const handleSearch = () => {
@@ -200,7 +245,7 @@
     // 권한 부여(접근제한)
     const handleAlertClose = () => {
       setIsAlertOpen(false);
-      window.location.href = '/';
+      window.location.href = '/auth/login';
     };
 
     // 체크박스 전체 선택 또는 해제
@@ -291,7 +336,7 @@
               <Button variant="contained" color="primary" onClick={handleUpdateMember}>
                 수정
               </Button>
-              <Button variant="contained" color="error" onClick={() => setIsEditModalOpen(false)}>
+              <Button variant="contained" color="error" onClick={handleCloseEditModal}>
                 취소
               </Button>
             </Box>
@@ -301,36 +346,51 @@
 
       {/* DELETE 모달 */}
       <Modal
-        open={deleteConfirmationOpen}
-        onClose={cancelDeleteMembers}
-        aria-labelledby="delete-confirmation-modal-title"
-        aria-describedby="delete-confirmation-modal-description"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+          open={deleteConfirmationOpen}
+          onClose={cancelDeleteMembers}
+          aria-labelledby="delete-confirmation-modal-title"
+          aria-describedby="delete-confirmation-modal-description"
+          style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+          }}
       >
-        <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
-          <div style={{ width: '400px' }}>
-            <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
-              선택한 회원 삭제
-            </Typography>
-            <Typography variant="body1" style={{ marginBottom: '20px' }}>
-              선택한 회원을 삭제하시겠습니까?
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-              <Button variant="contained" color="primary" onClick={confirmDeleteMembers}>
-                삭제
-              </Button>
-              <Button variant="contained" color="error" onClick={cancelDeleteMembers}>
-                취소
-              </Button>
-            </Box>
-          </div>
-        </Paper>
+          <Paper className="modal-paper" style={{ padding: '20px', width: '400px' }}>
+              <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <Typography variant="h6" style={{ fontSize: '18px' }}>
+                          회원 삭제
+                      </Typography>
+                      <IconButton aria-label="닫기" onClick={cancelDeleteMembers}>
+                          <CloseIcon />
+                      </IconButton>
+                  </div>
+                  {deletionInProgress ? (
+                      <Typography variant="body1" style={{ marginBottom: '20px' }}>
+                          삭제 진행 중...
+                      </Typography>
+                  ) : selectedMembers.some(member => member.memberId === 'admin') ? (
+                      <Typography variant="body1" style={{ marginBottom: '20px', color: 'red', fontWeight: 'bold' }}>
+                          관리자 계정은 삭제할 수 없습니다.
+                      </Typography>
+                  ) : (
+                      <>
+                          <Typography variant="body1" style={{ marginBottom: '20px' }}>
+                              선택한 회원을 삭제하시겠습니까?
+                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                              {!selectedMembers.some(member => member.memberId === 'admin') && (
+                                  <Button variant="contained" color="primary" onClick={confirmDeleteMembers} disabled={deletionInProgress}>
+                                      삭제
+                                  </Button>
+                              )}
+                          </Box>
+                      </>
+                  )}
+              </div>
+          </Paper>
       </Modal>
-      
       
       {/* INSERT 모달 */}
       <Modal
@@ -339,65 +399,73 @@
           aria-labelledby="simple-modal-title"
           aria-describedby="simple-modal-description"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
           }}
-        >
+      >
           <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
-            <div style={{ width: '400px' }}>
-              <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 회원 추가</Typography>
-              <TextField
-                label="이름"
-                variant="outlined"
-                type='text'
-                onChange={(e) => handlerSetInputData('memberName',e.target.value)}
-                fullWidth
-                margin="normal"
-                required
-              />
-              <TextField
-                label="아이디"
-                variant="outlined"
-                type='text'
-                onChange={(e) => handlerSetInputData('memberId',e.target.value)}
-                fullWidth
-                margin="normal"
-                required
-              />
-              <TextField
-                label="비밀번호"
-                variant="outlined"
-                type="password"
-                onChange={(e) => handlerSetInputData('password',e.target.value)}
-                fullWidth
-                margin="normal"
-                required
-              />
-              <TextField
-                label="역할"
-                variant="outlined"
-                select // Select 컴포넌트로 변경
-                fullWidth
-                margin="normal"
-                value={newMember.memberRole} // 선택한 역할 표시
-                onChange={(e) => handlerSetInputData('memberRole', e.target.value)}
-                required
-              >
-                <MenuItem value="ADMIN">관리자</MenuItem>
-                <MenuItem value="MEMBER">회원</MenuItem>
-              </TextField>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-                <Button variant="contained" color="primary" onClick={handleSaveNewMember}>
-                  추가
-                </Button>
-                <Button variant="contained" color="error" onClick={handleCloseEditModal}>
-                  취소
-                </Button>
-              </Box>
-            </div>
+              <div style={{ width: '400px' }}>
+                  <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 회원 추가</Typography>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                  <TextField
+                      label="아이디"
+                      variant="outlined"
+                      type="text"
+                      onChange={(e) => handlerSetInputData('memberId', e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      required
+                      error={alertMessage.includes('이미 존재하는 아이디')}
+                      helperText={alertMessage}
+                  />
+                      <Button variant="outlined" color="primary" onClick={handleCheckDuplicateId} style={{ marginLeft: '10px', flex: 1 }} >
+                          중복 체크
+                      </Button>
+                  </div>
+                  <TextField
+                      label="비밀번호"
+                      variant="outlined"
+                      type="password"
+                      onChange={(e) => handlerSetInputData('password', e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      required
+                      
+                  />
+                  <TextField
+                      label="이름"
+                      variant="outlined"
+                      type='text'
+                      onChange={(e) => handlerSetInputData('memberName', e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      required
+                  />
+                  <TextField
+                      label="역할"
+                      variant="outlined"
+                      select
+                      fullWidth
+                      margin="normal"
+                      value={newMember.memberRole}
+                      onChange={(e) => handlerSetInputData('memberRole', e.target.value)}
+                      required
+                  >
+                      <MenuItem value="ADMIN">관리자</MenuItem>
+                      <MenuItem value="MEMBER">회원</MenuItem>
+                  </TextField>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+                      <Button variant="contained" color="primary" onClick={handleSaveNewMember}>
+                          추가
+                      </Button>
+                      <Button variant="contained" color="error" onClick={handleCloseModal}>
+                          취소
+                      </Button>
+                  </Box>
+              </div>
           </Paper>
-        </Modal>
+      </Modal>          
 
       {/* 비로그인/회원 경고 Alert 창 */}
       {isAlertOpen && (
@@ -435,31 +503,28 @@
 
       {/* 수정시 다중 선택 alert창 */}
       <Snackbar
-        open={isSnackbarVisible}
-        autoHideDuration={4000}
-        onClose={() => setIsSnackbarVisible(false)}
-        anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
-        >
-        <Alert
-            severity="warning"
-            variant="filled"
-            onClose={() => setIsSnackbarVisible(false)}
-            sx={{
-            width: '400px', // 너비 조정
-            padding: '15px', // 패딩 조정
-            }}
-        >
-            <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-                중복으로 선택할 수 없습니다.
-            </Typography>
-            <Typography variant="body1">
-                하나의 멤버만 선택해주세요.
-            </Typography>
-        </Alert>
-    </Snackbar>
+          open={isSnackbarVisible}
+          autoHideDuration={4000}
+          onClose={() => setIsSnackbarVisible(false)}
+          anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+          >
+          <Alert
+              severity="warning"
+              variant="filled"
+              onClose={() => setIsSnackbarVisible(false)}
+              sx={{
+              width: '400px', // 너비 조정
+              padding: '15px', // 패딩 조정
+              }}
+          >
+              <Typography variant="h6" sx={{ marginBottom: '10px' }}>
+                하나의 회원을(만) 선택해주세요.
+              </Typography>
+          </Alert>
+      </Snackbar>
 
       <DashboardCard >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, padding: '10px'}}>
             <Typography variant="h4" component="div">
               회원관리
             </Typography>
@@ -496,7 +561,10 @@
             aria-label="simple table"
             sx={{
               whiteSpace: 'nowrap',
-              mt: 2,
+              '& td': {
+                padding: '9px 16px', // 전체 td의 padding 값을 변경
+              },
+              
             }}
           >
             <TableHead
