@@ -1,10 +1,6 @@
 import React, { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import Loadable from '../layouts/full/shared/loadable/Loadable';
-// import { exact } from 'prop-types';
-// import { Tune } from '@mui/icons-material';
-
-
 
 /* ***Layouts**** */
 const FullLayout = Loadable(lazy(() => import('../layouts/full/FullLayout')));
@@ -12,10 +8,6 @@ const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')))
 
 /* ****Pages***** */
 const Dashboard = Loadable(lazy(() => import('../views/dashboard/Dashboard')))
-
-
-
-
 const Error = Loadable(lazy(() => import('../views/authentication/Error')));
 const Register = Loadable(lazy(() => import('../views/authentication/Register')));
 const Login = Loadable(lazy(() => import('../views/authentication/Login')));
@@ -25,24 +17,22 @@ const Account = Loadable(lazy( () => import('../views/dashboard/components/Accou
 const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberComponents")))
 const Warehouse = Loadable(lazy(() => import("../views/dashboard/components/WarehouseComponents")))
 const WarehouseSection = Loadable(lazy(() => import("../views/dashboard/components/WarehouseSection")))
+const Item = Loadable(lazy(() => import('../views/dashboard/components/ItemsComponents')));
 const Router = [
+  
   {
     path: '/',
     element: <FullLayout />,
     children: [
       { path: '/', element: <Navigate to="/dashboard" /> },
       { path: '/dashboard', exact: true, element: <Dashboard /> },
-
-
+      { path: '/item/list', exact:true, element: <Item/>},
       { path: '/Logistic/POrder',exact:true, element:<POrder/>},
       { path: '/Logistic/Receive', exact:true, element:<Receieve/>},
       { path: '/Logistic/Account', exact:true, element:<Account/>},
       { path: "/member/list",exact: true, element:<Member/>},
       { path: "/warehouse/list",exact:true, element:<Warehouse/>},
       { path: "/WarehouseSection/list",exact:true,element:<WarehouseSection/>}
-      
-//      { path '/table/account', exact: true, element: <Account/>},
-//      { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },
   {

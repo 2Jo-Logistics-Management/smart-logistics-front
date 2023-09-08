@@ -10,14 +10,15 @@ import axios from 'axios';
 import { Pagination } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import ko from 'date-fns/locale/ko';
+import { searchRecentPK } from '../../../../redux/thunks/searchRecentPK'
+axios.defaults.withCredentials = true;
 
 
 const PorderModal = () => {
   const dispatch = useDispatch();
   const porderModalState = useSelector((state) => state.porderModal.openModal);
 
-  
+
 
   // 디비에서 selectbox 데이터 가져오기
 
@@ -40,7 +41,7 @@ const PorderModal = () => {
   const currentAccountList = accountList.slice(indexOfFirstAccount, indexOfLastAccount);
   const [selectedAccountContactNumber, setSelectedAccountContactNumber] = useState("");
   const [selectedItemName, setSeletedItemName] = useState("");
-
+  const [selectedDateTime, setSelectedDateTime] = useState("");
 
 
 
@@ -49,6 +50,7 @@ const PorderModal = () => {
       .then(response => {
         const fetchedItems = response.data.data;
         setItems(fetchedItems);
+
       })
       .catch(error => {
         console.error('첫번째 options에서 에러 발생', error);
@@ -66,7 +68,7 @@ const PorderModal = () => {
       });
   }, []);
   const handleAccountRowClick = (clickedItem) => {
-    // 클릭한 거래처의 contactNumber를 선택한 거래처번호 상태 변수에 저장
+
     setSelectedAccountContactNumber(clickedItem.accountNo);
 
   };
@@ -75,34 +77,44 @@ const PorderModal = () => {
   const handleCancel = () => {
     dispatch(close_Modal());
   };
-
-  const handleSave = () => {
+  function formatDate(pOrderDate) {
+    const { format } = require('date-fns');
+    const formattedDate = format(pOrderDate, 'yyyy-MM-dd HH:mm:ss')
+    return formattedDate
+  }
+  const handleSave = async () => {
     try {
-     
-      const itemsWithManageName = selectedItems.map(item => ({ ...item, manageName: manageName }));
+      const itemsWithManageName = selectedItems.map(item => {
+        const { spec, ...rest } = item;
+        return { ...rest };
+      });
+  
       const saveData = {
-        createIp: null,
-        createId: null,
         pOrderItems: itemsWithManageName,
         accountNo: selectedAccountContactNumber,
         pOrderCode: null,
-        pOrderDate: new Date().toLocaleDateString('en-CA')
-        
+        pOrderDate: formatDate(new Date()),
+        manager: manageName,
       }
-      console.log(saveData)
-    
-      itemAddAxios(saveData);
-      dispatch(close_Modal());//위에 dispatch를 사용하면 지워야함
+  
+   
+      await itemAddAxios(saveData);
+  
 
-      
+      dispatch(searchRecentPK());
+      dispatch(close_Modal());
+      setSelectedItems([]);
+  
       swal.fire({
         title: '발주상품 등록 완료.',
         text: '상품이 등록 되었습니다.',
         icon: 'success',
         showConfirmButton: false,
       });
-    } catch (error) {
+  
 
+
+    } catch (error) {
       swal.fire({
         title: '오류 발생',
         text: '데이터 저장 중 오류가 발생했습니다.',
@@ -111,20 +123,18 @@ const PorderModal = () => {
       });
     }
   };
+  
   const handleRowClick = (clickedItem) => {
     // 이미 선택된 로우는 중복 추가하지 않습니다.
     if (!selectedItems.some(item => item.itemCode === clickedItem.itemCode)) {
-      console.log(clickedItem)
       const newItem = {
         itemCode: clickedItem.itemCode,
         pOrderCount: '0', // 초기에는 수량을 0으로 설정합니다.
         pOrderPrice: clickedItem.itemPrice,
-        receiveDeadLine: new Date(),
         pOrderItemPrice: clickedItem.itemPrice,
-        manager: manageName,
-        createIp: null,
-        createId: null,
-        pOrderCode: null
+        pOrderCode: null,
+        spec: clickedItem.spec,
+        itemName: clickedItem.itemName
 
       };
       setSelectedItems(prevItems => [...prevItems, newItem]);
@@ -139,7 +149,7 @@ const PorderModal = () => {
       const newData = prevData.map((item) =>
         item.itemCode === editedData.itemCode ? { ...item, pOrderCount: editedData.pOrderCount, pOrderPrice: editedData.pOrderPrice } : item
       );
-      console.log(newData);
+
 
       return newData;
     });
@@ -154,7 +164,7 @@ const PorderModal = () => {
 
 
   const handleAccountSearchClick = (searchData) => {
-    console.log(searchData);
+   
     axios.get(`http://localhost:8888/api/account/list?accountName=${searchData}`)
       .then(response => {
         const AccountSearchData = response.data.data;
@@ -169,20 +179,21 @@ const PorderModal = () => {
       })
   }
 
-  
 
 
-  const handleDateChange = (index, receiveDeadLine) => {
-    const formattedDate = receiveDeadLine.toLocaleDateString('en-CA'); // "yyyy-MM-dd" 형식으로 변환
+
+  const handleDateChange = (index, receiveDeadline) => {
+    const { format } = require('date-fns');
+    const formattedDate = format(receiveDeadline, 'yyyy-MM-dd HH:mm:ss'); // "yyyy-MM-dd HH:mm:ss" 형식으로 변환
     setSelectedItems(prevItems => {
       const updatedItems = [...prevItems];
-      console.log("Formatted Date:", formattedDate);
-      updatedItems[index].receiveDeadLine = formattedDate;
+      updatedItems[index].receiveDeadline = formattedDate;
       return updatedItems;
     });
   };
 
-
+  const [accountModal, setAccountModal] = useState(false);
+  const [itemModal, setItemModal] = useState(false);
   return (
     <Dialog
       open={porderModalState}
@@ -190,6 +201,7 @@ const PorderModal = () => {
         sx: {
           width: '100%',
           maxWidth: 'xl',
+          height: '80%',
           display: 'flex',
         },
       }}
@@ -198,7 +210,9 @@ const PorderModal = () => {
       <DialogTitle>발주 작성</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex' }}>
-          <Box sx={{ flex: 1, padding: '16px' }}>
+
+          <Dialog open={accountModal}>
+            <DialogTitle>거래처 찾기</DialogTitle>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
               <p style={{ marginRight: '8px' }}>거래처명:</p>
               <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
@@ -223,13 +237,16 @@ const PorderModal = () => {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)'
                     }
                   }}
-                    onClick={() => handleAccountRowClick(accountList)}
+                    onClick={() => {
+                      handleAccountRowClick(accountList);
+                      setAccountModal(false);
+                    }}
                   >
-                    <TableCell sx={{ height: '10px' }}>{accountList.accountName}</TableCell>
-                    <TableCell sx={{ height: '10px' }}>{accountList.accountNo}</TableCell>
-                    <TableCell sx={{ height: '10px' }}>{accountList.representative}</TableCell>
-                    <TableCell sx={{ height: '10px' }}>{accountList.contactNumber}</TableCell>
-                    <TableCell sx={{ height: '10px' }}>{accountList.businessNumber}</TableCell>
+                    <TableCell>{accountList.accountName}</TableCell>
+                    <TableCell>{accountList.axcountNo}</TableCell>
+                    <TableCell >{accountList.representative}</TableCell>
+                    <TableCell >{accountList.contactNumber}</TableCell>
+                    <TableCell >{accountList.businessNumber}</TableCell>
                   </TableRow>
                 ))}
 
@@ -248,8 +265,10 @@ const PorderModal = () => {
                 </TableRow>
               </TableFooter>
             </Table>
-            <hr />
-            <h2>품목선택리스트</h2>
+          </Dialog>
+
+          <Dialog open={itemModal} sx={{margin: 0}} >
+            <DialogTitle>신규 발주품목 추가</DialogTitle>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
               <p style={{ marginRight: '8px' }}>품목명:</p>
               <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
@@ -273,16 +292,14 @@ const PorderModal = () => {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)'
                     }
                   }}>
-                    <TableCell sx={{ height: '10px !important' }}>{item.itemCode}</TableCell>
-                    <TableCell sx={{ height: '10px !important' }}>{item.itemName}</TableCell>
-                    <TableCell sx={{ height: '10px !important' }}>{item.spec}</TableCell>
-                    <TableCell sx={{ height: '10px !important' }}>{item.unit}</TableCell>
-                    <TableCell sx={{ height: '10px !important' }}>{item.itemPrice}</TableCell>
+                    <TableCell >{item.itemCode}</TableCell>
+                    <TableCell >{item.itemName}</TableCell>
+                    <TableCell >{item.spec}</TableCell>
+                    <TableCell >{item.unit}</TableCell>
+                    <TableCell >{item.itemPrice}</TableCell>
                   </TableRow>
                 ))}
-
               </TableBody>
-
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={5}>
@@ -298,42 +315,58 @@ const PorderModal = () => {
               </TableFooter>
 
             </Table>
-          </Box>
+            <DialogActions>
+            <Button color="primary" variant="contained" onClick={() => { setItemModal(false) }}>완료</Button>
+            </DialogActions>
+          </Dialog>
+
           <Box sx={{ flex: 1, padding: '16px' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
-              <p style={{ marginRight: '8px' }}>거래처코드:</p>
-              <TextField
-                sx={{ width: '150px', marginRight: '16px' }}
-                variant="outlined"
-                size="small"
-                value={selectedAccountContactNumber}
-                onChange={(e) => setSelectedAccountContactNumber(e.target.value)}
-              />
-              <p style={{ marginRight: '8px' }}>담당자:</p>
-              <TextField sx={{ width: '150px' }} variant="outlined" size="small"
-                onChange={(e) => setManageName(e.target.value)}
-              />
+
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                <Button onClick={() => setItemModal(true)} color="primary" variant="contained">품목추가</Button>
+              </Box>
+
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                <p style={{ marginRight: '8px' }}>거래처코드:</p>
+                <TextField
+                  sx={{ width: '150px', marginRight: '16px' }}
+                  variant="outlined"
+                  size="small"
+                  value={selectedAccountContactNumber}
+                  onClick={() => setAccountModal(true)}
+                  onChange={(e) => setSelectedAccountContactNumber(e.target.value)}
+                />
+                <p style={{ marginRight: '8px' }}>담당자:</p>
+                <TextField
+                  sx={{ width: '150px' }}
+                  variant="outlined"
+                  size="small"
+                  onChange={(e) => setManageName(e.target.value)}
+                />
+              </Box>
             </Box>
 
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>품번</TableCell>
-                  <TableCell>품명</TableCell>
-                  <TableCell>규격</TableCell>
-                  <TableCell>단가</TableCell>
-                  <TableCell>금액</TableCell>
-                  <TableCell>count</TableCell>
-                  <TableCell>납기일</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell style={{ minWidth: '80px' }}>품번</TableCell>
+                  <TableCell style={{ minWidth: '80px' }}>품명</TableCell>
+                  <TableCell style={{ minWidth: '120px' }}>규격</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>단가</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>금액</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>count</TableCell>
+                  <TableCell style={{ minWidth: '200px' }}>납기일</TableCell>
+                  <TableCell style={{ minWidth: '150px' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {selectedItems.map((item, index) => (
-                  <TableRow key={`selected-${index}`}>
-                    <TableCell>{item.itemCode}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.size}</TableCell>
+                  <TableRow key={`selected-${index}`}
+                    sx={{ padding: 1, marigin: 0 }}>
+                    <TableCell sx={{ padding: 1 }}>{item.itemCode}</TableCell>
+                    <TableCell sx={{ padding: 1 }}>{item.itemName}</TableCell>
+                    <TableCell sx={{ padding: 1 }}>{item.spec}</TableCell>
                     <TableCell>
                       {editedData.itemCode === item.itemCode ? (
                         <input
@@ -348,8 +381,8 @@ const PorderModal = () => {
                       )}
                     </TableCell>
 
-                    <TableCell>{item.pOrderPrice}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ padding: 1 }}>{item.pOrderPrice}</TableCell>
+                    <TableCell sx={{ padding: 1 }}>
                       {editedData.itemCode === item.itemCode ? ( // 현재 행이 수정 중인 행이라면
                         <input
                           type="itemCode"
@@ -362,33 +395,31 @@ const PorderModal = () => {
                         item.pOrderCount
                       )}
                     </TableCell>
-                    <TableCell>
-                      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-                        <Box display="flex" justifyContent="center" alignItems="center">
-                          <DatePicker
-                            renderInput={(props) => <TextField {...props} />}
-                            label="마감 일자"
-                            value={item.receiveDeadLine}
-                            onChange={(receiveDeadLine) => {
-                              handleDateChange(index, receiveDeadLine);
-                            }}
-                            views={['year', 'month', 'day']}
-                            format='yyyy-MM-dd' // 날짜 형식을 변경
-                            slotProps={{ textField: { variant: 'outlined', size: "small" } }}
-                            minDate={new Date('2022-07-01')}
-                            maxDate={new Date("2100-01-01")}
-                          />
-                        </Box>
+                    <TableCell sx={{ padding: 1 }}>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+
+                        <DatePicker
+                          label="조회 기간"
+                          value={selectedDateTime}
+                          onChange={(newDate) => handleDateChange(index, newDate)}
+                          views={['year', 'month', 'day']}
+                          format='yyyy-MM-dd'
+                          slotProps={{ textField: { variant: 'outlined', size: "small" } }}
+                          minDate={new Date()}
+                          maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                        />
+
                       </LocalizationProvider>
 
+
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ padding: 1 }}>
                       {editedData.itemCode === item.itemCode ? ( // 현재 행이 수정 중인 행이라면
                         <>
                           <Button variant="outlined" color="primary" onClick={handleConfirmEdit}>
                             확인
                           </Button>
-                          &nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;
                           <Button
                             variant="outlined"
                             color="secondary"
@@ -405,7 +436,7 @@ const PorderModal = () => {
                           >
                             Edit
                           </Button>
-                          &nbsp;&nbsp;&nbsp;&nbsp;
+                          &nbsp;&nbsp;
                           <Button
                             variant='outlined'
                             onClick={() => handleDelete(item.itemCode)}
