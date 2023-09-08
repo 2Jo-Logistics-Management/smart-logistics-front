@@ -6,7 +6,7 @@ axios.defaults.withCredentials = true;
 const ReceiveAxios = (selectedProducts, dispatch) => {
   if (selectedProducts.length === 1) {
     const productId = selectedProducts[0];
-    console.log(productId);
+
     axios
       .get(`receiveAxios`)
       .then((response) => {

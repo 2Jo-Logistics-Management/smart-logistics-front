@@ -163,7 +163,7 @@ const ReceiveModal = () => {
 
     if (selectedProduct) {
       axios
-        .get("http://localhost:8888/api/receive/availableCount", {
+        .get("http://localhost:8888/api/porder-item/list/remainder", {
           params: {
             porderCode: porderCode,
             porderItemNo: porderItemNo,
@@ -271,7 +271,12 @@ const ReceiveModal = () => {
                 {currentItems.map((porders, index) => {
                   const { porderCode, accountNo, manager, state, porderDate } = porders;
                   return (
-                    <TableRow key={index} onClick={() => handleProductClick(porderCode)}>
+                    <TableRow key={index} onClick={() => handleProductClick(porderCode)}
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      }
+                    }}>
                       <TableCell>{porderCode}</TableCell>
                       <TableCell>{accountNo}</TableCell>
                       <TableCell>{manager}</TableCell>

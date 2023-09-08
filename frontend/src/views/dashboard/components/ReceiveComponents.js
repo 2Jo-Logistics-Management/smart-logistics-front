@@ -288,7 +288,7 @@ const ReceviveComponents = () => {
                   </TableCell>
                   <TableCell>
                     <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                      {realProduct.receiveDate.split(" ")[0]}
+                      {realProduct.receiveDate ? realProduct.receiveDate.split(" ")[0] : "데이터 로딩중"}
                     </Typography>
                   </TableCell>
                 </TableRow>
