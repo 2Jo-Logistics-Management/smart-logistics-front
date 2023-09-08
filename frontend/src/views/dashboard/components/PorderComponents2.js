@@ -18,8 +18,7 @@ import { Edit, Done } from '@mui/icons-material';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from 'axios';
-import pOrderItemUpdateAxios from '../../../axios/POrderItemUpdateAxios'
-import { Pagination } from '@mui/material';
+import { Pagination} from '@mui/material';
 import { LocalizationProvider, DesktopDateTimePicker } from '@mui/x-date-pickers';
 
 
@@ -99,11 +98,11 @@ const PorderComponets2 = () => {
       pOrderCount: pOrderCount,
 
     }
-
     axios.post('http://localhost:8888/api/porder-item/insert', data)
       .then((response) => {
-        console.log(response.data);
         setDataUpdated(true);
+        window.location.reload();
+        // localStorage.clear(); 
       })
       .catch((error) => {
         console.error(error);
@@ -174,7 +173,7 @@ const PorderComponets2 = () => {
     if (editMode[productId]) { // 이 부분을 수정하여 "Save" 버튼을 눌렀을 때만 axios 통신이 일어나도록 함
       const index = tempProducts.findIndex((product) => product.id === productId);
       const updatedProducts = [...tempProducts];
-      
+
       setTempProducts(updatedProducts);
 
     }
@@ -194,9 +193,9 @@ const PorderComponets2 = () => {
     }
   };
   const pOrderItemEdit = () => {
-    
+
     const pOrderItemStateModifyDto = {
-      itemCode : editItemCode,
+      itemCode: editItemCode,
       pOrderCount: editPOrderCount,
       pOrderItemPrice: editPOrderItemPrice,
       pOrderCode: pOrderCode,
@@ -206,7 +205,6 @@ const PorderComponets2 = () => {
 
     axios.patch(`http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`, pOrderItemStateModifyDto)
       .then(() => {
-        console.log("수정성공")
         window.location.reload();
       })
       .catch(() => {
@@ -231,7 +229,7 @@ const PorderComponets2 = () => {
           >
             <TableRow>
               <TableCell>선택</TableCell>
-              <TableCell>발주품목번호</TableCell>
+              <TableCell>발주상태</TableCell>
               <TableCell>품목번호</TableCell>
               <TableCell>가격</TableCell>
               <TableCell>수량</TableCell>
@@ -241,7 +239,8 @@ const PorderComponets2 = () => {
           <TableBody>
             <TableRow>
               <TableCell></TableCell>
-              <TableCell><TextField value={lastPorderItemNo} /></TableCell>
+              <TableCell sx={{ display: "none" }}><TextField value={lastPorderItemNo} /></TableCell>
+              <TableCell><TextField value={"WAIT"} disabled></TextField></TableCell>
               <TableCell><TextField value={itemCode} onClick={handleTextFieldClick} /></TableCell>
               <TableCell><TextField value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
               <TableCell><TextField onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
@@ -272,7 +271,7 @@ const PorderComponets2 = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{product.porderItemNo}</Typography>
+                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{product.porderState}</Typography>
                   </TableCell>
                   <TableCell>
                     {editMode[product.porderItemNo] ? (
@@ -340,7 +339,18 @@ const PorderComponets2 = () => {
 
                   </TableCell>
                   <TableCell>
-                    <Button
+                    {product.porderState === "wait" ? 
+                     
+                      
+                      (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Done />}
+                        />
+                      )
+                      :(
+                      <Button
                       variant="contained"
                       size="small"
                       startIcon={
@@ -360,9 +370,11 @@ const PorderComponets2 = () => {
                     >
                       {editMode[product.porderItemNo] ? 'Save' : 'Edit'}
                     </Button>
+                  )
+                    }
                   </TableCell>
 
-                  <TableCell sx= {{display: "none"}} >
+                  <TableCell sx={{ display: "none" }} >
                     <TextField
                       value={product.porderCode}
                     />
