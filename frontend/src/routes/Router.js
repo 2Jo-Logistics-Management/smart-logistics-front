@@ -18,6 +18,7 @@ const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberC
 const Warehouse = Loadable(lazy(() => import("../views/dashboard/components/WarehouseComponents")))
 const WarehouseSection = Loadable(lazy(() => import("../views/dashboard/components/WarehouseSection")))
 const Router = [
+  
   {
     path: '/',
     element: <FullLayout />,
