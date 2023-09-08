@@ -1,16 +1,16 @@
-import axios from "axios";
 import React, { useState } from "react";
 import {
-    Typography,
-    Box,
-    TextField,
-    Button,
-    Modal,
-    Paper,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  Modal,
+  Paper,
 } from "@mui/material";
+import ItemInsertAxios from "src/axios/item/ItemInsertAxios";
 
 const ItemInsertModal = (props) => {
-  const [ itemInsertDto, setItemInsertDto ] = useState({
+  const [itemInsertDto, setItemInsertDto] = useState({
     itemName: "",
     spec: "",
     unit: "",
@@ -19,26 +19,18 @@ const ItemInsertModal = (props) => {
   const { open, onClose } = props;
 
   const handlerSetInputData = (state, data) => {
-    setItemInsertDto(prevItem => ({
+    setItemInsertDto((prevItem) => ({
       ...prevItem,
-      [state]: data
+      [state]: data,
     }));
-  };
-
-  const handleSaveNewItem = () => {
-    axios.post(`http://localhost:8888/api/item/insert`, itemInsertDto)
-    .then(response => {
-        alert(response.data.data);
-        onClose(true);
-        window.location.reload();
-    })
-    .catch(error => {
-        alert(error.message);
-    })
   };
 
   const closeModal = () => {
     onClose(true);
+  };
+
+  const handleSaveNewItem = () => {
+    ItemInsertAxios(itemInsertDto, closeModal);
   };
 
   return (
@@ -68,7 +60,7 @@ const ItemInsertModal = (props) => {
             label="물품명"
             variant="outlined"
             type="text"
-            onChange={(e) => handlerSetInputData('itemName', e.target.value)}
+            onChange={(e) => handlerSetInputData("itemName", e.target.value)}
             fullWidth
             margin="normal"
             required
