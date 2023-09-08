@@ -1,5 +1,5 @@
-import axios from "axios";
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Typography,
   Box,
@@ -17,32 +17,48 @@ import DashboardCard from "../../../components/shared/DashboardCard";
 import ItemInsertModal from "../components/modal/item/ItemInsertModal";
 import ItemModifyModal from "../components/modal/item/ItemModifyModal";
 import swal from "sweetalert2";
-import ItemDeleteAxios from "src/axios/item/ItemDeleteAxios";
+import { fetchItemsFromApi } from "src/redux/thunks/fetchItemsFromApi";
+import { fetchSearchItemsFromApi } from "src/redux/thunks/fetchSearchItemsFromApi";
+import { changeCurrentPage } from "src/redux/slices/ItemsReducer";
+import {
+  ADD_SELECTED_ITEM,
+  REMOVE_SELECTED_ITEM,
+  REMOVE_SELECTED_ALL_ITEM,
+} from "src/redux/slices/selectedItemsReducer";
+import axios from "axios";
 
 const Item = () => {
   const ITEMS_PER_PAGE = 5; // 한 페이지당 표시할 아이템 개수
-  const [initItems, setInitItems] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0); // 현재 페이지 상태
   const [insertModalOpen, setInsertModalOpen] = useState(false);
   const [modifyModalOpen, setModifyModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState([]);
   const [searchItemCode, setSearchItemCode] = useState("");
   const [searchItemName, setSearchItemName] = useState("");
   const [searchItemPrice, setSearchItemPrice] = useState("");
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
-    axios
-      .get("http://localhost:8888/api/item/list")
-      .then((response) => {
-        setInitItems(response.data.data);
-      })
-      .catch((error) => {
-        alert(error.message);
-      });
-  }, []);
+    dispatch(fetchItemsFromApi());
+  }, [dispatch]);
+
+  const selectedItems =
+    useSelector((state) => state.selectedItems.selectedItems) || [];
+  const reducerItems = useSelector((state) => state.items.items);
+  const reducerItmesToJSON = reducerItems
+    ? JSON.parse(JSON.stringify(reducerItems))
+    : undefined;
+  const initItems = reducerItmesToJSON?.data || [];
+
+  // 현재 페이지에 따른 아이템들 계산
+  const currentPage = useSelector((state) => state.items.currentPage);
+  let offset = currentPage * ITEMS_PER_PAGE;
+  let currentItems = Array.isArray(initItems)
+    ? initItems.slice(offset, offset + ITEMS_PER_PAGE)
+    : [];
+  let totalPage = Math.ceil(initItems.length / ITEMS_PER_PAGE);
 
   const handlePageChange = (event, newPage) => {
-    setCurrentPage(newPage - 1); // 페이지 변경 시 현재 페이지 상태 업데이트
+    dispatch(changeCurrentPage(newPage - 1)); // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
   const itemInsertButtonClick = () => {
@@ -50,9 +66,9 @@ const Item = () => {
   };
 
   const itemModifyButtonClick = () => {
-    if (selectedItem.length === 1) {
+    if (selectedItems.length === 1) {
       setModifyModalOpen(true);
-    } else if (selectedItem.length >= 2) {
+    } else if (selectedItems.length >= 2) {
       alert("수정은 데이터 하나만 가능합니다!");
     } else {
       alert("수정할 데이터를 선택해주세요!");
@@ -60,10 +76,10 @@ const Item = () => {
   };
 
   const itemDeleteButtonClick = () => {
-    if (selectedItem.length >= 1) {
+    if (selectedItems.length >= 1) {
       swal
         .fire({
-          title: `정말로 ${selectedItem.length}의 물품을 삭제하시겠습니까?`,
+          title: `정말로 ${selectedItems.length}개의 물품을 삭제하시겠습니까?`,
           text: "삭제된 데이터는 복구할 수 없습니다.\n",
           icon: "warning",
           showCancelButton: true,
@@ -74,56 +90,67 @@ const Item = () => {
         })
         .then((result) => {
           if (result.isConfirmed) {
-            ItemDeleteAxios(selectedItem);
+            itemDeleteAxios();
           }
         });
     }
   };
 
-  const handleSingleSelect = (item) => {
-    if (selectedItem.includes(item)) {
-      // 이미 체크박스에 선택 됐으면 해당 로직 수행
-      setSelectedItem(selectedItem.filter((m) => m !== item));
-      return;
-    }
-
-    // 체크박스에 체크 되어 있으면 selectedItem의 State를 바꾼다.
-    setSelectedItem((preSelectedItems) => [...preSelectedItems, item]);
-  };
-
-  // 현재 페이지에 따른 아이템들 계산
-  const offset = currentPage * ITEMS_PER_PAGE;
-  const currentItems = Array.isArray(initItems)
-    ? initItems.slice(offset, offset + ITEMS_PER_PAGE)
-    : [];
-
-  const handleSearch = () => {
+  const itemDeleteAxios = () => {
     axios
-      .get("http://localhost:8888/api/item/list", {
-        params: {
-          itemCode: searchItemCode,
-          itemName: searchItemName,
-          itemPrice: searchItemPrice,
-        },
-      })
+      .delete(
+        `http://localhost:8888/api/item/delete?itemCodes=${selectedItems}`
+      )
       .then((response) => {
-        // 요청이 성공하면 응답 데이터를 처리
-        // 처리된 데이터를 상태에 저장하거나 표시하는 로직을 작성
-        setInitItems(response.data.data);
+        swal
+          .fire({
+            title: "삭제 완료",
+            text: "재고가 삭제되었습니다.",
+            icon: "success",
+          })
+          .then(() => {
+            dispatch(REMOVE_SELECTED_ALL_ITEM());
+            window.location.reload();
+          });
       })
       .catch((error) => {
-        // 요청이 실패한 경우 에러 처리 로직을 작성
         swal.fire({
-          title: "해당 데이터는 찾을 수 없습니다.",
-          icon: "warning",
-          showConfirmButton: true, // OK 버튼만 보이도록 설정
-        });
-      })
-      .finally(() => {
-        setSearchItemCode("");
-        setSearchItemName("");
-        setSearchItemPrice("");
+          title: "삭제 실패",
+          text: `${error.data.message}`,
+          icon: "error",
+        })
       });
+  };
+
+  const handleSingleSelect = (event, itemCode) => {
+    if (event.target.checked) {
+      dispatch(ADD_SELECTED_ITEM(itemCode));
+    } else {
+      dispatch(REMOVE_SELECTED_ITEM(itemCode));
+    }
+  };
+
+  const handleSearch = () => {
+    let timerInterval;
+    dispatch(
+      fetchSearchItemsFromApi(searchItemCode, searchItemName, searchItemPrice)
+    );
+    swal.fire({
+      title: "입고물품 조회중",
+      html: "잠시만 기다려주세요",
+      timer: 1000,
+      timerProgressBar: true,
+      didOpen: () => {
+        swal.showLoading();
+        const b = swal.getHtmlContainer().querySelector("b");
+        timerInterval = setInterval(() => {
+          b.textContent = swal.getTimerLeft();
+        }, 1000);
+      },
+      willClose: () => {
+        clearInterval(timerInterval);
+      },
+    });
   };
 
   return (
@@ -235,9 +262,7 @@ const Item = () => {
               }}
             >
               <TableRow>
-                <TableCell>
-                  <Checkbox />
-                </TableCell>
+                <TableCell></TableCell>
                 <TableCell>
                   <Typography variant="h6" fontWeight={600}>
                     물품코드
@@ -281,12 +306,13 @@ const Item = () => {
                       cursor: "pointer",
                     },
                   }}
-                  onClick={() => handleSingleSelect(item)}
                 >
                   <TableCell>
                     <Checkbox
-                      checked={selectedItem.includes(item)}
-                      onChange={(event) => event.stopPropagation()} // 이벤트 전파 차단
+                      checked={selectedItems.includes(item.itemCode)}
+                      onChange={(event) =>
+                        handleSingleSelect(event, item.itemCode)
+                      }
                     />
                   </TableCell>
                   <TableCell>
@@ -338,7 +364,7 @@ const Item = () => {
           >
             {initItems ? (
               <Pagination
-                count={Math.ceil(initItems.length / ITEMS_PER_PAGE)}
+                count={totalPage}
                 page={currentPage + 1}
                 variant="outlined"
                 color="primary"
@@ -359,7 +385,7 @@ const Item = () => {
       <ItemModifyModal
         open={modifyModalOpen}
         onClose={() => setModifyModalOpen(false)}
-        selectedItem={selectedItem}
+        selectedItem={selectedItems}
       />
     </>
   );
