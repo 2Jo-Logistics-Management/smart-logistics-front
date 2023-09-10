@@ -21,7 +21,6 @@ const porderModalReducer = createSlice({
     },
     SAVE_MODAL_DATA: (state,action) => {
       state.modalData.push(action.payload);
-      console.log("reducer에서: "+state.modalData);
       state.openModal = false;
       state.modalData = null;
     }

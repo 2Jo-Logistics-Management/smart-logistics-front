@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import swal from 'sweetalert2';
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TableFooter, TextField } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TableFooter, TextField, Typography } from '@mui/material';
 import { close_Modal } from '../../../../redux/slices/porderModalDuck';
 import { Delete } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -88,7 +88,7 @@ const PorderModal = () => {
         const { spec, ...rest } = item;
         return { ...rest };
       });
-  
+
       const saveData = {
         pOrderItems: itemsWithManageName,
         accountNo: selectedAccountContactNumber,
@@ -96,34 +96,33 @@ const PorderModal = () => {
         pOrderDate: formatDate(new Date()),
         manager: manageName,
       }
-  
-   
+
+      dispatch(close_Modal());
       await itemAddAxios(saveData);
-  
+
 
       dispatch(searchRecentPK());
-      dispatch(close_Modal());
       setSelectedItems([]);
-  
+
       swal.fire({
         title: '발주상품 등록 완료.',
         text: '상품이 등록 되었습니다.',
         icon: 'success',
         showConfirmButton: false,
       });
-  
+
 
 
     } catch (error) {
       swal.fire({
-        title: '오류 발생',
-        text: '데이터 저장 중 오류가 발생했습니다.',
+        title: '발주추가 실패',
+        text: '데이터를 모두 입력해주시기 바랍니다',
         icon: 'error',
         showConfirmButton: false,
       });
     }
   };
-  
+
   const handleRowClick = (clickedItem) => {
     // 이미 선택된 로우는 중복 추가하지 않습니다.
     if (!selectedItems.some(item => item.itemCode === clickedItem.itemCode)) {
@@ -164,7 +163,7 @@ const PorderModal = () => {
 
 
   const handleAccountSearchClick = (searchData) => {
-   
+
     axios.get(`http://localhost:8888/api/account/list?accountName=${searchData}`)
       .then(response => {
         const AccountSearchData = response.data.data;
@@ -194,6 +193,14 @@ const PorderModal = () => {
 
   const [accountModal, setAccountModal] = useState(false);
   const [itemModal, setItemModal] = useState(false);
+
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  useEffect(() => {
+    const newTotalAmount = selectedItems.reduce((acc, item) => acc + (item.pOrderPrice * item.pOrderCount), 0);
+    setTotalAmount(newTotalAmount);
+  }, [selectedItems]);
+
   return (
     <Dialog
       open={porderModalState}
@@ -267,7 +274,7 @@ const PorderModal = () => {
             </Table>
           </Dialog>
 
-          <Dialog open={itemModal} sx={{margin: 0}} >
+          <Dialog open={itemModal} sx={{ margin: 0 }} >
             <DialogTitle>신규 발주품목 추가</DialogTitle>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
               <p style={{ marginRight: '8px' }}>품목명:</p>
@@ -316,7 +323,7 @@ const PorderModal = () => {
 
             </Table>
             <DialogActions>
-            <Button color="primary" variant="contained" onClick={() => { setItemModal(false) }}>완료</Button>
+              <Button color="primary" variant="contained" onClick={() => { setItemModal(false) }}>완료</Button>
             </DialogActions>
           </Dialog>
 
@@ -354,8 +361,8 @@ const PorderModal = () => {
                   <TableCell style={{ minWidth: '80px' }}>품명</TableCell>
                   <TableCell style={{ minWidth: '120px' }}>규격</TableCell>
                   <TableCell style={{ minWidth: '100px' }}>단가</TableCell>
-                  <TableCell style={{ minWidth: '100px' }}>금액</TableCell>
                   <TableCell style={{ minWidth: '100px' }}>count</TableCell>
+                  <TableCell style={{ minWidth: '100px' }}>금액</TableCell>
                   <TableCell style={{ minWidth: '200px' }}>납기일</TableCell>
                   <TableCell style={{ minWidth: '150px' }}>Actions</TableCell>
                 </TableRow>
@@ -380,8 +387,6 @@ const PorderModal = () => {
                         item.pOrderPrice
                       )}
                     </TableCell>
-
-                    <TableCell sx={{ padding: 1 }}>{item.pOrderPrice}</TableCell>
                     <TableCell sx={{ padding: 1 }}>
                       {editedData.itemCode === item.itemCode ? ( // 현재 행이 수정 중인 행이라면
                         <input
@@ -395,6 +400,15 @@ const PorderModal = () => {
                         item.pOrderCount
                       )}
                     </TableCell>
+                    <TableCell sx={{ padding: 1 }}>{editedData.itemCode === item.itemCode ? (
+                      <input
+                        type="itemCode"
+                        value={editedData.pOrderPrice * editedData.pOrderCount} // 두 값을 곱한 결과를 표시
+                        readOnly
+                      />
+                    ) : (
+                      item.pOrderPrice * item.pOrderCount // 두 값을 곱한 결과를 표시
+                    )}</TableCell>
                     <TableCell sx={{ padding: 1 }}>
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
 
@@ -455,6 +469,11 @@ const PorderModal = () => {
           </Box>
         </Box>
       </DialogContent>
+      <Box display="flex" justifyContent="flex-end" style={{ margin: '10px' }}>
+        <Typography variant="subtitle1" fontWeight={600} style={{ color: '#0000ff', border: '2px solid #0000ff', padding: '10px', borderRadius: '5px', background: '#f0f8ff', textAlign: 'center' }}>
+          총 금액: {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(totalAmount)}
+        </Typography>
+      </Box>
       <DialogActions>
         <Button onClick={handleCancel}>Cancel</Button>
         <Button onClick={handleSave} color="primary" variant="contained">

@@ -13,7 +13,7 @@ const pOrderListReducer = createSlice({
 
     },
     searchPOrder: (state, action) =>{
-      console.log("reducer"+JSON.stringify(action.payload))
+      
       state.products = action.payload;
     }
   }
