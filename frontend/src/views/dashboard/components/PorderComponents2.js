@@ -148,11 +148,7 @@ const PorderComponets2 = () => {
         setItems(itemSearchData);
       })
   }
-  const handleRowClick = (item) => {
-    setPOrderPrice(item.itemPrice);
-    setPOrderItemPrice(item.itemPrice);
-    setItemCode(item.itemCode);
-  }
+
 
   // visibleProducts 배열의 마지막 항목의 product.porderItemNo 값을 갱신
   useEffect(() => {
@@ -167,6 +163,16 @@ const PorderComponets2 = () => {
   const [editPOrderItemPrice, setEditPOrderItemPrice] = useState('');
 
   const [pOrderItemNo, setPOrderItemNo] = useState('');
+
+  const handleRowClick = (item) => {
+    setPOrderPrice(item.itemPrice);
+    setPOrderItemPrice(item.itemPrice);
+    setItemCode(item.itemCode);
+    
+    setEditItemCode(item.itemCode);
+    setEditPOrderItemPrice(item.itemPrice);
+  }
+
 
   const handleEdit = (productId) => {
     setEditMode((prevState) => ({ ...prevState, [productId]: !prevState[productId] }));
@@ -193,7 +199,7 @@ const PorderComponets2 = () => {
     }
   };
   const pOrderItemEdit = () => {
-
+      alert("수정")
     const pOrderItemStateModifyDto = {
       itemCode: editItemCode,
       pOrderCount: editPOrderCount,
@@ -206,6 +212,7 @@ const PorderComponets2 = () => {
     axios.patch(`http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`, pOrderItemStateModifyDto)
       .then(() => {
         window.location.reload();
+
       })
       .catch(() => {
         console.log("수정실패")
@@ -233,6 +240,7 @@ const PorderComponets2 = () => {
               <TableCell>품목번호</TableCell>
               <TableCell>가격</TableCell>
               <TableCell>수량</TableCell>
+              <TableCell>금액</TableCell>
               <TableCell>납기일</TableCell>
             </TableRow>
           </TableHead>
@@ -244,7 +252,8 @@ const PorderComponets2 = () => {
               <TableCell><TextField value={itemCode} onClick={handleTextFieldClick} /></TableCell>
               <TableCell><TextField value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
               <TableCell><TextField onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
-              <TableCell>
+              <TableCell>{pOrderPrice*pOrderCount}</TableCell>
+              <TableCell> 
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DesktopDateTimePicker
                     value={selectedDateTime}
@@ -276,7 +285,8 @@ const PorderComponets2 = () => {
                   <TableCell>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        defaultvalue={product.itemCode}
+                        value={editItemCode}
+                        onClick={() => {setIsModalOpen(true)}}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'itemCode', e.target.value);
                           setEditItemCode(e.target.value)
@@ -286,13 +296,12 @@ const PorderComponets2 = () => {
                       <Typography variant="subtitle2" fontWeight={600}>
                         {product.itemCode}
                       </Typography>
-
                     )}
                   </TableCell>
                   <TableCell>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        defaultvalue={product.porderPrice}
+                        value={editPOrderItemPrice}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderPrice', e.target.value)
                           setEditPOrderItemPrice(e.target.value)
@@ -303,7 +312,6 @@ const PorderComponets2 = () => {
                       <Typography variant="subtitle2" fontWeight={600}>
                         {product.porderPrice}
                       </Typography>
-
                     )}
                   </TableCell>
                   <TableCell>
@@ -319,7 +327,16 @@ const PorderComponets2 = () => {
                       <Typography variant="subtitle2" fontWeight={600}>
                         {product.porderCount}
                       </Typography>
-
+                    )}
+                  </TableCell>
+                  <TableCell>
+                  {editMode[product.porderItemNo] ? (
+                      <Typography>
+                        {editPOrderItemPrice*editPOrderCount}</Typography>
+                    ) : (
+                      <Typography>
+                        {product.porderCount*product.pOrderPrice} 
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
@@ -336,12 +353,9 @@ const PorderComponets2 = () => {
                         <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.receiveDeadline}</Typography>
                       )
                     }
-
                   </TableCell>
                   <TableCell>
                     {product.porderState === "wait" ? 
-                     
-                      
                       (
                         <Button
                           variant="contained"

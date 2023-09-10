@@ -36,14 +36,11 @@ const PorderComponets = () => {
   const [selectAll, setSelectAll] = useState(false);
   const porderModalState = useSelector((state) => state.porderModal.openModal);
 
-
   useEffect(() => {
     if (!porderModalState) {
       dispatch(fetchProducts());
     }
   }, [porderModalState, dispatch]);
-
-
 
   const selectedProducts = useSelector((state) => state.selectedProduct.selectedProduct);
   const productsData = useSelector((state) => state.pOrderList.products);
@@ -54,15 +51,11 @@ const PorderComponets = () => {
     ? state.recentPOrderNumber.recentPOrderNumber
     : []
 );
- 
   const [porderCodeState, setPorderCodeState] = useState("");
-
   useEffect(() => {
     if (recentPOrderNumber.data && recentPOrderNumber.data[0]) {
-      console.log("Setting porderCodeState with", recentPOrderNumber.data[0].porderCode); // for debugging
-      setPorderCodeState(recentPOrderNumber.data[0].porderCode);
-  
-      // 페이지를 맨 마지막 페이지로 이동
+      // console.log("Setting porderCodeState with", recentPOrderNumber.data[0].porderCode); // for debugging
+      setPorderCodeState(recentPOrderNumber.data[0].porderCode); 
       const totalPages = Math.ceil(realProducts.length / ITEMS_PER_PAGE);
       setCurrentPage(totalPages - 1);
     }
@@ -100,14 +93,14 @@ const PorderComponets = () => {
       });
   };
 
-
-
+  const [tableRowClickValue, setTableRowClickValue] = useState("");
+// 여기에 수정
   useEffect(() => {
-    if (selectedProducts.length === 1) {
-      dispatch(seletedPOrderList(selectedProducts));
+    if (tableRowClickValue) {
+      dispatch(seletedPOrderList(tableRowClickValue));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProducts]);
+  }, [tableRowClickValue]);
 
   const handleSelectAllChange = () => {
     if (selectAll) {
@@ -217,7 +210,10 @@ const PorderComponets = () => {
         <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
           <Table aria-label="simple table" sx={{ whiteSpace: 'nowrap', mt: 2 }}>
             <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
-              <TableRow style={{ height: '10px' }}>
+              <TableRow sx={{ height: '10px'
+                              ,'&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                              } }} >
                 <TableCell>
                   <Checkbox checked={selectAll} onChange={handleSelectAllChange} />
                 </TableCell>
@@ -255,11 +251,17 @@ const PorderComponets = () => {
             </TableHead>
             <TableBody>
               {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct) => (
-                <TableRow key={realProduct.porderCode} style={{ backgroundColor: realProduct.porderCode === porderCodeState ? 'lightyellow' : 'white' }}>
+                <TableRow key={realProduct.porderCode} sx={{ backgroundColor: realProduct.porderCode === porderCodeState ? 'lightyellow' : 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                } }}
+                 onClick = { () => {setTableRowClickValue(realProduct.porderCode)}}
+                >
                   <TableCell sx={{ padding: 0 }}>
                     <Checkbox
                       checked={selectedProducts.includes(realProduct.porderCode)}
                       onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
+              
                     />
                   </TableCell>
                   <TableCell sx={{ padding: 0 }}>
