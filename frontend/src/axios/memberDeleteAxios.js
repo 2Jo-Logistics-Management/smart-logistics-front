@@ -8,7 +8,6 @@ const memberDeleteAxios = (selectedMember) => {
       data: selectedMember,
     })
     .then((response) => {
-      console.log(response.data);
       swal.fire({
         title: "삭제 완료",
         text: "재고가 삭제되었습니다.",

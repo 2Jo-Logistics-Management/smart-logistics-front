@@ -90,7 +90,7 @@ const WarehouseSection = () => {
             text: '창고가 수정되었습니다.',
             icon: 'success',
         });
-        console.log('Save button clicked:', editedProduct);
+
         // 여기서 데이터 슥하면 되는데 state를 1이면 insert 2이면 modify를 주면 됨
 
         setEditedProduct({});
@@ -99,7 +99,6 @@ const WarehouseSection = () => {
     };
 
     const handleCancel = () => {
-        console.log('모달창 닫기');
 
         setEditedProduct({}); //
         setOpenModal(false);
@@ -127,7 +126,6 @@ const WarehouseSection = () => {
                     text: '재고가 삭제되었습니다.',
                     icon: 'success',
                 });
-                console.log('삭제할 재고:', selectedProducts);
 
                 //여기서 삭제할 데이터 스삭하면 됨
                 setSelectedProducts([]);

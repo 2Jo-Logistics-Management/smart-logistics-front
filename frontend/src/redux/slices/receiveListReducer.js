@@ -10,7 +10,6 @@ const receiveListReducer = createSlice({
   reducers: {
     fetchProductsSuccess: (state, action) => {
       state.products = action.payload;
-      console.log("reducer:"+JSON.stringify(state.products));
 
     },
   }

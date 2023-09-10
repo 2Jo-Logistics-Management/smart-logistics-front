@@ -9,7 +9,6 @@ export const searchWarehouseList = (warehouseName,itemName) => async (dispatch) 
   try {
     const response = await axios.get(`http://localhost:8888/api/warehouse-stock/list?warehouseName=${warehouseName}&itemName=${itemName}`);
     const products = response.data;
-    console.log("검색중" +products)
     dispatch(fetchProductsSuccess(products));
   } catch (error) {
     console.error('Error fetching products:', error);

@@ -10,7 +10,6 @@ const ReceiveAxios = (selectedProducts, dispatch) => {
     axios
       .get(`receiveAxios`)
       .then((response) => {
-        console.log(response.data);
         dispatch({ type: "seletedReceiveDetails", payload: response.data });
       })
       .catch((error) => {
