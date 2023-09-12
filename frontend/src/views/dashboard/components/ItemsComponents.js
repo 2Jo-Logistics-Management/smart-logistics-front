@@ -118,15 +118,17 @@ const Item = () => {
           title: "삭제 실패",
           text: `${error.data.message}`,
           icon: "error",
-        })
+        });
       });
   };
 
   const handleSingleSelect = (event, itemCode) => {
-    if (event.target.checked) {
-      dispatch(ADD_SELECTED_ITEM(itemCode));
-    } else {
+    if (selectedItems.includes(itemCode)) {
       dispatch(REMOVE_SELECTED_ITEM(itemCode));
+      return;
+    } else {
+      dispatch(ADD_SELECTED_ITEM(itemCode));
+      return;
     }
   };
 
@@ -161,14 +163,22 @@ const Item = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            mt: 0.5, // 상단 간격 조절
-            mb: 0.5, // 하단 간격 조절
+            mb: 2, // 하단 간격 조절
+            padding: "10px",
           }}
         >
           <Typography variant="h4" component="div">
             물품관리
           </Typography>
           <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ mr: 2 }}
+              onClick={handleSearch}
+            >
+              조회
+            </Button>
             <Button
               variant="contained"
               color="primary"
@@ -199,7 +209,7 @@ const Item = () => {
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
+            justifyContent: "flex-start",
           }}
         >
           <Typography variant="subtitle2" sx={{ mr: 1 }}>
@@ -235,21 +245,17 @@ const Item = () => {
             value={searchItemPrice}
             onChange={(e) => setSearchItemPrice(e.target.value)}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ mr: 2 }}
-            onClick={handleSearch}
-          >
-            조회
-          </Button>
         </Box>
         <br />
-        <Box sx={{ overflow: "auto", maxHeight: "600px" }}>
+        <Box sx={{ overflow: "auto", maxHeight: "650px" }}>
           <Table
             aria-label="simple table"
             sx={{
               whiteSpace: "nowrap",
+              "& td": {
+                padding: "9px 16px",
+              },
+
               borderCollapse: "collapse", // 테이블 셀 경계선 병합
             }}
           >
@@ -285,7 +291,7 @@ const Item = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="h6" fontWeight={600}>
-                    금액
+                    단가
                   </Typography>
                 </TableCell>
                 <TableCell></TableCell>
@@ -306,6 +312,7 @@ const Item = () => {
                       cursor: "pointer",
                     },
                   }}
+                  onClick={(event) => handleSingleSelect(event, item.itemCode)}
                 >
                   <TableCell>
                     <Checkbox

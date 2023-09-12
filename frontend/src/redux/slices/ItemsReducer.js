@@ -14,6 +14,7 @@ const ItemsReducer = createSlice({
     },
     fetchSearchItemsFromApiSuccess: (state, action) => {
       state.items = action.payload;
+      state.currentPage = 0;
     },
     changeCurrentPage: (state, action) => {
       state.currentPage = action.payload;
