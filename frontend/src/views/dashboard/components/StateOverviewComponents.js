@@ -55,14 +55,14 @@ const MonthlyEarnings = () => {
       bar: {
         horizontal: true,
         distributed: true,
-        barHeight: '60%',
+        barHeight: '50%',
         columnWidth: '42%',
         borderRadius: 4,
         borderRadiusApplication: 'end',
         borderRadiusWhenStacked: 'all',
       },
     },
-    colors: ['#666666', 'rgb(255, 174, 31)', 'rgba(93, 135, 255, 0.85)'],
+    colors: ['#999999', 'rgb(255, 174, 31)', 'rgba(93, 135, 255, 0.85)'],
     stroke: {
       show: true,
       width: 5,
@@ -115,7 +115,7 @@ const MonthlyEarnings = () => {
 
   return (
     <DashboardCard
-      title="State Value"
+      title="발주 상태 현황"
       action={
         <Fab color="secondary" size="medium" sx={{ color: '#ffffff' }}>
           <IconBulb width={24} />
@@ -123,9 +123,6 @@ const MonthlyEarnings = () => {
       }
       footer={chart}
     >
-    <Typography variant="h3" fontWeight="600" mt={4} mb={3}>
-        발주 상태 현황
-    </Typography>
       <>
           
       </>

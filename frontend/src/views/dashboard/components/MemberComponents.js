@@ -1,7 +1,7 @@
   import axios from 'axios';
   import React, { useState, useEffect } from 'react';
   import CloseIcon from '@mui/icons-material/Close';
-  import { Alert, Checkbox, IconButton, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
+  import { Alert, Avatar, Checkbox, Grid, IconButton, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
   import {
     Typography,
     Box,
@@ -16,7 +16,9 @@
     Paper,
   } from '@mui/material';
   import DashboardCard from '../../../components/shared/DashboardCard';
+  import { IconCopy, IconDetails, IconList, IconListDetails, IconRefresh } from '@tabler/icons';
   axios.defaults.withCredentials = true;
+
 
   const Member = () => {
     const [currentMember, setCurrentMember] = useState([]);
@@ -49,11 +51,14 @@
     // 관리자 삭제 금지 기능
     const [deletionInProgress, setDeletionInProgress] = useState(false);
 
+    const [selectedMemberDetail, setSelectedMemberDetail] = useState(null);
+
     const [newMember, setNewMember] = useState({
       memberName: '',
       memberId: '',
       password: '',
       memberRole: '',
+      createDate: '',
     });
 
     // INSERT 취소버튼시 함수
@@ -204,6 +209,37 @@
         })
         .catch();
     };
+    
+    // 데이터 새로고침 함수
+    const handleRefresh = () => {
+      axios.get('http://localhost:8888/api/member/list')
+        .then(updateMemberList)
+        .catch(handleError);
+    };
+
+    useEffect(() => {
+      // 초기 로드 시에 memberNo가 1인 항목의 데이터를 가져오는 axios 요청
+      axios.get(`http://localhost:8888/api/member/detail/1`)
+        .then((response) => {
+          setSelectedMemberDetail(response.data.data);
+        })
+        .catch(handleError);
+    }, []);
+
+    const handleSingleSelect = (member) => {
+      if (selectedMembers.includes(member)) {
+        setSelectedMembers(selectedMembers.filter((m) => m !== member));
+      } else {
+        
+        // 여기서 멤버의 상세 정보를 로드하고, setSelectedMemberDetail로 설정합니다.
+        // 예를 들어, axios를 사용하여 API에서 상세 정보를 가져올 수 있습니다.
+        axios.get(`http://localhost:8888/api/member/detail/${member.memberNo}`)
+          .then((response) => {
+            setSelectedMemberDetail(response.data.data); // 상세 정보 설정
+          })
+          .catch(handleError);
+      }
+    };
 
     const handleDeleteMembers = () => {
       if (selectedMembers.length === 0) {
@@ -259,12 +295,31 @@
     };
 
     // 단일 선택 체크박스 선택 또는 해제
-    const handleSingleSelect = (member) => {
+    const handleSingleCheckboxSelect = (member) => {
       if (selectedMembers.includes(member)) {
         setSelectedMembers(selectedMembers.filter((m) => m !== member));
       } else {
         setSelectedMembers((prevSelectedMembers) => [...prevSelectedMembers, member]);
       }
+  };
+
+    // 왼쪽 그리드 스타일
+    const leftGridStyle = {
+      overflow: 'auto',
+      maxHeight: '650px',
+      borderRadius: '6px', // 모서리를 둥글게 만듭니다.
+      border: '1px solid #e0e0e0', // 테두리를 추가합니다.
+      margin: '12px 0px 8px 8px', // 위쪽에 16px, 나머지 방향은 8px의 공백
+    };
+
+    // 오른쪽 그리드 스타일
+    const rightGridStyle = {
+      overflow: 'auto',
+      maxHeight: '650px',
+      padding: '8px', // 상자 내부 공백
+      borderRadius: '6px', // 모서리를 둥글게 만듭니다.
+      border: '1px solid #e0e0e0', // 테두리를 추가합니다.
+      margin: '8px 8px 8px 8px', // 위쪽에 16px, 나머지 방향은 8px의 공백
     };
     
 
@@ -348,7 +403,7 @@
       <Modal
           open={deleteConfirmationOpen}
           onClose={cancelDeleteMembers}
-          aria-labelledby="delete-confirmation-modal-title"
+          aria-labelledby="delete-confirmation-modal-titlfe"
           aria-describedby="delete-confirmation-modal-description"
           style={{
               display: 'flex',
@@ -524,9 +579,10 @@
       </Snackbar>
 
       <DashboardCard >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, padding: '10px'}}>
-            <Typography variant="h4" component="div">
-              회원관리
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 5}}>
+            <Typography variant="h4" component="div" style={{ display: 'flex', alignItems: 'center' }}>
+                <IconCopy style={{ marginRight: '8px' }} />
+                사원관리
             </Typography>
             <Box>
               <Button variant="contained" color="primary" onClick={handleSearch} sx={{ mr: 2 }}>
@@ -545,131 +601,214 @@
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
             <Typography variant="subtitle2" sx={{ mr: 1 }}>
-              이름
+              사원 이름
             </Typography>
-            <TextField label="이름" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}/>
+            <TextField label="사원 이름" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}/>
             <Typography variant="subtitle2" sx={{ mr: 1 }}>
               아이디
             </Typography>
             <TextField label="아이디" variant="outlined" size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} />
           </Box>
-        </DashboardCard>
-
-      <DashboardCard>
-        <Box sx={{ overflow: 'auto', maxHeight: '650px' }}>
-          <Table
-            aria-label="simple table"
-            sx={{
-              whiteSpace: 'nowrap',
-              '& td': {
-                padding: '9px 16px', // 전체 td의 padding 값을 변경
-              },
-              
-            }}
-          >
-            <TableHead
-              sx={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 1,
-                backgroundColor: '#fff',
+      </DashboardCard>
+      <Box>
+        {/* 왼쪽그리드 */}
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingTop: '12px',
+                paddingLeft: '10px',
               }}
             >
-              <TableRow>
-                <TableCell>
-                  <Checkbox checked={selectAll} onChange={handleSelectAll} />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    No
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    사원이름
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    아이디
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    역할
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    생성일자
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    IP주소
-                  </Typography>
-                </TableCell>
-                <TableCell></TableCell>
-              </TableRow>
-            </TableHead>
-            
-            <TableBody>
-              {currentMember.map((realMember) => (
-                <TableRow key={realMember.memberNo}
+              <Typography
+                variant="h6"
+                component="div"
                 sx={{
-                  '&:hover': {
-                      backgroundColor: '#f5f5f5',
-                      cursor: 'pointer'
-                  }
-              }}
-              onClick={() => handleSingleSelect(realMember)}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedMembers.includes(realMember)}
-                      onChange={() => handleSingleSelect(realMember)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                        {realMember.memberNo}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={400}>
-                          {realMember.memberName}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {realMember.memberId}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {realMember.memberRole}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {realMember.createDate}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {realMember.ipaddress}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
+                  display: 'flex',
+                  alignItems: 'center',
+                  paddingTop: '12px', // 위쪽 패딩 추가
+                }}
+              >             
+              <IconList style={{ fontSize: '1rem', marginRight: '8px' }} /> {/* 아이콘 크기 조절 */}
+              사원 목록
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleRefresh}
+                sx={{
+                  ml: 2,
+                  width: '12px', // 버튼의 너비를 조절
+                  height: '30px', // 버튼의 높이를 조절
+                }}
+              >
+                <IconRefresh />
+              </Button>
+              
+            </div>
+
+            <Box sx={ leftGridStyle }>
+              <Table
+                aria-label="simple table"
+                sx={{
+                  whiteSpace: 'nowrap',
+                  '& th' : {
+                    padding: '8px',
+
+                  },
+                  '& td': {
+                    padding: '2px 8px', // 전체 td의 padding 값을 변경
+                  },
+                  
+                }}
+              >
+                <TableHead
+                  sx={{
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1,
+                    backgroundColor: '#fff',
+                  }}
+                >
+                  <TableRow>
+                    <TableCell>
+                      <Checkbox checked={selectAll} onChange={handleSelectAll} />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="h6" fontWeight={600}>
+                        No
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="h6" fontWeight={600}>
+                        사원이름
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="h6" fontWeight={600}>
+                        아이디
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
                 
-              ))}
-            </TableBody>
-          </Table>
-        </Box>
-      </DashboardCard>
+                <TableBody>
+                  {currentMember.map((realMember) => (
+                    <TableRow
+                      key={realMember.memberNo}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: '#f5f5f5',
+                          cursor: 'pointer'
+                        }
+                      }}
+                      onClick={() => handleSingleSelect(realMember)}
+                    >
+                       <TableCell>
+                        <Checkbox
+                          checked={selectedMembers.includes(realMember)}
+                          onChange={(event) => {
+                            event.stopPropagation()
+                            handleSingleCheckboxSelect(realMember);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="subtitle2" fontWeight={400}>
+                            {realMember.memberNo}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight={400}>
+                              {realMember.memberName}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {realMember.memberId}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          </Grid>
+          {/* 오른쪽 그리드 */}
+          <Grid item xs={12} md={8}>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                paddingTop: '23px', // 위쪽 패딩 추가
+                paddingBottom: '3px',
+                paddingLeft: '10px', // 왼쪽 패딩 추가
+              }}
+            >
+            <IconListDetails style={{ fontSize: '1rem', marginRight: '8px' }} /> {/* 아이콘 크기 조절 */}
+              사원 상세정보
+            </Typography>
+            <Box sx={rightGridStyle}>
+            {selectedMemberDetail && (
+              <Paper
+                elevation={3}
+                sx={{
+                  padding: '16px',
+                  borderRadius: '4px',
+                  backgroundColor: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '16px',
+                  boxShadow: 'none',
+                }}
+              >
+                <Avatar
+                  alt="User Avatar"
+                  src={selectedMemberDetail.avatarUrl}
+                  sx={{
+                    width: '120px',
+                    height: '120px',
+                  }}
+                />
+                <Typography variant="h5" gutterBottom>
+                  사원 상세 정보
+                </Typography>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell><strong>이름:</strong></TableCell>
+                      <TableCell>{selectedMemberDetail.memberName}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><strong>아이디:</strong></TableCell>
+                      <TableCell>{selectedMemberDetail.memberId}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><strong>사용자 권한:</strong></TableCell>
+                      <TableCell>{selectedMemberDetail.memberRole}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><strong>생성 일자:</strong></TableCell>
+                      <TableCell>{selectedMemberDetail.createDate}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </Paper>
+            )}
+          </Box>
+          </Grid>
+        </Grid>
+      </Box>
 
       </>
     );

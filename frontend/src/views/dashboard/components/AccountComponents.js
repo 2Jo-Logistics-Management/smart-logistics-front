@@ -17,15 +17,18 @@ import {
     IconButton,
 } from '@mui/material';
 import DashboardCard from '../../../components/shared/DashboardCard';
+import { IconCopy } from '@tabler/icons';
 
 const Account = () => {
 
     const [currentAccount, setCurrentAccount] = useState([]);
     const [accountList, setAccountList] = useState([]);
 
+    // 거래처 이름, 거래처 코드 검색
     const [searchName, setSearchName] = useState('');
-    const [searchNo, setSearchNo] = useState('');
+    const [searchCode, setSearchCode] = useState('');
 
+    const [alertMessage, setAlertMessage] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // 체크박스 관련 state
@@ -69,6 +72,7 @@ const Account = () => {
     };
 
     const [newAccount, setNewAccount] = useState({
+        accountCode: '',
         accountName: '',
         representative: '',
         contactNumber: '',
@@ -118,27 +122,34 @@ const Account = () => {
 
     // INSERT axios
     const handleSaveNewAccount = () => {
-      if (newAccount.accountName && newAccount.representative && newAccount.contactNumber && newAccount.businessNumber) {
-        
-        if (newAccount.accountName.length > 20) {
-          setAccountNameError(true);
-          return;
-        } else {
-          setAccountNameError(false); // 에러 상태 초기화
-        }
-    
-        axios.post('http://localhost:8888/api/account/insert', newAccount)
-          .then(response => {
-            axios.get('http://localhost:8888/api/account/list')
-              .then(updateAccountList)
-            setIsModalOpen(false);
-          })
-          .catch(error => {
-            console.error(error);
-          });
-      } else {
-        console.log("모든 필드를 입력하세요.");
+      // 필수 입력 값 확인
+      if (
+        !newAccount.accountName ||
+        !newAccount.representative ||
+        !newAccount.contactNumber ||
+        !newAccount.businessNumber
+      ) {
+        // 필수 입력 값이 하나라도 누락된 경우
+        console.log("모든 필수 항목을 입력하세요.");
+        return;
       }
+    
+      if (newAccount.accountName.length > 20) {
+        setAccountNameError(true);
+        return;
+      } else {
+        setAccountNameError(false); // 에러 상태 초기화
+      }
+    
+      axios
+        .post('http://localhost:8888/api/account/insert', newAccount)
+        .then((response) => {
+          axios.get('http://localhost:8888/api/account/list').then(updateAccountList);
+          setIsModalOpen(false);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
     };
 
     // DELETE axios
@@ -175,12 +186,35 @@ const Account = () => {
         }
     };
 
+    
+    // 중복체크 axios
+    const handleCheckDuplicateId = () => {
+      const accountCode = newAccount.accountCode || null; // 값이 없으면 null 할당
+      
+      if (!accountCode) {
+        setAlertMessage('거래처코드를 입력하세요.');
+        return;
+      }
+      axios.get(`http://localhost:8888/api/account/checkAccountCode/${accountCode}`)
+        .then(response => {
+          const isDuplicate = response.data.data;
+          if (isDuplicate) {
+            // 중복된 거래처코드가 존재하는 경우
+            setAlertMessage('이미 존재하는 거래처코드 입니다.');
+          } else {
+            // 중복된 거래처코드가 존재하지 않는 경우
+            setAlertMessage('사용 가능한 거래처코드 입니다.');
+          }
+        })
+        .catch();
+    };
+
     // 조회조건 axios
     const handleSearch = () => {
       const queryParams = [];
   
-      if (searchNo) {
-          queryParams.push(`accountNo=${searchNo}`);
+      if (searchCode) {
+          queryParams.push(`accountCode=${searchCode}`);
       }
       if (searchName) {
           queryParams.push(`accountName=${searchName}`);
@@ -256,6 +290,16 @@ const Account = () => {
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
               거래처 정보 수정
             </Typography>
+            <TextField
+                label="거래처코드"
+                variant="outlined"
+                type='text'
+                value={editingAccount?.accountCode || ''}
+                onChange={(e) => setEditingAccount({ ...editingAccount, accountCode: e.target.value })}
+                fullWidth
+                margin="normal"
+                required
+            />
             <TextField
                 label="거래처명"
                 variant="outlined"
@@ -361,6 +405,29 @@ const Account = () => {
         <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
           <div style={{ width: '400px' }}>
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 거래처 추가</Typography>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+            <TextField
+                label="거래처코드"
+                variant="outlined"
+                type='text'
+                onChange={(e) => {
+                    const value = e.target.value;
+                    setNewAccount((prevAccount) => ({
+                        ...prevAccount,
+                        accountCode: value
+                    }));
+                    setAccountNameError(handleInputValidation(value, 20));
+                }}
+                fullWidth
+                margin="normal"
+                required
+                error={alertMessage.includes('이미 존재하는 거래처코드')}
+                helperText={alertMessage}
+            />
+                <Button variant="outlined" color="primary" onClick={handleCheckDuplicateId} style={{ marginLeft: '10px', flex: 1 }} >
+                          중복 체크
+                </Button>
+            </div>
             <TextField
                 label="거래처명"
                 variant="outlined"
@@ -452,10 +519,12 @@ const Account = () => {
 
         {/* 화면단 코드 start */}
         <DashboardCard>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, padding: '10px' }}>
-                <Typography variant="h4" component="div">
-                    거래처관리
-                </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 5}}>
+              
+              <Typography variant="h4" component="div" style={{ display: 'flex', alignItems: 'center' }}>
+                  <IconCopy style={{ marginRight: '8px' }} />
+                  거래처관리
+              </Typography>
                 <Box>
                     <Button variant="contained" color="primary" onClick={handleSearch} sx={{ mr: 2 }}>
                         조회
@@ -472,7 +541,7 @@ const Account = () => {
                 <Typography variant="subtitle2" sx={{ mr: 1 }}>
                     거래처코드
                 </Typography>
-                <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchNo} onChange={(e) => setSearchNo(e.target.value)}
+                <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
                 onKeyDown={handleEnterKeyPress} />
                 <Typography variant="subtitle2" sx={{ mr: 1 }}>
                     거래처명
@@ -483,13 +552,16 @@ const Account = () => {
         </DashboardCard>
 
         <DashboardCard>
-            <Box sx={{ overflow: 'auto', maxHeight: '650px' }}>
+            <Box sx={{ overflow: 'auto', maxHeight: '650px'}}>
                 <Table
                 aria-label="simple table"
                 sx={{
                     whiteSpace: 'nowrap',
+                    '& th' : {
+                      padding: '0px 0px 16px 0px',
+                    },
                     '& td': {
-                      padding: '9px 16px', // 전체 td의 padding 값을 변경
+                      padding: '2px 0px', // 전체 td의 padding 값을 변경
                     },
                 }}
                 >
@@ -530,11 +602,6 @@ const Account = () => {
                                     사업자번호
                                 </Typography>
                             </TableCell>
-                            <TableCell>
-                              <Typography variant="h6" fontWeight={600}>
-                                생성일자
-                              </Typography>
-                            </TableCell>
                         </TableRow>
                     </TableHead>
 
@@ -562,7 +629,7 @@ const Account = () => {
                                 </TableCell>
                                 <TableCell>
                                     <Typography variant="subtitle2" fontWeight={400}>
-                                        {realAccount.accountNo}
+                                        {realAccount.accountCode}
                                     </Typography>
                                 </TableCell>
                                 <TableCell>
@@ -588,11 +655,6 @@ const Account = () => {
                                 <TableCell>
                                     <Typography variant="subtitle2" fontWeight={400}>
                                         {realAccount.businessNumber}
-                                    </Typography>
-                                </TableCell>
-                                <TableCell>
-                                    <Typography variant="subtitle2" fontWeight={400}>
-                                        {realAccount.createDate}
                                     </Typography>
                                 </TableCell>
                             </TableRow>
