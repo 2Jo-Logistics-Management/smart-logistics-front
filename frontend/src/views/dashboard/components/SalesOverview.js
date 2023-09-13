@@ -56,7 +56,7 @@ const SalesOverview = () => {
 
   return (
     <DashboardCard
-      title="POrder/Receieve Graph"
+      title="연월별 발주/입고 현황"
       action={
         <Select
           labelId="month-dd"
@@ -71,9 +71,6 @@ const SalesOverview = () => {
         </Select>
       }
     >
-    <Typography variant="h3" fontWeight="600" mt={4} mb={4}>
-        입고&발주 수량
-    </Typography>
       <Chart
         options={{
           chart: {
@@ -133,7 +130,7 @@ const SalesOverview = () => {
         }}
         series={chartData.series}
         type="bar"
-        height="613px"
+        height="645px"
       />
     </DashboardCard>
   );

@@ -83,13 +83,10 @@ const WarehouseTopRank = () => {
   };
 
   return (
-    <DashboardCard title="Warehouse Top Rate ">
+    <DashboardCard title="창고 Top5">
       <Grid container spacing={3}>
         <Grid item xs={5} sm={5}>
           {/* 좌측 컨텐츠 */}
-          <Typography variant="h3" fontWeight="700" mt={2}>
-            창고 Top5
-          </Typography>
           <Stack spacing={1} mt={2} direction="column">
             {warehouseData.map((item) => (
               <Stack key={item.warehouseName} direction="row" spacing={1} alignItems="center">
