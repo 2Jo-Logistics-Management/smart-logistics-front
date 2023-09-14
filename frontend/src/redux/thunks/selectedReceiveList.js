@@ -2,15 +2,17 @@
 import axios from "axios";
 import { fetchProductsSuccess } from "../slices/receiveListReducer";
 
-export const receiveListAll =
-  (receiveCode, searchManager, selectedStartDate, selectedEndDate) => async (dispatch) => {
+// 입고 List 뽑는 구문
+// 비동기로 products 데이터를 가져오는 액션 크리에이터 함수
+export const selectedReceiveList =
+  (receiveCode, manager, searchStartDate, searchEndDate) => async (dispatch) => {
     try {
       const response = await axios.get("http://localhost:8888/api/receive/list", {
         params: {
           receiveCode: receiveCode,
-          manager: searchManager,
-          startDate: selectedStartDate,
-          endDate: selectedEndDate,
+          manager: manager,
+          startDate: searchStartDate,
+          endDate: searchEndDate,
         },
       });
       const products = response.data;

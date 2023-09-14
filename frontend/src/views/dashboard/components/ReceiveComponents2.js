@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
 import {
   Typography,
   Box,
@@ -11,30 +10,83 @@ import {
   TextField,
   Button,
   Checkbox,
+  Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
 } from "@mui/material";
-import { Delete, Edit, Done } from "@mui/icons-material";
+import { Edit, Done, Delete } from "@mui/icons-material";
 import DashboardCard from "../../../components/shared/DashboardCard";
 import swal from "sweetalert2";
-// import products from '../../data/memberData';
-import pOrderItemUpdateAxios from "../../../axios/POrderItemUpdateAxios";
-import receiveItemDeleteAxios from "src/axios/receiveItemDeleteAxios";
+import receiveItemUpdateAxios from "src/axios/receiveItemUpdateAxios";
+import axios from "axios";
+import receiveInsertAxios from "src/axios/receiveInsertAxios";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { lightBlue } from "@mui/material/colors";
+import { log } from "util";
 
-const ReceiveComponents = (props) => {
+const ReceiveComponents2 = (props) => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [visibleProducts, setVisibleProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [editMode, setEditMode] = useState({});
   const [receiveProducts, setReceiveProducts] = useState([]);
-
+  const [warehouseOptions, setWarehouseOptions] = useState([]);
+  const [detailPorder, setDetailPorder] = useState(null);
+  const [selectWarehouse, setSelectWarehouse] = useState("");
+  const [receiveCounts, setReceiveCounts] = useState("");
+  const [modifyReceiveItemData, setModfiyReceiveItemData] = useState(null);
+  const [addPOrderProducts, setAddPOrderProducts] = useState([]);
+  const [addReceiveManager, setAddReceiveManager] = useState(null);
+  const [addSelectedDateTime, setAddSelectedDateTime] = useState("");
+  const [receiveItemCounts, setReceiveItemCounts] = useState(
+    Array(addPOrderProducts.length).fill("")
+  );
+  const [selectedWarehouses, setSelectedWarehouses] = useState(
+    Array(addPOrderProducts.length).fill("")
+  );
+  useEffect(() => {
+    axios
+      .get("http://localhost:8888/api/warehouse/list")
+      .then((response) => {
+        setWarehouseOptions(response.data.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching warehouse data:", error);
+      });
+  }, []);
   useEffect(() => {
     if (props.receiveItemData && props.receiveItemData.data) {
       setReceiveProducts(props.receiveItemData.data);
     }
+    if (props.receiveItemData.data === undefined) {
+      setReceiveProducts([]);
+    }
   }, [props.receiveItemData]);
-
   useEffect(() => {
     setVisibleProducts(receiveProducts.slice(0, visibleCount));
   }, [visibleCount, receiveProducts]);
+
+  useEffect(() => {
+    if (props.receiveCheckData === true) {
+      setSelectedProducts([]);
+    }
+  }, [props.receiveCheckData]);
+
+  useEffect(() => {
+    if (props.modifyReceiveCode !== null) {
+      setModfiyReceiveItemData(props.modifyReceiveCode);
+    }
+  }, [props.modifyReceiveCode]);
+
+  useEffect(() => {
+    if (props.modalSelectedProducts.length !== 0) {
+      setAddPOrderProducts(props.modalSelectedProducts);
+    } else if (props.modalSelectedProducts.length === 0) {
+      setAddPOrderProducts([]);
+    }
+  }, [props.modalSelectedProducts]);
 
   const handleScroll = (e) => {
     const { scrollTop, clientHeight, scrollHeight } = e.target;
@@ -46,64 +98,36 @@ const ReceiveComponents = (props) => {
     e.target = clientHeight;
   };
 
-  const dispatch = useDispatch();
-  // const porderModalState = useSelector((state) => state.porderModal);
-  // const porderData = useSelector((state) => state.selectedPOrder.seletedPOrder);
-
   const handleEdit = (receiveCode, receiveItemNo) => {
     setEditMode((prevState) => ({
       ...prevState,
       [`${receiveCode}-${receiveItemNo}`]: !prevState[`${receiveCode}-${receiveItemNo}`],
     }));
-    if (editMode[`${receiveCode}-${receiveItemNo}`]) {
-      const index = receiveProducts.findIndex(
-        (product) => product.receiveCode === receiveCode && product.receiveItemNo === receiveItemNo
-      );
-      if (index !== -1) {
-        const updatedProducts = [...receiveProducts];
-        updatedProducts[index] = receiveProducts[index];
-        setReceiveProducts(updatedProducts);
-        pOrderItemUpdateAxios(updatedProducts[index]);
-      }
-    }
-  };
-  const handleDelete = () => {
-    swal
-      .fire({
-        title: "정말로 삭제하시겠습니까?",
-        text: "삭제된 데이터는 복구할 수 없습니다.\n 해당하는 데이터의 창고재고도 함께 삭제됩니다.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "삭제",
-        cancelButtonText: "취소",
-      })
-      .then((result) => {
-        if (result.isConfirmed) {
-          receiveItemDeleteAxios(selectedProducts); // 여기서 삭제 처리를 호출
-        }
-      });
-  };
 
-  const handleClick = () => {
-    let timerInterval;
-    swal.fire({
-      title: "품목을 조회중",
-      html: "잠시만 기다려주세요",
-      timer: 1000,
-      timerProgressBar: true,
-      didOpen: () => {
-        swal.showLoading();
-        const b = swal.getHtmlContainer().querySelector("b");
-        timerInterval = setInterval(() => {
-          b.textContent = swal.getTimerLeft();
-        }, 1000);
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
-      },
-    });
+    const index = receiveProducts.findIndex(
+      (product) => product.receiveCode === receiveCode && product.receiveItemNo === receiveItemNo
+    );
+
+    if (editMode[`${receiveCode}-${receiveItemNo}`] && index !== -1) {
+      const updatedProduct = receiveProducts[index];
+
+      const updatedProducts = [...receiveProducts];
+      updatedProducts[index] = {
+        ...updatedProduct,
+      };
+      setReceiveProducts(updatedProducts);
+      if (receiveCounts === "" && selectWarehouse === "") {
+        swal.fire({
+          title: "변경 사항 없음",
+          text: "수정할 입력 사항이 없습니다",
+          icon: "warning",
+        });
+      } else if (receiveCounts !== "" || selectWarehouse !== "") {
+        receiveItemUpdateAxios(receiveCode, receiveItemNo, receiveCounts, selectWarehouse);
+      }
+      setReceiveCounts("");
+      setSelectWarehouse("");
+    }
   };
 
   const handleCheckboxChange = (receiveCode, receiveItemNo) => {
@@ -111,7 +135,7 @@ const ReceiveComponents = (props) => {
     const isProductSelected = selectedProducts.some(
       (product) => product.receiveCode === receiveCode && product.receiveItemNo === receiveItemNo
     );
-    console.log("checkBoxTest : " + JSON.stringify(selectedProducts));
+
     if (isProductSelected) {
       setSelectedProducts((prevSelected) =>
         prevSelected.filter(
@@ -122,236 +146,373 @@ const ReceiveComponents = (props) => {
     } else {
       setSelectedProducts((prevSelected) => [...prevSelected, selectedProduct]);
     }
+    props.onCheckboxChange(receiveCode, receiveItemNo, !isProductSelected);
   };
 
-  // const handleCheckboxChange = (receiveCode, receiveItemNo) => {
-  //   const selectedId = `${receiveCode}-${receiveItemNo}`;
-  //   const selectedIndex = selectedProducts.indexOf(selectedId);
-  //   let updatedSelectedProducts = [...selectedProducts];
-  //   if (selectedIndex === -1) {
-  //     updatedSelectedProducts.push(selectedId);
-  //   } else {
-  //     updatedSelectedProducts.splice(selectedIndex, 1);
-  //   }
-  //   setSelectedProducts(updatedSelectedProducts);
-  // };
+  const handleReceiveCountChange = (value, index) => {
+    value = parseFloat(String(value).replace(/,/g, "")) || 0;
+    const updatedReceiveCounts = [...receiveCounts];
+    updatedReceiveCounts[index] = value;
+    setReceiveCounts(updatedReceiveCounts);
+  };
 
-  // const handleCheckboxChange = (productId) => {
-  //   const selectedIndex = selectedProducts.indexOf(productId);
-  //   let updatedSelectedProducts = [...selectedProducts];
-  //   if (selectedIndex === -1) {
-  //     updatedSelectedProducts.push(productId);
-  //   } else {
-  //     updatedSelectedProducts.splice(selectedIndex, 1);
-  //   }
-  //   setSelectedProducts(updatedSelectedProducts);
-  // };
-
-  const handleChange = (productId, property, value) => {
-    if (editMode[productId] && (property === "receiveCount" || property === "warehouseNo")) {
-      const index = receiveProducts.findIndex((product) => product.receiveItemNo === productId);
+  const handleChange = (productId, property, value, index) => {
+    value = parseFloat(String(value).replace(/,/g, "")) || 0;
+    const updatedSelectWarehouse = [...selectWarehouse];
+    updatedSelectWarehouse[index] = value;
+    setSelectWarehouse(updatedSelectWarehouse);
+    if (
+      editMode[productId] &&
+      (property === "receiveCount" || property === "warehouseNo" || property === "warehouseName")
+    ) {
       const updatedProducts = [...receiveProducts];
-      updatedProducts[index][property] = value;
+      const productIndex = updatedProducts.findIndex(
+        (product) => product.receiveItemNo === productId
+      );
+      updatedProducts[productIndex] = {
+        ...updatedProducts[productIndex],
+        [property]: value,
+      };
       setReceiveProducts(updatedProducts);
     }
   };
+  const handleReceiveItemCountChange = (value, index) => {
+    const updatedItemCounts = [...receiveItemCounts];
+    updatedItemCounts[index] = value;
+    setReceiveItemCounts(updatedItemCounts);
+  };
+  const handleSelectedWarehouse = (event, rowIndex) => {
+    const updatedSelectedWarehouses = [...selectedWarehouses];
+    updatedSelectedWarehouses[rowIndex] = event.target.value;
+    setSelectedWarehouses(updatedSelectedWarehouses);
+  };
+  const handleRemoveRow = (indexToRemove) => {
+    setAddPOrderProducts((prevProducts) =>
+      prevProducts.filter((_, index) => index !== indexToRemove)
+    );
+    setSelectedWarehouses((prevWarehouses) =>
+      prevWarehouses.filter((_, index) => index !== indexToRemove)
+    );
+    setReceiveItemCounts((prevCounts) => prevCounts.filter((_, index) => index !== indexToRemove));
+  };
+  const handleSave = async () => {
+    try {
+      const dateTimeObj = new Date(addSelectedDateTime);
+      const year = dateTimeObj.getFullYear();
+      const month = (dateTimeObj.getMonth() + 1).toString().padStart(2, "0");
+      const day = dateTimeObj.getDate().toString().padStart(2, "0");
+      const hours = dateTimeObj.getHours().toString().padStart(2, "0");
+      const minutes = dateTimeObj.getMinutes().toString().padStart(2, "0");
+      const seconds = dateTimeObj.getSeconds().toString().padStart(2, "0");
+      const finalReceiveDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      const insertData = addPOrderProducts.map((product, index) => ({
+        porderCode: product.porderCode,
+        porderItemNo: product.porderItemNo,
+        itemCode: product.itemCode,
+        accountNo: product.accountNo,
+        receiveCount: receiveItemCounts[index],
+        warehouseNo: selectedWarehouses[index],
+      }));
+      const response = await receiveInsertAxios([
+        addReceiveManager,
+        finalReceiveDateTime,
+        { insertData },
+      ]);
+      const receiveNewData = response.data.data;
+      setAddPOrderProducts([]);
+      setAddReceiveManager(null);
+      setAddSelectedDateTime(null);
+      props.addPOrdersClear([]);
+      props.newReceiveCode(receiveNewData);
+    } catch (error) {
+      console.log("오류발생 : ", error.message);
+    }
+  };
+  const handleCancel = () => {
+    setAddPOrderProducts([]);
+    setAddReceiveManager(null);
+    setAddSelectedDateTime(null);
+    props.addPOrdersClear([]);
+  };
 
   return (
-    <DashboardCard>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Box>
-          <Button
-            variant="outlined"
-            size="big"
-            onClick={handleDelete}
-            startIcon={<Delete />}
-            color="error"
-          >
-            삭제
-          </Button>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography variant="subtitle2" sx={{ mr: 1 }}>
-            품목번호:
-          </Typography>
-          <TextField label="품목번호" variant="outlined" size="small" sx={{ mr: 2 }} />
-          <Button onClick={handleClick} variant="contained">
-            Search
-          </Button>
-        </Box>
-      </Box>
-      <br />
-      <Box sx={{ overflow: "auto", maxHeight: "400px" }} onScroll={handleScroll}>
-        <Table aria-label="simple table" sx={{ whiteSpace: "nowrap", mt: 2 }}>
+    <DashboardCard sx={{}} disabled={receiveProducts.length !== 0}>
+      <Box
+        sx={{
+          overflow: "auto",
+          maxHeight: "800px",
+          height: "800px",
+          padding: "3px",
+          marginTop: "-40px",
+          marginLeft: "-15px",
+        }}
+        onScroll={handleScroll}
+      >
+        {addPOrderProducts.length !== 0 && (
+          <Table>
+            <TableRow sx={{ backgroundColor: "rgba(200, 200, 200, 0.5)" }}>
+              <TableCell
+                sx={{ fontSize: "13px", paddingLeft: 30, textAlign: "center", paddingRight: 0 }}
+              >
+                입고담당자
+              </TableCell>
+              <TableCell sx={{ fontSize: "13px", textAlign: "center", paddingLeft: "0px" }}>
+                <TextField
+                  label="입고담당자"
+                  size="small"
+                  value={addReceiveManager}
+                  onChange={(e) => setAddReceiveManager(e.target.value)}
+                />
+              </TableCell>
+
+              <TableCell sx={{ fontSize: "13px" }}>입고일</TableCell>
+              <TableCell sx={{ fontSize: "13px" }}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    label="입고일"
+                    value={addSelectedDateTime}
+                    onChange={(newDate) => setAddSelectedDateTime(newDate)}
+                    renderInput={(props) => <TextField {...props} />}
+                    views={["year", "month", "day"]}
+                    format="yyyy.MM.dd"
+                    defaultValue={new Date()}
+                    slotProps={{ textField: { size: "small" } }}
+                  />
+                </LocalizationProvider>
+              </TableCell>
+              <TableCell sx={{ textAlign: "right" }}>
+                <Button onClick={handleCancel} variant="contained" color="error">
+                  등록취소
+                </Button>
+              </TableCell>
+              <TableCell sx={{ textAlign: "right", width: 120 }}>
+                <Button
+                  color="primary"
+                  variant="contained"
+                  onClick={() => {
+                    if (addReceiveManager === null || receiveItemCounts.length === 0) {
+                      swal.fire({
+                        title: "담당자 또는 수량 입력 필요",
+                        text: "담당자와 수량을 정확히 입력하세요",
+                        icon: "warning",
+                      });
+                    }
+
+                    if (addReceiveManager !== null && receiveItemCounts.length !== 0) {
+                      setAddReceiveManager(addReceiveManager);
+                      handleSave(addReceiveManager, addSelectedDateTime);
+                    }
+                  }}
+                >
+                  등록완료
+                </Button>
+              </TableCell>
+            </TableRow>
+          </Table>
+        )}
+        <Table aria-label="simple table" sx={{ whiteSpace: "nowrap", mt: 2, marginLeft: "-5px" }}>
           <TableHead
             sx={{
               position: "sticky",
               top: 0,
               zIndex: 1,
               backgroundColor: "#fff",
+              padding: "3px",
             }}
           >
-            <TableRow>
-              <TableCell>선택</TableCell>
-              <TableCell>입고순번</TableCell>
-              <TableCell>발주코드</TableCell>
-              <TableCell>발주순번</TableCell>
-              <TableCell>품목코드</TableCell>
-              <TableCell>입고수량</TableCell>
-              <TableCell>창고번호</TableCell>
-              <TableCell>수정</TableCell>
+            <TableRow sx={{ padding: "3px" }}>
+              <TableCell sx={{ width: 215 }}>
+                {addPOrderProducts.length === 0 ? "선택" : "발주번호"}
+              </TableCell>
+              <TableCell sx={{ width: 200 }}>순번</TableCell>
+              <TableCell sx={{ width: 200 }}>품목코드</TableCell>
+              <TableCell sx={{ width: 200 }}>
+                {addPOrderProducts.length === 0 ? "품목이름" : "거래처번호"}
+              </TableCell>
+              <TableCell sx={{ width: 200 }}>입고수량</TableCell>
+              <TableCell sx={{ width: 200 }}>창고</TableCell>
+              <TableCell sx={{ width: 200 }}>
+                {addPOrderProducts.length === 0 ? "발주정보" : ""}
+              </TableCell>
+              <TableCell sx={{ visibility: "hidden" }}>수정</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {visibleProducts.map((product, index) => (
-              <TableRow key={index}>
-                {/* <TableCell>
-                  <Checkbox
-                    checked={selectedProducts.includes(
-                      `${product.receiveCode}-${product.receiveItemNo}`
+          {addPOrderProducts.length !== 0 && (
+            <TableBody>
+              {addPOrderProducts.map((product, index) => (
+                <TableRow
+                  key={index}
+                  sx={{
+                    "&:hover": {
+                      backgroundColor: "rgba(0, 0, 0, 0.04)",
+                    },
+                  }}
+                >
+                  <TableCell>{product.porderCode}</TableCell>
+                  <TableCell>{product.porderItemNo}</TableCell>
+                  <TableCell>{product.itemCode}</TableCell>
+                  <TableCell>{product.accountNo}</TableCell>
+                  <TableCell>
+                    <TextField
+                      size="small"
+                      sx={{ width: 100 }}
+                      label={`잔량: ${product.availableCount}`}
+                      value={receiveItemCounts[index]}
+                      onChange={(e) => handleReceiveItemCountChange(e.target.value, index)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <FormControl sx={{ width: 80 }} size="small">
+                      <Select
+                        value={selectedWarehouses[index] || ""}
+                        onChange={(event) => handleSelectedWarehouse(event, index)}
+                        displayEmpty
+                        inputProps={{ "aria-label": "Select warehouse" }}
+                      >
+                        {warehouseOptions.map((warehouse) => (
+                          <MenuItem key={warehouse.warehouseNo} value={warehouse.warehouseNo}>
+                            {warehouse.warehouseName}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                  <TableCell>
+                    <Button onClick={() => handleRemoveRow(index)}>✖️</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
+          {addPOrderProducts.length === 0 && (
+            <TableBody sx={{ padding: "3px" }} disabled={false}>
+              {visibleProducts.map((product, index) => (
+                <TableRow key={index}>
+                  <TableCell sx={{ padding: "3px" }}>
+                    <Checkbox
+                      checked={selectedProducts.some(
+                        (selectedProduct) =>
+                          selectedProduct.receiveCode === product.receiveCode &&
+                          selectedProduct.receiveItemNo === product.receiveItemNo
+                      )}
+                      onChange={() =>
+                        handleCheckboxChange(product.receiveCode, product.receiveItemNo)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>{product.receiveItemNo}</TableCell>
+                  <TableCell>{product.itemCode}</TableCell>
+                  <TableCell>{product.itemName}</TableCell>
+                  <TableCell>
+                    {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
+                    (product.receiveCount !== null || product.warehouseNo !== null) ? (
+                      <TextField
+                        value={receiveCounts[index] || product.receiveCount}
+                        onChange={(e) => handleReceiveCountChange(e.target.value, index)}
+                        size="small"
+                        sx={{ width: "80px" }}
+                      />
+                    ) : (
+                      <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
+                        {product.receiveCount}
+                      </Typography>
                     )}
-                    onChange={() =>
-                      handleCheckboxChange(product.receiveCode, product.receiveItemNo)
-                    }
-                  />
-                </TableCell> */}
-                <TableCell>
-                  <Checkbox
-                    checked={selectedProducts.some(
-                      (selectedProduct) =>
-                        selectedProduct.receiveCode === product.receiveCode &&
-                        selectedProduct.receiveItemNo === product.receiveItemNo
-                    )}
-                    onChange={() =>
-                      handleCheckboxChange(product.receiveCode, product.receiveItemNo)
-                    }
-                  />
-                </TableCell>
-
-                {/* <TableCell>
-                  <Checkbox
-                    checked={selectedProducts.includes(product.receiveItemNo)}
-                    onChange={() => handleCheckboxChange(product.receiveItemNo)}
-                  />
-                </TableCell> */}
-                <TableCell>
-                  {editMode[product.receiveItemNo] ? (
-                    <TextField
-                      value={product.receiveItemNo}
-                      onChange={(e) =>
-                        handleChange(product.receiveItemNo, "receiveItemNo", e.target.value)
-                      }
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.receiveItemNo}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editMode[product.porderCode] ? (
-                    <TextField
-                      value={product.porderCode}
-                      onChange={(e) =>
-                        handleChange(product.porderCode, "receiveItemNo", e.target.value)
-                      }
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.porderCode}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editMode[product.porderItemNo] ? (
-                    <TextField
-                      value={product.porderItemNo}
-                      onChange={(e) =>
-                        handleChange(product.porderItemNo, "receiveItemNo", e.target.value)
-                      }
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.porderItemNo}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editMode[product.itemCode] ? (
-                    <TextField
-                      value={product.itemCode}
-                      onChange={(e) =>
-                        handleChange(product.itemCode, "receiveItemNo", e.target.value)
-                      }
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.itemCode}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                  (product.receiveCount !== null || product.warehouseNo !== null) ? (
-                    <TextField
-                      value={product.receiveCount}
-                      onChange={(e) =>
-                        handleChange(
-                          `${product.receiveCode}-${product.receiveItemNo}`,
-                          "receiveCount",
-                          e.target.value
-                        )
-                      }
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.receiveCount}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                  (product.receiveCount !== null || product.warehouseNo !== null) ? (
-                    <TextField
-                      value={product.warehouseNo}
-                      onChange={(e) =>
-                        handleChange(
-                          `${product.receiveCode}-${product.receiveItemNo}`,
-                          "warehouseNo",
-                          e.target.value
-                        )
-                      }
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                      {product.warehouseNo}
-                    </Typography>
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={
-                      editMode[`${product.receiveCode}-${product.receiveItemNo}`] ? (
-                        <Done />
+                  </TableCell>
+                  <TableCell>
+                    <FormControl sx={{ width: 80 }} size="small">
+                      {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
+                      (product.receiveCount !== null || product.warehouseNo !== null) ? (
+                        <Select
+                          value={selectWarehouse[index] || product.warehouseName}
+                          onChange={(e) =>
+                            handleChange(
+                              `${product.receiveCode}-${product.receiveItemNo}`,
+                              "warehouseNo",
+                              e.target.value,
+                              index
+                            )
+                          }
+                          sx={{ width: "80px" }}
+                        >
+                          {warehouseOptions.map((option) => (
+                            <MenuItem key={option.warehouseNo} value={option.warehouseNo}>
+                              {option.warehouseName}
+                            </MenuItem>
+                          ))}
+                        </Select>
                       ) : (
-                        <Edit />
-                      )
-                    }
-                    onClick={() => handleEdit(product.receiveCode, product.receiveItemNo)}
-                  >
-                    {editMode[`${product.receiveCode}-${product.receiveItemNo}`] ? "Save" : "Edit"}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+                        <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
+                          {product.warehouseName}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip
+                      title={
+                        <div>
+                          발주코드: {product.porderCode}
+                          <br />
+                          발주순번: {product.porderItemNo}
+                        </div>
+                      }
+                      sx={{ marginRight: "50px" }}
+                    >
+                      <Button
+                        sx={{
+                          marginRight: 10,
+                          marginLeft: 0,
+                        }}
+                      >
+                        ℹ️
+                      </Button>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={
+                        editMode[`${product.receiveCode}-${product.receiveItemNo}`] ? (
+                          <Done />
+                        ) : (
+                          <Edit />
+                        )
+                      }
+                      onClick={() => handleEdit(product.receiveCode, product.receiveItemNo)}
+                      disabled={String(modifyReceiveItemData) !== String(product.receiveCode)}
+                    >
+                      {editMode[`${product.receiveCode}-${product.receiveItemNo}`]
+                        ? "Save"
+                        : "Edit"}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
+          <Tooltip>
+            {detailPorder && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "0",
+                  left: "0",
+                  backgroundColor: "white",
+                  zIndex: 999,
+                  width: "100px",
+                  height: "30px",
+                  border: "1px solid #ccc",
+                }}
+              >
+                {detailPorder.porderCode}
+              </div>
+            )}
+          </Tooltip>
         </Table>
       </Box>
     </DashboardCard>
   );
 };
 
-export default ReceiveComponents;
+export default ReceiveComponents2;
