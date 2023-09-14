@@ -5,7 +5,7 @@ const initialState = {
 };
 
 const selectedItemsReducer = createSlice({
-  name: 'selectedItems',
+  name: "selectedItems",
   initialState,
   reducers: {
     ADD_SELECTED_ITEM: (state, action) => {
@@ -22,7 +22,10 @@ const selectedItemsReducer = createSlice({
   },
 });
 
-export const { ADD_SELECTED_ITEM, REMOVE_SELECTED_ITEM, REMOVE_SELECTED_ALL_ITEM } =
-  selectedItemsReducer.actions;
+export const {
+  ADD_SELECTED_ITEM,
+  REMOVE_SELECTED_ITEM,
+  REMOVE_SELECTED_ALL_ITEM,
+} = selectedItemsReducer.actions;
 
 export default selectedItemsReducer.reducer;

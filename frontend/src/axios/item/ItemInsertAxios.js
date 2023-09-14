@@ -3,31 +3,44 @@ import swal from "sweetalert2";
 
 axios.defaults.withCredentials = true;
 
-const ItemInsertAxios = (itemInsertDto, closeModal) => {
+const ItemInsertAxios = (itemInsertDto, closeModal, isSuccessCallback) => {
+  let timerInterval;
+  
   axios
     .post(`http://localhost:8888/api/item/insert`, itemInsertDto)
     .then((response) => {
+      closeModal();
       swal
         .fire({
-          title: "수정 완료",
-          text: "데이터가 수정되었습니다.",
+          title: "삽입 완료",
+          text: "데이터가 삽입되었습니다.",
           icon: "success",
+          timer: 1000,
+          timerProgressBar: true,
+
+          didOpen: () => {
+            swal.showLoading();
+            const b = swal.getHtmlContainer().querySelector("b");
+            timerInterval = setInterval(() => {
+              b.textContent = swal.getTimerLeft();
+            }, 1000);
+          },
+          willClose: () => {
+            clearInterval(timerInterval);
+          },
         })
         .then(() => {
-          alert(response.data.data);
-          closeModal();
+          isSuccessCallback(response.data.data);
           window.location.reload();
         });
     })
     .catch((error) => {
+      closeModal();
       swal.fire({
-        title: "삭제 실패",
-        text: `${error.data.message}`,
+        title: "삽입 실패",
+        text: `${error}`,
         icon: "error",
       });
-    })
-    .catch((error) => {
-      alert(error.message);
     });
 };
 

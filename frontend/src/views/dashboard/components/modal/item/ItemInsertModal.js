@@ -16,7 +16,7 @@ const ItemInsertModal = (props) => {
     unit: "",
     itemPrice: "",
   });
-  const { open, onClose } = props;
+  const { open, onClose, isSuccessCallback } = props;
 
   const handlerSetInputData = (state, data) => {
     setItemInsertDto((prevItem) => ({
@@ -30,7 +30,7 @@ const ItemInsertModal = (props) => {
   };
 
   const handleSaveNewItem = () => {
-    ItemInsertAxios(itemInsertDto, closeModal);
+    ItemInsertAxios(itemInsertDto, closeModal, isSuccessCallback);
   };
 
   return (
