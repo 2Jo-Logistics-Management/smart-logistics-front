@@ -13,9 +13,12 @@ const searchRecentPOrderNumber = createSlice({
         state.recentPOrderNumber = action.payload; // 여기를 수정하였습니다.
         console.log("최근PORDERNumber" + JSON.stringify(state.recentPOrderNumber));
       },
+      resetRecentPOrderNumber: (state) =>{ 
+        state.recentPOrderNumber = [] ;
+      } ,
     }
   });
   
 
-export const { setRecentPOrderNumber } = searchRecentPOrderNumber.actions;
+export const { setRecentPOrderNumber,resetRecentPOrderNumber} = searchRecentPOrderNumber.actions;
 export default searchRecentPOrderNumber.reducer;
