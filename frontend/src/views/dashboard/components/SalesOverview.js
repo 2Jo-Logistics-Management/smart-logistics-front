@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Select, MenuItem, Typography } from '@mui/material';
+import { Select, MenuItem, Typography, Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DashboardCard from '../../../components/shared/DashboardCard';
 import Chart from 'react-apexcharts';
@@ -55,22 +55,19 @@ const SalesOverview = () => {
   const theme = useTheme();
 
   return (
-    <DashboardCard
-      title="연월별 발주/입고 현황"
-      action={
-        <Select
-          labelId="month-dd"
-          id="month-dd"
-          value={selectedYear}
-          size="small"
-          onChange={handleChange}
-        >
-          <MenuItem value="2021">2021</MenuItem>
-          <MenuItem value="2022">2022</MenuItem>
-          <MenuItem value="2023">2023</MenuItem>
-        </Select>
-      }
-    >
+    <Paper elevation={3} sx={{ padding: '16px', borderRadius: '4px', marginRight: '25px', marginLeft: '25px' }}>
+      <Select
+        labelId="month-dd"
+        id="month-dd"
+        value={selectedYear}
+        size="small"
+        onChange={handleChange}
+        sx={{ marginBottom: '16px' }}
+      >
+        <MenuItem value="2021">2021</MenuItem>
+        <MenuItem value="2022">2022</MenuItem>
+        <MenuItem value="2023">2023</MenuItem>
+      </Select>
       <Chart
         options={{
           chart: {
@@ -130,9 +127,9 @@ const SalesOverview = () => {
         }}
         series={chartData.series}
         type="bar"
-        height="645px"
+        height="515px"
       />
-    </DashboardCard>
+    </Paper>
   );
 };
 

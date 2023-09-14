@@ -1,14 +1,10 @@
 import React, { useEffect, useState  } from 'react';
 import Chart from 'react-apexcharts';
 import { useTheme } from '@mui/material/styles';
-import { Grid, Stack, Typography, Avatar } from '@mui/material';
+import { Grid, Stack, Typography, Avatar, Paper } from '@mui/material';
 import axios from 'axios';
 // 메인페이지 도넛그래프
 
-
-
-
-import DashboardCard from '../../../components/shared/DashboardCard';
 
 const WarehouseTopRank = () => {
   // chart color
@@ -83,7 +79,7 @@ const WarehouseTopRank = () => {
   };
 
   return (
-    <DashboardCard title="창고 Top5">
+    <Paper elevation={3} sx={{ padding: '16px', borderRadius: '4px', margin: '0px 25px' }}>
       <Grid container spacing={3}>
         <Grid item xs={5} sm={5}>
           {/* 좌측 컨텐츠 */}
@@ -113,7 +109,7 @@ const WarehouseTopRank = () => {
           />
         </Grid>
       </Grid>
-    </DashboardCard>
+    </Paper>
   );
 };
 
