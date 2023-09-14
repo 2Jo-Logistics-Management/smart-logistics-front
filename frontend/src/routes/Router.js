@@ -13,8 +13,8 @@ const Register = Loadable(lazy(() => import('../views/authentication/Register'))
 const Login = Loadable(lazy(() => import('../views/authentication/Login')));
 const POrder = Loadable(lazy(() => import('../views/dashboard/components/PorderComponets')))
 const Receieve = Loadable(lazy(() => import('../views/dashboard/components/ReceiveComponents')))
-const Account = Loadable(lazy( () => import('../views/dashboard/components/AccountComponents')))
-const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberComponents")))
+const Account = Loadable(lazy( () => import('../views/dashboard/components/AccountComponents2')))
+const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberComponents2")))
 const Warehouse = Loadable(lazy(() => import("../views/dashboard/components/WarehouseComponents")))
 const WarehouseSection = Loadable(lazy(() => import("../views/dashboard/components/WarehouseSection")))
 const Item = Loadable(lazy(() => import('../views/dashboard/components/ItemsComponents')));

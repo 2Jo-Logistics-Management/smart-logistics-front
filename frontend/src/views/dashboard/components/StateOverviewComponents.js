@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { useTheme } from '@mui/material/styles';
-import { Fab, Typography } from '@mui/material';
-import { IconBulb, IconCurrencyDollar } from '@tabler/icons';
-import DashboardCard from '../../../components/shared/DashboardCard';
+import { Paper, Box } from '@mui/material';
 import axios from 'axios';
 
 const MonthlyEarnings = () => {
@@ -94,7 +92,6 @@ const MonthlyEarnings = () => {
       theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
       fillSeriesColor: false,
     },
-    
   };
   
   const seriescolumnchart = [
@@ -104,30 +101,17 @@ const MonthlyEarnings = () => {
     },
   ];
 
-  const chart = graphData.length > 0 ? (
-    <Chart
-      options={optionscolumnchart}
-      series={seriescolumnchart}
-      type="bar"
-      height="300px"
-    />
-  ) : null;
-
   return (
-    <DashboardCard
-      title="발주 상태 현황"
-      action={
-        <Fab color="secondary" size="medium" sx={{ color: '#ffffff' }}>
-          <IconBulb width={24} />
-        </Fab>
-      }
-      footer={chart}
-    >
-      <>
-          
-      </>
-    </DashboardCard>
-    
+    <Paper elevation={3} sx={{ padding: '16px', borderRadius: '4px', marginLeft: '25px', marginRight: '25px' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Chart
+          options={optionscolumnchart}
+          series={seriescolumnchart}
+          type="bar"
+          width="400px" // 차트의 가로 확장을 100%로 설정
+        />
+      </Box>
+    </Paper>
   );
 };
 

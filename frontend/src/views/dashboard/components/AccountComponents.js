@@ -241,7 +241,6 @@ const Account = () => {
         setDeleteConfirmationOpen(true);
     };
 
-
     const openAddNewAccountForm = () => {
         setNewAccount({
         accountName: '',
