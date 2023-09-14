@@ -12,6 +12,7 @@ import ItemsReducer from "./slices/ItemsReducer";
 import selectedItemsReducer from "./slices/selectedItemsReducer";
 import warehouseSectionListReducer from "./slices/warehouseSectionListReducer";
 import searchRecentPOrderNumber from "./slices/searchRecentPOrderNumber";
+import pOrderInfoCheckboxReducer from "./slices/pOrderInfoCheckboxReducer";
 
 const rootReducer = combineReducers({
   porderModal: porderModalDuck,
@@ -26,7 +27,8 @@ const rootReducer = combineReducers({
   items: ItemsReducer,
   selectedItems: selectedItemsReducer,
   warehouseSectionList : warehouseSectionListReducer,
-  recentPOrderNumber:searchRecentPOrderNumber
+  recentPOrderNumber:searchRecentPOrderNumber,
+  pOrderInfoCheckbox:pOrderInfoCheckboxReducer,
 });
 
 export default rootReducer;
