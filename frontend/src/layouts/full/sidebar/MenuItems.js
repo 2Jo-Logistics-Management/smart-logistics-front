@@ -1,5 +1,5 @@
 import {
-   IconCopy, IconLayoutDashboard, IconTypography, IconSun
+   IconCopy, IconLayoutDashboard, IconTypography, IconHammer
 } from '@tabler/icons';
 import { uniqueId } from 'lodash';
 //사이드바 종류(주소 바꾸고싶으면 여기서 바꾸면 됨)
@@ -27,7 +27,7 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: '품목 관리시스템',
-    icon: IconSun,
+    icon: IconHammer,
     href: '/item/list',
   },
   {

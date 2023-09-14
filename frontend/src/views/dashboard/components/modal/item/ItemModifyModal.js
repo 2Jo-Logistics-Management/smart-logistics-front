@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Box,
@@ -8,10 +8,11 @@ import {
   Paper,
   TextField,
 } from "@mui/material";
+import swal from "sweetalert2";
 
 const ItemModifyModal = (props) => {
 
-  const { open, onClose, selectedItem } = props;
+  const { open, onClose, selectedItem, isSuccessCallback } = props;
 
   const [ itemModifyDto, setItemModifyDto ] = useState({
     itemName: null,
@@ -40,12 +41,27 @@ const ItemModifyModal = (props) => {
 
     axios.patch(`http://localhost:8888/api/item/modify/${selectedItem[0].itemCode}`, itemModifyDto)
     .then(response => {
-        alert(response.data.data);
-        onClose(true);
-        window.location.reload();
+      closeModal();
+      swal
+        .fire({
+          title: "수정 완료",
+          text: "데이터가 수정되었습니다.",
+          icon: "success",
+        })
+        .then(() => {
+          isSuccessCallback();
+          setTimeout(() => {
+            window.location.reload();
+          }, 300)
+        });
     })
     .catch(error => {
-        alert(error.message);
+      closeModal();
+      swal.fire({
+        title: "수정 실패",
+        text: `${error}`,
+        icon: "error",
+      });
     })
   }
 

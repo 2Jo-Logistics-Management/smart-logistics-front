@@ -3,29 +3,69 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   Typography,
   Box,
+  TableContainer,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
   TextField,
+  Paper,
   Button,
   Checkbox,
   Pagination,
+  styled,
 } from "@mui/material";
+import { IconHammer } from "@tabler/icons";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import { tableCellClasses } from "@mui/material/TableCell";
 import DashboardCard from "../../../components/shared/DashboardCard";
 import ItemInsertModal from "../components/modal/item/ItemInsertModal";
 import ItemModifyModal from "../components/modal/item/ItemModifyModal";
 import swal from "sweetalert2";
 import { fetchItemsFromApi } from "src/redux/thunks/fetchItemsFromApi";
 import { fetchSearchItemsFromApi } from "src/redux/thunks/fetchSearchItemsFromApi";
-import { changeCurrentPage } from "src/redux/slices/ItemsReducer";
+import {
+  changeCurrentPage,
+  WILL_BE_CHANGE_ITEM_CODE,
+} from "src/redux/slices/ItemsReducer";
 import {
   ADD_SELECTED_ITEM,
   REMOVE_SELECTED_ITEM,
   REMOVE_SELECTED_ALL_ITEM,
 } from "src/redux/slices/selectedItemsReducer";
 import axios from "axios";
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: theme.palette.common.black,
+    color: theme.palette.common.white,
+    width: "200px",
+  },
+  [`&.${tableCellClasses.body}`]: {
+    fontSize: 40,
+    minWidth: 100,
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(
+  ({ theme, itemCode, changedItemCode }) => ({
+    backgroundColor: itemCode === changedItemCode ? "lightyellow" : "white",
+    "&:nth-of-type(odd)": {
+      backgroundColor:
+        itemCode === changedItemCode
+          ? "lightyellow"
+          : theme.palette.action.hover,
+    },
+    // hide last border
+    "&:last-child td, &:last-child th": {
+      border: 0,
+    },
+  })
+);
 
 const Item = () => {
   const ITEMS_PER_PAGE = 5; // 한 페이지당 표시할 아이템 개수
@@ -34,12 +74,9 @@ const Item = () => {
   const [searchItemCode, setSearchItemCode] = useState("");
   const [searchItemName, setSearchItemName] = useState("");
   const [searchItemPrice, setSearchItemPrice] = useState("");
+  const [changedItemCode, setChangedItemCode] = useState(-1);
 
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(fetchItemsFromApi());
-  }, [dispatch]);
 
   const selectedItems =
     useSelector((state) => state.selectedItems.selectedItems) || [];
@@ -61,6 +98,32 @@ const Item = () => {
     dispatch(changeCurrentPage(newPage - 1)); // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
+  const willBeChangeItemCode =
+    useSelector((state) => state.items.willBeChangeItemCode) || -1;
+
+  const insertSuccessCallback = (callBack) => {
+    dispatch(WILL_BE_CHANGE_ITEM_CODE(callBack));
+
+    // 전체 아이템 개수를 한 페이지당 아이템 개수로 나눈 나머지 계산
+    let remainder = initItems.length % ITEMS_PER_PAGE;
+
+    if (remainder === 0) {
+      dispatch(changeCurrentPage(totalPage));
+    } else {
+      dispatch(changeCurrentPage(totalPage - 1));
+    }
+  };
+
+  useEffect(() => {
+    dispatch(fetchItemsFromApi());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (willBeChangeItemCode !== -1) {
+      setChangedItemCode(willBeChangeItemCode);
+    }
+  }, [willBeChangeItemCode]);
+
   const itemInsertButtonClick = () => {
     setInsertModalOpen(true);
   };
@@ -69,9 +132,17 @@ const Item = () => {
     if (selectedItems.length === 1) {
       setModifyModalOpen(true);
     } else if (selectedItems.length >= 2) {
-      alert("수정은 데이터 하나만 가능합니다!");
+      swal.fire({
+        title: "다수의 데이터 수정 불가",
+        text: "데이터 하나만 지정 해주세요!",
+        icon: "error",
+      });
     } else {
-      alert("수정할 데이터를 선택해주세요!");
+      swal.fire({
+        title: "데이터 선택",
+        text: "수정할 데이터 선택해주세요!",
+        icon: "error",
+      });
     }
   };
 
@@ -93,42 +164,48 @@ const Item = () => {
             itemDeleteAxios();
           }
         });
+    } else {
+      swal.fire({
+        title: "데이터 선택",
+        text: "한개 이상의 데이터를 선택해주세요.",
+        icon: "warning",
+      });
     }
   };
 
-  const itemDeleteAxios = () => {
-    axios
-      .delete(
+  const itemDeleteAxios = async () => {
+    try {
+      await axios.delete(
         `http://localhost:8888/api/item/delete?itemCodes=${selectedItems}`
-      )
-      .then((response) => {
-        swal
-          .fire({
-            title: "삭제 완료",
-            text: "재고가 삭제되었습니다.",
-            icon: "success",
-          })
-          .then(() => {
-            dispatch(REMOVE_SELECTED_ALL_ITEM());
-            window.location.reload();
-          });
-      })
-      .catch((error) => {
-        swal.fire({
-          title: "삭제 실패",
-          text: `${error.data.message}`,
-          icon: "error",
-        });
+      );
+      await swal.fire({
+        title: "삭제 완료",
+        text: "재고가 삭제되었습니다.",
+        icon: "success",
       });
+      dispatch(REMOVE_SELECTED_ALL_ITEM());
+      dispatch(changeCurrentPage(0));
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    } catch (error) {
+      swal.fire({
+        title: "삭제 실패",
+        text: `${error.message}`,
+        icon: "error",
+      });
+    }
   };
 
   const handleSingleSelect = (event, itemCode) => {
-    if (selectedItems.includes(itemCode)) {
-      dispatch(REMOVE_SELECTED_ITEM(itemCode));
-      return;
-    } else {
-      dispatch(ADD_SELECTED_ITEM(itemCode));
-      return;
+    if (event.type === "click") {
+      if (selectedItems.includes(itemCode)) {
+        dispatch(REMOVE_SELECTED_ITEM(itemCode));
+        return;
+      } else {
+        dispatch(ADD_SELECTED_ITEM(itemCode));
+        return;
+      }
     }
   };
 
@@ -155,6 +232,10 @@ const Item = () => {
     });
   };
 
+  const modifySuccessCallback = () => {
+    dispatch(WILL_BE_CHANGE_ITEM_CODE(selectedItems));
+  };
+
   return (
     <>
       <DashboardCard>
@@ -162,26 +243,75 @@ const Item = () => {
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
             mb: 2, // 하단 간격 조절
             padding: "10px",
           }}
         >
-          <Typography variant="h4" component="div">
-            물품관리
+          <IconHammer />
+          <Typography variant="h4" component="div" sx={{ ml: 1}} >
+            품목 관리
           </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+            padding: "10px",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
+              품목 코드
+            </Typography>
+            <TextField
+              label="품목 코드를 입력해주세요"
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+              value={searchItemCode}
+              onChange={(e) => setSearchItemCode(e.target.value)}
+            />
+            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+              품목명
+            </Typography>
+            <TextField
+              label="품목명을 입력해주세요"
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+              value={searchItemName}
+              onChange={(e) => setSearchItemName(e.target.value)}
+            />
+            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+              품목가격
+            </Typography>
+            <TextField
+              label="품목가격을 입력해주세요"
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+              value={searchItemPrice}
+              onChange={(e) => setSearchItemPrice(e.target.value)}
+            />
+          </Box>
           <Box>
             <Button
               variant="contained"
-              color="primary"
+              color="success"
+              size="large"
+              startIcon={<PageviewOutlinedIcon />}
               sx={{ mr: 2 }}
               onClick={handleSearch}
             >
-              조회
+              검색
             </Button>
             <Button
               variant="contained"
               color="primary"
+              size="large"
+              startIcon={<AddCircleOutlineOutlinedIcon />}
               sx={{ mr: 2 }}
               onClick={itemInsertButtonClick}
             >
@@ -190,6 +320,8 @@ const Item = () => {
             <Button
               variant="contained"
               color="info"
+              size="large"
+              startIcon={<AutoFixHighOutlinedIcon />}
               sx={{ mr: 2 }}
               onClick={itemModifyButtonClick}
             >
@@ -198,6 +330,8 @@ const Item = () => {
             <Button
               variant="contained"
               color="error"
+              size="large"
+              startIcon={<DeleteIcon />}
               sx={{ mr: 2 }}
               onClick={itemDeleteButtonClick}
             >
@@ -205,152 +339,103 @@ const Item = () => {
             </Button>
           </Box>
         </Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ mr: 1 }}>
-            물품코드
-          </Typography>
-          <TextField
-            label="물품코드를 입력해주세요"
-            variant="outlined"
-            size="small"
-            sx={{ mr: 2 }}
-            value={searchItemCode}
-            onChange={(e) => setSearchItemCode(e.target.value)}
-          />
-          <Typography variant="subtitle2" sx={{ mr: 1 }}>
-            물품명
-          </Typography>
-          <TextField
-            label="물품명을 입력해주세요"
-            variant="outlined"
-            size="small"
-            sx={{ mr: 2 }}
-            value={searchItemName}
-            onChange={(e) => setSearchItemName(e.target.value)}
-          />
-          <Typography variant="subtitle2" sx={{ mr: 1 }}>
-            물품가격
-          </Typography>
-          <TextField
-            label="물품가격을 입력해주세요"
-            variant="outlined"
-            size="small"
-            sx={{ mr: 2 }}
-            value={searchItemPrice}
-            onChange={(e) => setSearchItemPrice(e.target.value)}
-          />
-        </Box>
-        <br />
         <Box sx={{ overflow: "auto", maxHeight: "650px" }}>
-          <Table
-            aria-label="simple table"
-            sx={{
-              whiteSpace: "nowrap",
-              "& td": {
-                padding: "9px 16px",
-              },
-
-              borderCollapse: "collapse", // 테이블 셀 경계선 병합
-            }}
-          >
-            <TableHead
+          <TableContainer component={Paper}>
+            <Table
+              aria-label="customized table"
               sx={{
-                position: "sticky",
-                top: 0,
-                zIndex: 1,
-                backgroundColor: "#fff",
+                minWidth: 700,
               }}
             >
-              <TableRow>
-                <TableCell></TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    물품코드
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    물품명
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    규격
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    단위
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" fontWeight={600}>
-                    단가
-                  </Typography>
-                </TableCell>
-                <TableCell></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody
-              sx={{
-                mt: 0.5, // 상단 간격 조절
-                mb: 0.5, // 하단 간격 조절
-              }}
-            >
-              {currentItems.map((item) => (
-                <TableRow
-                  key={item.itemCode}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "#f5f5f5",
-                      cursor: "pointer",
-                    },
-                  }}
-                  onClick={(event) => handleSingleSelect(event, item.itemCode)}
-                >
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedItems.includes(item.itemCode)}
-                      onChange={(event) =>
-                        handleSingleSelect(event, item.itemCode)
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {item.itemCode}
+              <TableHead>
+                <StyledTableRow>
+                  <StyledTableCell></StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="h6" fontWeight={600}>
+                      품목코드
                     </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {item.itemName}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="h6" fontWeight={600}>
+                      품목명
                     </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {item.spec}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="h6" fontWeight={600}>
+                      규격
                     </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {item.unit}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="h6" fontWeight={600}>
+                      단위
                     </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight={400}>
-                      {item.itemPrice}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="h6" fontWeight={600}>
+                      단가
                     </Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </StyledTableCell>
+                </StyledTableRow>
+              </TableHead>
+              <TableBody
+                sx={{
+                  mt: 0.5, // 상단 간격 조절
+                  mb: 0.5, // 하단 간격 조절
+                }}
+              >
+                {currentItems.map((item) => (
+                  <StyledTableRow
+                    key={item.itemCode}
+                    itemCode={item.itemCode}
+                    changedItemCode={changedItemCode}
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "#f5f5f5",
+                        cursor: "pointer",
+                      },
+                    }}
+                    onClick={(event) =>
+                      handleSingleSelect(event, item.itemCode)
+                    }
+                  >
+                    <StyledTableCell align="center">
+                      <Checkbox
+                        checked={selectedItems.includes(item.itemCode)}
+                        onChange={(event) =>
+                          handleSingleSelect(event, item.itemCode)
+                        }
+                      />
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      <Typography variant="subtitle2" fontWeight={400}>
+                        {item.itemCode}
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell align="left">
+                      <Typography variant="subtitle2" fontWeight={400}>
+                        {item.itemName}
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell align="left">
+                      <Typography variant="subtitle2" fontWeight={400}>
+                        {item.spec}
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell align="left">
+                      <Typography variant="subtitle2" fontWeight={400}>
+                        {item.unit}
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell align="left">
+                      <Typography variant="subtitle2" fontWeight={400}>
+                        {item.itemPrice}
+                      </Typography>
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Box>
         {/* 페이지 네이션 */}
         <Box
@@ -374,7 +459,6 @@ const Item = () => {
                 count={totalPage}
                 page={currentPage + 1}
                 variant="outlined"
-                color="primary"
                 onChange={handlePageChange}
               />
             ) : (
@@ -388,11 +472,13 @@ const Item = () => {
       <ItemInsertModal
         open={insertModalOpen}
         onClose={() => setInsertModalOpen(false)}
+        isSuccessCallback={insertSuccessCallback}
       />
       <ItemModifyModal
         open={modifyModalOpen}
         onClose={() => setModifyModalOpen(false)}
-        selectedItem={selectedItems}
+        selectedItem={initItems.filter((i) => selectedItems[0] === i.itemCode)}
+        isSuccessCallback={() => modifySuccessCallback()}
       />
     </>
   );
