@@ -1,26 +1,48 @@
-  import axios from 'axios';
   import React, { useState, useEffect } from 'react';
+  import axios from 'axios';
   import CloseIcon from '@mui/icons-material/Close';
-  import { Alert, Avatar, Checkbox, Grid, IconButton, MenuItem, Snackbar } from '@mui/material'; // Select와 MenuItem 추가
+  import PropTypes from 'prop-types';
+  import FormControlLabel from '@mui/material/FormControlLabel';
+  import Switch from '@mui/material/Switch';
+  import DeleteIcon from '@mui/icons-material/Delete';
+  import FilterListIcon from '@mui/icons-material/FilterList';
+  import { visuallyHidden } from '@mui/utils';
+  import { Avatar, Grid, MenuItem } from '@mui/material'; // Select와 MenuItem 추가
   import {
     Typography,
-    Box,
-    Table,
-    TableBody,
-    TableCell,
+    Checkbox,
+    IconButton,
+    Tooltip,
+    Modal, 
+    Paper, 
+    Box, 
+    Table, 
+    TableBody, 
+    TableCell, 
+    TableContainer, 
     TableHead,
+    TablePagination,
     TableRow,
-    TextField,
+    TableSortLabel,
+    Toolbar,
+    alpha,
     Button,
-    Modal,
-    Paper,
+    TextField,
   } from '@mui/material';
-  import DashboardCard from '../../../components/shared/DashboardCard';
-  import { IconCopy, IconDetails, IconList, IconListDetails, IconRefresh } from '@tabler/icons';
+  import { IconCopy, IconList, IconListDetails, IconRefresh } from '@tabler/icons';
   axios.defaults.withCredentials = true;
 
 
   const Member = () => {
+
+    
+    const [order, setOrder] = React.useState('asc');
+    const [orderBy, setOrderBy] = React.useState('memberNo');
+    const [selected, setSelected] = React.useState([]);
+    const [page, setPage] = React.useState(0);
+    const [dense, setDense] = React.useState(false);
+    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+
     const [currentMember, setCurrentMember] = useState([]);
     const [memberList, setMemberList] = useState([]);
 
@@ -35,18 +57,12 @@
     // 체크박스 관련 state
     const [selectedMembers, setSelectedMembers] = useState([]);
 
-    // 전체 선택 체크박스 관련 state
-    const [selectAll, setSelectAll] = useState(false);
-
     // 삭제 알림창 
     const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
     
     // 수정 관련 state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
-
-    // 수정 중복선택 경고 alert창
-    const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
 
     // 관리자 삭제 금지 기능
     const [deletionInProgress, setDeletionInProgress] = useState(false);
@@ -60,6 +76,13 @@
       memberRole: '',
       createDate: '',
     });
+
+    // Enter시 검색
+    const handleEnterKeyPress = (event) => {
+      if (event.key === 'Enter') {
+          handleSearch();
+      }
+    };
 
     // INSERT 취소버튼시 함수
     const handleCloseModal = () => {
@@ -79,15 +102,163 @@
       setSelectedMembers([]); // 선택된 멤버들을 모두 해제
     };
 
-    // 수정 중복선택 경고 alert창    
-    const handleEditMembers = () => {
-      if (selectedMembers.length !== 1) {
-        setIsSnackbarVisible(true); // Show the snackbar
-        return;
+    function descendingComparator(a, b, orderBy) {
+      if (b[orderBy] < a[orderBy]) {
+        return -1;
       }
-  
-      setEditingMember({ ...selectedMembers[0] });
-      setIsEditModalOpen(true);
+      if (b[orderBy] > a[orderBy]) {
+        return 1;
+      }
+      return 0;
+    }
+
+    function getComparator(order, orderBy) {
+      return order === 'desc'
+        ? (a, b) => descendingComparator(a, b, orderBy)
+        : (a, b) => -descendingComparator(a, b, orderBy);
+    }
+
+    function stableSort(array, comparator) {
+      const stabilizedThis = array.map((el, index) => [el, index]);
+      stabilizedThis.sort((a, b) => {
+        const order = comparator(a[0], b[0]);
+        if (order !== 0) {
+          return order;
+        }
+        return a[1] - b[1];
+      });
+      return stabilizedThis.map((el) => el[0]);
+    }
+
+
+
+    const headCells = [
+      {
+        id: 'memberNo',
+        numeric: false,
+        disablePadding: false,
+        label: '사원번호',
+      },
+      {
+        id: 'memberName',
+        numeric: false,
+        disablePadding: true,
+        label: '사원이름',
+      },
+      {
+        id: 'memberId',
+        numeric: false,
+        disablePadding: true,
+        label: '아이디',
+      },
+    ];
+
+    function EnhancedTableHead(props) {
+      const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
+        props;
+      const createSortHandler = (property) => (event) => {
+        onRequestSort(event, property);
+      };
+
+      return (
+        <TableHead>
+          <TableRow>
+            <TableCell padding="checkbox">
+              <Checkbox
+                color="primary"
+                indeterminate={numSelected > 0 && numSelected < rowCount}
+                checked={rowCount > 0 && numSelected === rowCount}
+                onChange={onSelectAllClick}
+                inputProps={{
+                  'aria-label': 'select all desserts',
+                }}
+              />
+            </TableCell>
+            {headCells.map((headCell) => (
+              <TableCell
+                key={headCell.id}
+                align={headCell.numeric ? 'right' : 'left'}
+                padding={headCell.disablePadding ? 'none' : 'normal'}
+                sortDirection={orderBy === headCell.id ? order : false}
+                sx={{
+                  fontSize: 'h6.fontSize', // 글자 크기를 h6로 설정
+                  fontWeight: 600, // 글꼴 두께를 600으로 설정
+                }}
+              >
+                <TableSortLabel
+                  active={orderBy === headCell.id}
+                  direction={orderBy === headCell.id ? order : 'asc'}
+                  onClick={createSortHandler(headCell.id)}
+                >
+                  {headCell.label}
+                  {orderBy === headCell.id ? (
+                    <Box component="span" sx={visuallyHidden}>
+                      {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
+                    </Box>
+                  ) : null}
+                </TableSortLabel>
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+      );
+    }
+
+    // Enhance 함수
+    EnhancedTableHead.propTypes = {
+      numSelected: PropTypes.number.isRequired,
+      onRequestSort: PropTypes.func.isRequired,
+      onSelectAllClick: PropTypes.func.isRequired,
+      order: PropTypes.oneOf(['asc', 'desc']).isRequired,
+      orderBy: PropTypes.string.isRequired,
+      rowCount: PropTypes.number.isRequired,
+    };
+
+    function EnhancedTableToolbar(props) {
+      const { numSelected } = props;
+
+      return (
+        <Toolbar
+          sx={{
+            pl: { sm: 2 },
+            pr: { xs: 1, sm: 1 },
+            ...(numSelected > 0 && {
+              bgcolor: (theme) =>
+                alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+            }),
+          }}
+        >
+          {numSelected > 0 ? (
+            <Typography
+              sx={{ flex: '1 1 100%' }}
+              color="inherit"
+              variant="subtitle1"
+              component="div"
+            >
+              {numSelected} selected
+            </Typography>
+          ) : 
+            null}
+
+          {numSelected > 0 ? (
+            <Tooltip title="Delete">
+              <IconButton onClick={setDeleteConfirmationOpen}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Filter list">
+              <IconButton sx={{ marginLeft: 'auto' }}>
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Toolbar>
+      );
+    }
+
+    EnhancedTableToolbar.propTypes = {
+      numSelected: PropTypes.number.isRequired,
     };
 
     // LIST axios
@@ -153,21 +324,18 @@
     
     // DELETE axios
     const confirmDeleteMembers = () => {
-      // Check if the admin member is selected for deletion
-      if (selectedMembers.some(member => member.memberId === 'admin')) {
+      if (selected.some(member => member.memberId === 'admin')) {
         setAlertMessage('관리자 계정은 삭제할 수 없습니다.');
         return;
       }
     
       setDeletionInProgress(true); // Mark deletion process as initiated
         
-      let memberNoArr = selectedMembers.map(item => item.memberNo);
-      console.log(selectedMembers.map(item => item.memberNo))
       axios.delete('http://localhost:8888/api/member/delete', {
-        data: memberNoArr
+        data: selected,
       })
         .then(() => {
-          console.log(memberNoArr);
+          
           axios.get('http://localhost:8888/api/member/list')
             .then(updateMemberList)
             .catch(handleError);
@@ -242,16 +410,6 @@
       }
     };
 
-    const handleDeleteMembers = () => {
-      if (selectedMembers.length === 0) {
-        console.log("선택된 멤버가 없습니다.");
-        return;
-      }
-    
-      setDeleteConfirmationOpen(true);
-    };
-    
-
     const updateMemberList = response => {
       setMemberList(response.data.data);
       setCurrentMember(response.data.data);
@@ -266,7 +424,6 @@
       });
       setIsModalOpen(true);
     };
-
     
     // 이름, 아이디 검색기능
     const handleSearch = () => {
@@ -285,34 +442,6 @@
       window.location.href = '/auth/login';
     };
 
-    // 체크박스 전체 선택 또는 해제
-    const handleSelectAll = () => {
-      if (selectAll) {
-        setSelectedMembers([]);
-      } else {
-        setSelectedMembers([...currentMember]);
-      }
-      setSelectAll(!selectAll);
-    };
-
-    // 단일 선택 체크박스 선택 또는 해제
-    const handleSingleCheckboxSelect = (member) => {
-      if (selectedMembers.includes(member)) {
-        setSelectedMembers(selectedMembers.filter((m) => m !== member));
-      } else {
-        setSelectedMembers((prevSelectedMembers) => [...prevSelectedMembers, member]);
-      }
-  };
-
-    // 왼쪽 그리드 스타일
-    const leftGridStyle = {
-      overflow: 'auto',
-      maxHeight: '550px',
-      borderRadius: '6px', // 모서리를 둥글게 만듭니다.
-      border: '1px solid #e0e0e0', // 테두리를 추가합니다.
-      margin: '12px 0px 8px 8px', // 위쪽에 16px, 나머지 방향은 8px의 공백
-    };
-
     // 오른쪽 그리드 스타일
     const rightGridStyle = {
       overflow: 'auto',
@@ -322,84 +451,77 @@
       border: '1px solid #e0e0e0', // 테두리를 추가합니다.
       margin: '8px 8px 8px 8px', // 위쪽에 16px, 나머지 방향은 8px의 공백
     };
+
+    const handleRequestSort = (event, property) => {
+      const isAsc = orderBy === property && order === 'asc';
+      setOrder(isAsc ? 'desc' : 'asc');
+      setOrderBy(property);
+    };
+
+    const getSortedData = () => {
+      const comparator = getComparator(order, orderBy);
+      return stableSort(currentMember, comparator);
+    };
+
+    const handleSelectAllClick = (event) => {
+      if (event.target.checked) {
+        const newSelected = currentMember.map((n) => n.memberNo);
+        setSelected(newSelected);
+      } else {
+        setSelected([]);
+      }
+    };
+
+    const handleClick = (event, name) => {
+      const selectedIndex = selected.indexOf(name);
+      let newSelected = [];
+    
+      if (selectedIndex === -1) {
+        newSelected = newSelected.concat(selected, name);
+      } else if (selectedIndex === 0) {
+        newSelected = newSelected.concat(selected.slice(1));
+      } else if (selectedIndex === selected.length - 1) {
+        newSelected = newSelected.concat(selected.slice(0, -1));
+      } else if (selectedIndex > 0) {
+        newSelected = newSelected.concat(
+          selected.slice(0, selectedIndex),
+          selected.slice(selectedIndex + 1),
+        );
+      }
+    
+      setSelected(newSelected);
+    };
+
+    const handleChangePage = (event, newPage) => {
+      setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+      setRowsPerPage(parseInt(event.target.value, 10));
+      setPage(0);
+    };
+
+    const handleChangeDense = (event) => {
+      setDense(event.target.checked);
+    };
+
+    const isSelected = (name) => selected.indexOf(name) !== -1;
+
+    const emptyRows =
+      page > 0 ? Math.max(0, (1 + page) * rowsPerPage - currentMember.length) : 0;
+
+      const visibleRows = React.useMemo(
+        () => getSortedData().slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+        [order, orderBy, page, rowsPerPage, currentMember],
+      );
+      const tableBodyStyle = {
+        overflowY: 'auto', // 세로 스크롤 추가
+      };
     
 
     return (
       <>
       
-      {/* MODIFY 모달 */}
-      <Modal
-        open={isEditModalOpen}
-        onClose={handleCloseEditModal}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
-          <div style={{ width: '400px' }}>
-            <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
-              회원 정보 수정
-            </Typography>
-            <TextField
-              label="이름"
-              variant="outlined"
-              type='text'
-              value={editingMember?.memberName || ''}
-              onChange={(e) => setEditingMember({ ...editingMember, memberName: e.target.value })}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="아이디"
-              variant="outlined"
-              type='text'
-              value={editingMember?.memberId || ''}
-              onChange={(e) => setEditingMember({ ...editingMember, memberId: e.target.value })}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="비밀번호"
-              variant="outlined"
-              type='text'
-              value={editingMember?.password || ''}
-              onChange={(e) => setEditingMember({ ...editingMember, password: e.target.value })}
-              fullWidth
-              margin="normal"
-              required
-            />
-
-            <TextField
-                label="역할"
-                variant="outlined"
-                select // Select 컴포넌트로 변경
-                fullWidth
-                margin="normal"
-                value={editingMember?.memberRole || ''}
-                onChange={(e) => setEditingMember({ ...editingMember, memberRole: e.target.value })}
-                required
-              >
-                <MenuItem value="ADMIN">관리자</MenuItem>
-                <MenuItem value="MEMBER">회원</MenuItem>
-            </TextField>
-              
-            
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-              <Button variant="contained" color="primary" onClick={handleUpdateMember}>
-                수정
-              </Button>
-              <Button variant="contained" color="error" onClick={handleCloseEditModal}>
-                취소
-              </Button>
-            </Box>
-          </div>
-        </Paper>
-      </Modal>
-
       {/* DELETE 모달 */}
       <Modal
           open={deleteConfirmationOpen}
@@ -557,28 +679,6 @@
         </div>
       )}
 
-      {/* 수정시 다중 선택 alert창 */}
-      <Snackbar
-          open={isSnackbarVisible}
-          autoHideDuration={4000}
-          onClose={() => setIsSnackbarVisible(false)}
-          anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
-          >
-          <Alert
-              severity="warning"
-              variant="filled"
-              onClose={() => setIsSnackbarVisible(false)}
-              sx={{
-              width: '400px', // 너비 조정
-              padding: '15px', // 패딩 조정
-              }}
-          >
-              <Typography variant="h6" sx={{ marginBottom: '10px' }}>
-                하나의 회원을(만) 선택해주세요.
-              </Typography>
-          </Alert>
-      </Snackbar>
-
       <Box sx={{ width: '100%', padding:'10px' }}>
         <Paper sx={{ width: '100%', mb: 1, padding: '16px 5px 40px 16px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 5}}>
@@ -590,14 +690,8 @@
               <Button variant="contained" color="primary" onClick={handleSearch} sx={{ mr: 2 }}>
                 조회
               </Button>
-              <Button variant="contained" color="info" onClick={handleEditMembers} sx={{ mr: 2 }}>
-                수정
-              </Button>
-              <Button variant="contained" color="error" onClick={handleDeleteMembers} sx={{ mr: 2 }}>
-                삭제
-              </Button>
-              <Button variant="contained" color="primary" onClick={openAddNewMemberForm} >
-                신규
+              <Button variant="outlined" color="primary" onClick={openAddNewMemberForm} sx={{ mr: 2 }}>
+                신규등록
               </Button>
             </Box>
           </Box>
@@ -605,18 +699,20 @@
             <Typography variant="subtitle2" sx={{ mr: 1 }}>
               사원 이름
             </Typography>
-            <TextField label="사원 이름" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}/>
+            <TextField label="사원 이름" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}
+            onKeyDown={handleEnterKeyPress} />
             <Typography variant="subtitle2" sx={{ mr: 1 }}>
               아이디
             </Typography>
-            <TextField label="아이디" variant="outlined" size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} />
+            <TextField label="아이디" variant="outlined" size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} 
+            onKeyDown={handleEnterKeyPress} />
           </Box>
       </Paper>
       </Box>
       <Box>
         {/* 왼쪽그리드 */}
         <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <div
               style={{
                 display: 'flex',
@@ -647,6 +743,7 @@
                   ml: 2,
                   width: '12px', // 버튼의 너비를 조절
                   height: '30px', // 버튼의 높이를 조절
+                  marginRight: '8px',
                 }}
               >
                 <IconRefresh />
@@ -654,99 +751,116 @@
               
             </div>
 
-            <Box sx={ leftGridStyle }>
-              <Table
-                aria-label="simple table"
-                sx={{
-                  whiteSpace: 'nowrap',
-                  '& th' : {
-                    padding: '8px',
+            <Box sx={{ width: '100%', padding:'10px' }}>
+              <Paper sx={{ width: '100%', mb: 2 }}>
+                <EnhancedTableToolbar numSelected={selected.length} />
+                <TableContainer>
+                  <Table
+                    sx={{ minWidth: 750 }}
+                    aria-labelledby="tableTitle"
+                    size={dense ? 'small' : 'medium'}
+                    style={{ tableLayout: 'fixed' }} // 테이블 너비 고정
+                    
+                  >
+                    <EnhancedTableHead
+                      numSelected={selected.length}
+                      order={order}
+                      orderBy={orderBy}
+                      onSelectAllClick={handleSelectAllClick}
+                      onRequestSort={handleRequestSort}
+                      rowCount={currentMember.length}
+                    />
+                    <TableBody sx={tableBodyStyle}>
+                      {visibleRows.map((realMember, index) => {
+                        const isItemSelected = isSelected(realMember.memberNo);
+                        const labelId = `enhanced-table-checkbox-${index}`;
 
-                  },
-                  '& td': {
-                    padding: '2px 8px', // 전체 td의 padding 값을 변경
-                  },
-                  
-                }}
-              >
-                <TableHead
-                  sx={{
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 1,
-                    backgroundColor: '#fff',
-                  }}
-                >
-                  <TableRow>
-                    <TableCell>
-                      <Checkbox checked={selectAll} onChange={handleSelectAll} />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="h6" fontWeight={600}>
-                        No
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="h6" fontWeight={600}>
-                        사원이름
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="h6" fontWeight={600}>
-                        아이디
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                
-                <TableBody>
-                  {currentMember.map((realMember) => (
-                    <TableRow
-                      key={realMember.memberNo}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: '#f5f5f5',
-                          cursor: 'pointer'
-                        }
-                      }}
-                      onClick={() => handleSingleSelect(realMember)}
-                    >
-                       <TableCell>
-                        <Checkbox
-                          checked={selectedMembers.includes(realMember)}
-                          onChange={(event) => {
-                            event.stopPropagation()
-                            handleSingleCheckboxSelect(realMember);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
-                            {realMember.memberNo}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Box>
-                            <Typography variant="subtitle2" fontWeight={400}>
+                        return (
+                          <TableRow
+                            hover
+                            onClick={() => handleSingleSelect(realMember)}
+                            tabIndex={-1}
+                            key={realMember.memberNo}
+                            sx={{ cursor: 'pointer' }}
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleClick(event, realMember.memberNo)}}
+                                color="primary"
+                                checked={isItemSelected}
+                                inputProps={{
+                                  'aria-labelledby': labelId,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{
+                                fontSize: 'subtitle2.fontSize', // 글자 크기를 subtitle2로 설정
+                                fontWeight: 400, // 글꼴 두께를 400으로 설정
+                              }}
+                            >
+                              {realMember.memberNo}
+                            </TableCell>
+                            <TableCell
+                              component="th"
+                              id={labelId}
+                              scope="row"
+                              padding="none"
+                              sx={{
+                                fontSize: 'subtitle2.fontSize', // 글자 크기를 subtitle2로 설정
+                                fontWeight: 400, // 글꼴 두께를 400으로 설정
+                              }}
+                            >
                               {realMember.memberName}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
-                          {realMember.memberId}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            </TableCell>
+                            <TableCell
+                              component="th"
+                              id={labelId}
+                              scope="row"
+                              padding="none"
+                              sx={{
+                                fontSize: 'subtitle2.fontSize', // 글자 크기를 subtitle2로 설정
+                                fontWeight: 400, // 글꼴 두께를 400으로 설정
+                              }}
+                            >
+                              {realMember.memberId}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {emptyRows > 0 && (
+                        <TableRow
+                          style={{
+                            height: (dense ? 33 : 53) * emptyRows,
+                          }}
+                        >
+                          <TableCell colSpan={6} />
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={currentMember.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+              </Paper>
+              <FormControlLabel
+                control={<Switch checked={dense} onChange={handleChangeDense} />}
+                label="Dense padding"
+              />
             </Box>
           </Grid>
           {/* 오른쪽 그리드 */}
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={6}>
             <Typography
               variant="h6"
               component="div"
@@ -761,55 +875,58 @@
             <IconListDetails style={{ fontSize: '1rem', marginRight: '8px' }} /> {/* 아이콘 크기 조절 */}
               사원 상세정보
             </Typography>
-            <Box sx={rightGridStyle}>
-            {selectedMemberDetail && (
-              <Paper
-                elevation={3}
-                sx={{
-                  padding: '16px',
-                  borderRadius: '4px',
-                  backgroundColor: '#fff',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '16px',
-                  boxShadow: 'none',
-                }}
-              >
-                <Avatar
-                  alt="User Avatar"
-                  src={selectedMemberDetail.avatarUrl}
+            <Box sx={{ width: '100%', padding:'10px' }}>
+              <Paper sx={{ width: '100%', mb: 2 }}>
+              {selectedMemberDetail && (
+                <Paper
+                  elevation={3}
                   sx={{
-                    width: '120px',
-                    height: '120px',
+                    padding: '16px',
+                    borderRadius: '4px',
+                    backgroundColor: '#fff',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '16px',
+                    height: '417px',
+                    boxShadow: 'none',
                   }}
-                />
-                <Typography variant="h5" gutterBottom>
-                  사원 상세 정보
-                </Typography>
-                <Table>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell><strong>이름:</strong></TableCell>
-                      <TableCell>{selectedMemberDetail.memberName}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell><strong>아이디:</strong></TableCell>
-                      <TableCell>{selectedMemberDetail.memberId}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell><strong>사용자 권한:</strong></TableCell>
-                      <TableCell>{selectedMemberDetail.memberRole}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell><strong>생성 일자:</strong></TableCell>
-                      <TableCell>{selectedMemberDetail.createDate}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                >
+                  <Avatar
+                    alt="User Avatar"
+                    src={selectedMemberDetail.avatarUrl}
+                    sx={{
+                      width: '120px',
+                      height: '120px',
+                    }}
+                  />
+                  <Typography variant="h5" gutterBottom>
+                    사원 상세 정보
+                  </Typography>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell><strong>이름:</strong></TableCell>
+                        <TableCell>{selectedMemberDetail.memberName}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell><strong>아이디:</strong></TableCell>
+                        <TableCell>{selectedMemberDetail.memberId}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell><strong>사용자 권한:</strong></TableCell>
+                        <TableCell>{selectedMemberDetail.memberRole}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell><strong>생성 일자:</strong></TableCell>
+                        <TableCell>{selectedMemberDetail.createDate}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </Paper>
+              )}
               </Paper>
-            )}
-          </Box>
+            </Box>
           </Grid>
         </Grid>
       </Box>
