@@ -1,6 +1,8 @@
+import React from 'react';
 import { Box, Container, Typography, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
-import ErrorImg from 'src/assets/images/backgrounds/404-error-idea.gif';
+
+const ErrorImgSource = `https://www.douzone.com/html/images/lg-douzone-color.svg`;
 
 const Error = () => (
   <Box
@@ -11,15 +13,19 @@ const Error = () => (
     justifyContent="center"
   >
     <Container maxWidth="md">
-      <img src={ErrorImg} alt="404" style={{ width: '100%', maxWidth: '500px' }} />
+      {/* 이미지 URL을 직접 사용 */}
+      <img
+        src={ErrorImgSource}
+        alt="404"
+        style={{ width: '100%', maxWidth: '500px' }}
+      />
       <Typography align="center" variant="h1" mb={4}>
-        Opps!!!
       </Typography>
       <Typography align="center" variant="h4" mb={4}>
         This page you are looking for could not be found.
       </Typography>
-      <Button color="primary" variant="contained" component={Link} to="/" disableElevation>
-        Go Back to Home
+      <Button color="primary" variant="contained" component={Link} to="/auth/login" disableElevation>
+        Go Back to page
       </Button>
     </Container>
   </Box>

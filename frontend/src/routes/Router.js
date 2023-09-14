@@ -32,7 +32,8 @@ const Router = [
       { path: '/Logistic/Account', exact:true, element:<Account/>},
       { path: "/member/list",exact: true, element:<Member/>},
       { path: "/warehouse/list",exact:true, element:<Warehouse/>},
-      { path: "/WarehouseSection/list",exact:true,element:<WarehouseSection/>}
+      { path: "/WarehouseSection/list",exact:true,element:<WarehouseSection/>},
+      { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },
   {
