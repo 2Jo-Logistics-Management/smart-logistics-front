@@ -23,7 +23,6 @@ const ItemsReducer = createSlice({
     },
     WILL_BE_CHANGE_ITEM_CODE: (state, action) => {
       state.willBeChangeItemCode = action.payload;
-      alert(state.willBeChangeItemCode);
     },
     CHANGE_RELOAD_FLAG: (state) => {
       state.reloadFlag = !state.reloadFlag;

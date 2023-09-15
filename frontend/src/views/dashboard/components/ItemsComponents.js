@@ -15,7 +15,6 @@ import {
   Checkbox,
   Pagination,
   styled,
-  Modal,
 } from "@mui/material";
 import { IconHammer } from "@tabler/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -90,27 +89,33 @@ const Item = () => {
     dispatch(changeCurrentPage(newPage - 1)); // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
+  const reducerFlag = useSelector((state) => state.selectedItems.reloadFlag);
+
+  useEffect(() => {
+    dispatch(fetchItemsFromApi());
+  }, [dispatch, reducerFlag]);
+
   const willBeChangeItemCode =
     useSelector((state) => state.items.willBeChangeItemCode) || -1;
 
-  const insertSuccessCallback = (callBack) => {
-    dispatch(WILL_BE_CHANGE_ITEM_CODE(callBack));
+  const insertSuccessCallback = async (callback) => {
+    dispatch(WILL_BE_CHANGE_ITEM_CODE(callback));
 
     // 전체 아이템 개수를 한 페이지당 아이템 개수로 나눈 나머지 계산
     let remainder = initItems.length % ITEMS_PER_PAGE;
 
     if (remainder === 0) {
       dispatch(changeCurrentPage(totalPage));
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    } else {
+      dispatch(changeCurrentPage(totalPage - 1));
+      setTimeout(() => {
+        window.location.reload();
+      }, 300)
     }
-
-    dispatch(CHANGE_RELOAD_FLAG());
   };
-
-  const reducerFlag = useSelector((state) => state.selectedItems.flag);
-
-  useEffect(() => {
-    dispatch(fetchItemsFromApi());
-  }, [dispatch, reducerFlag]);
 
   useEffect(() => {
     if (willBeChangeItemCode !== -1) {
@@ -227,7 +232,6 @@ const Item = () => {
   const modifySuccessCallback = (callback) => {
     dispatch(WILL_BE_CHANGE_ITEM_CODE(callback));
     dispatch(REMOVE_SELECTED_ALL_ITEM());
-    dispatch(changeCurrentPage(currentPage));
     dispatch(CHANGE_RELOAD_FLAG());
   };
 
@@ -480,7 +484,7 @@ const Item = () => {
         open={modifyModalOpen}
         onClose={() => setModifyModalOpen(false)}
         selectedItem={initItems.filter((i) => selectedItems[0] === i.itemCode)}
-        isSuccessCallback={() => modifySuccessCallback}
+        isSuccessCallback={modifySuccessCallback}
       />
     </>
   );

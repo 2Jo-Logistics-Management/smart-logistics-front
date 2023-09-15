@@ -11,14 +11,14 @@ import {
 } from "@mui/material";
 
 const ItemModifyModal = (props) => {
-  const { open, onClose, selectedItem, isSuccessCallback } = props;
-
   const [itemModifyDto, setItemModifyDto] = useState({
     itemName: null,
     spec: null,
     unit: null,
     itemPrice: null,
   });
+
+  const { open, onClose, selectedItem, isSuccessCallback } = props;
 
   const closeModal = () => {
     setItemModifyDto({
