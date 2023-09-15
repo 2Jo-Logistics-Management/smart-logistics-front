@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-// import Select from "react-select";
-import { Select } from "@mui/material";
-import swal from "sweetalert2";
 import {
   Box,
   Table,
@@ -10,67 +7,81 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Typography,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Pagination,
-  MenuItem,
+  Checkbox,
 } from "@mui/material";
 import { close_Modal } from "../../../../redux/slices/receiveModalDuck";
-import { Check, Delete } from "@mui/icons-material";
 import pOrderWaitIngAxios from "src/axios/pOrderWaitIngAxios";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker, LocalizationProvider, DesktopDateTimePicker } from "@mui/x-date-pickers";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import ko from "date-fns/locale/ko"; // 한국어 로케일 import
 import { TextField } from "@mui/material";
 import axios from "axios";
-import receiveInsertAxios from "src/axios/receiveInsertAxios";
 axios.defaults.withCredentials = true;
-const ReceiveModal = () => {
+const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
   const dispatch = useDispatch();
   const receiveModalState = useSelector((state) => state.receiveModal.openModal);
+  const [checkedRows, setCheckedRows] = useState([]);
+
+  const [visibleItems, setVisibleItems] = useState([]);
+  const [visibleItemCount, setVisibleItemCount] = useState(0);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [updatedModalState, setUpdatedModalState] = useState(receiveModalState);
+  const [modalSelectedProducts, setModalSelectedProducts] = useState([]);
+  const [searchManager, setSearchManager] = useState("");
   const [searchPOrders, setSearchPOrder] = useState([]);
-  const [selectedPOrderCode, setSelectedPOrderCode] = useState([]);
-  const [selectedItemCode, setSelectedItemCode] = useState([]);
+  const [searchPOrderCode, setSearchPOrderCode] = useState("");
+  const [searchItemCode, setSearchItemCode] = useState("");
+  const [searchAccountNo, setSearchAccountNo] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
-  const [selectedPOrderDate, setSelectedPOrderDate] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
   const [porderItemData, setPorderItemData] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
-  const [porderFind, setPorderFind] = useState([]);
-  const ITEMS_PER_PAGE = 5; // 한 페이지당 표시할 아이템 개수
-  const [selectedWarehouses, setSelectedWarehouses] = useState({});
-  const [currentPage, setCurrentPage] = useState(0); // 현재 페이지 상태
-
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedWarehouses, setSelectedWarehouses] = useState(
+    Array(modalSelectedProducts.length).fill("")
+  );
   const [warehouseOptions, setWarehouseOptions] = useState([]);
 
   const [selectedStartDate, setSelectedStartDate] = useState(null);
   const [selectedEndDate, setSelectedEndDate] = useState(null);
+
   const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [receiveManager, setReceiveManager] = useState(null);
   const [receiveItemCounts, setReceiveItemCounts] = useState(
-    Array(selectedProducts.length).fill("")
+    Array(modalSelectedProducts.length).fill("")
   );
 
   const handlePageChange = (event, newPage) => {
-    setCurrentPage(newPage - 1); // 페이지 변경 시 현재 페이지 상태 업데이트
+    setCurrentPage(newPage - 1);
   };
-  // const isReceiveManagerValid = receiveManager.trim() !== "";
-  // const isDateTimeValid = selectedDateTime !== null;
-  // 현재 페이지에 따른 아이템들 계산
+
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentItems = Array.isArray(searchPOrders)
     ? searchPOrders.slice(offset, offset + ITEMS_PER_PAGE)
     : [];
+  useEffect(() => {
+    if (selectedStartDate === null) {
+      setSelectedStartDate(new Date());
+    }
+    if (selectedEndDate === null) {
+      setSelectedEndDate(new Date());
+    }
+  }, []);
+  useEffect(() => {
+    setVisibleItems(searchPOrders.slice(0, visibleItemCount));
+  }, [visibleItemCount, searchPOrders]);
 
   useEffect(() => {
-    pOrderWaitIngAxios(selectedItems)
+    pOrderWaitIngAxios()
       .then((data) => {
-        setSearchPOrder(data.data); // Assuming the data you want to display is stored in 'data' field
+        const initialVisibleItemCount = Math.min(data.data.length, visibleItemCount);
+        setVisibleItemCount(initialVisibleItemCount);
+        setSearchPOrder(data.data);
       })
       .catch((error) => {
         console.error(error);
@@ -79,10 +90,9 @@ const ReceiveModal = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8888/api/warehouse/list") // Update the URL as needed
+      .get("http://localhost:8888/api/warehouse/list")
       .then((response) => {
-        console.log("warehouseList : " + JSON.stringify(response.data.data));
-        setWarehouseOptions(response.data.data); // Assuming the response contains an array of warehouse options
+        setWarehouseOptions(response.data.data);
       })
       .catch((error) => {
         console.error("Error fetching warehouse data:", error);
@@ -92,73 +102,85 @@ const ReceiveModal = () => {
   const handleCancel = () => {
     dispatch(close_Modal());
   };
-  const handleReceiveItemCountChange = (value, index) => {
-    const updatedItemCounts = [...receiveItemCounts];
-    updatedItemCounts[index] = value;
-    setReceiveItemCounts(updatedItemCounts);
-  };
-  const handleSave = (receiveManager, selectedDateTime) => {
-    const dateTimeObj = new Date(selectedDateTime);
+  const handleDone = async () => {
+    modalUpdateSelectedProducts(modalSelectedProducts);
 
-    // 년, 월, 일, 시간, 분, 초를 가져옴
-    const year = dateTimeObj.getFullYear();
-    const month = (dateTimeObj.getMonth() + 1).toString().padStart(2, "0");
-    const day = dateTimeObj.getDate().toString().padStart(2, "0");
-    const hours = dateTimeObj.getHours().toString().padStart(2, "0");
-    const minutes = dateTimeObj.getMinutes().toString().padStart(2, "0");
-    const seconds = dateTimeObj.getSeconds().toString().padStart(2, "0");
-
-    // 년월일 시간 형식으로 조합
-    const finalReceiveDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
-    const insertData = selectedProducts.map((product, index) => ({
-      porderCode: product.porderCode,
-      porderItemNo: product.porderItemNo,
-      itemCode: product.itemCode,
-      accountNo: product.accountNo,
-      receiveCount: receiveItemCounts[index],
-      warehouseNo: selectedWarehouses[index],
-    }));
-    receiveInsertAxios([receiveManager, finalReceiveDateTime, { insertData }]);
     dispatch(close_Modal());
-  };
-  const handleSelectedWarehouse = (event, rowIndex) => {
-    const updatedSelectedWarehouses = { ...selectedWarehouses };
-    updatedSelectedWarehouses[rowIndex] = event.target.value;
-    setSelectedWarehouses(updatedSelectedWarehouses);
-  };
-
-  const handleSelectePOrderCode = (selectedOption) => {
-    setSelectedPOrderCode(selectedOption);
+    onSave();
+    setModalSelectedProducts([]);
+    setPorderItemData([]);
+    setCheckedRows([]);
+    setReceiveManager(null);
+    setSelectedDateTime(null);
+    setSelectedRow(null);
   };
 
-  const handleSelectedItemCode = (selectedOption) => {
-    handleSelectedItemCode(selectedOption);
+  const handleSelectePOrderCode = (e) => {
+    setSearchPOrderCode(e.target.value);
   };
 
-  const handleFilterData = () => {
-    const selectedData = {
-      porderCode: selectedPOrderCode?.value || null,
-      itemCode: selectedItemCode?.value || null,
-      quantity: "0", // 초기에는 수량을 0으로 설정합니다.
-    };
-    setSelectedItems([...selectedItems, selectedData]);
+  const handleSelectedAccountNo = (e) => {
+    setSearchAccountNo(e.target.value);
+  };
+  const handleSelectedManger = (e) => {
+    setSearchManager(e.target.value);
+  };
+  const handleClick = () => {
+    let timerInterval;
+    const findDateStart = new Date(selectedStartDate);
+    const findDateEnd = new Date(selectedEndDate);
+    const startYear = findDateStart.getFullYear();
+    const startMonth = (findDateStart.getMonth() + 1).toString().padStart(2, "0");
+    const startDay = findDateStart.getDate().toString().padStart(2, "0");
+    const searchStartDate = `${startYear}-${startMonth}-${startDay}`;
+
+    const endYear = findDateEnd.getFullYear();
+    const endMonth = (findDateEnd.getMonth() + 1).toString().padStart(2, "0");
+    const endDay = findDateEnd.getDate().toString().padStart(2, "0");
+
+    const searchEndDate = `${endYear}-${endMonth}-${endDay}`;
+
+    pOrderWaitIngAxios(
+      searchPOrderCode,
+      searchManager,
+      searchAccountNo,
+      searchStartDate,
+      searchEndDate
+    )
+      .then((data) => {
+        const initialVisibleItemCount = Math.min(data.data.length, visibleItemCount);
+        setVisibleItemCount(initialVisibleItemCount);
+        setSearchPOrder(data.data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+    setPorderItemData([]);
+    setCheckedRows([]);
   };
 
   const handleProductClick = async (selectPorderCode) => {
+    setSelectedRow(selectPorderCode);
     try {
-      const response = await axios.get("http://localhost:8888/api/porder-item/list", {
+      const response = await axios.get("http://localhost:8888/api/porder-item/list?type=receive", {
         params: {
           pOrderCode: selectPorderCode,
         },
       });
-      console.log(response.data);
       setPorderItemData(response.data.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
   const handleCheckboxChange = (porderCode, porderItemNo, itemCode) => {
+    const isChecked = checkedRows.includes(`${porderCode}-${porderItemNo}`);
+
+    if (isChecked) {
+      setCheckedRows(checkedRows.filter((row) => row !== `${porderCode}-${porderItemNo}`));
+    } else {
+      setCheckedRows([...checkedRows, `${porderCode}-${porderItemNo}`]);
+    }
+
     const selectedProduct = searchPOrders.find((product) => product.porderCode === porderCode);
 
     if (selectedProduct) {
@@ -173,7 +195,6 @@ const ReceiveModal = () => {
           const availableCount = response.data.data;
           const { manager, accountNo } = selectedProduct;
 
-          // Create a new product object with updated availableCount
           const newProduct = {
             porderCode,
             porderItemNo,
@@ -183,24 +204,21 @@ const ReceiveModal = () => {
             availableCount,
           };
 
-          const existingProductIndex = selectedProducts.findIndex(
+          const existingProductIndex = modalSelectedProducts.findIndex(
             (product) => product.porderCode === porderCode && product.porderItemNo === porderItemNo
           );
 
           if (existingProductIndex !== -1) {
-            // Replace the existing product with the new product
-            const updatedProducts = [...selectedProducts];
+            const updatedProducts = [...modalSelectedProducts];
             updatedProducts[existingProductIndex] = newProduct;
-            setSelectedProducts(updatedProducts);
+            setModalSelectedProducts(updatedProducts);
           } else {
-            setSelectedProducts((prevProducts) => [...prevProducts, newProduct]);
+            setModalSelectedProducts((prevProducts) => [...prevProducts, newProduct]);
           }
         })
         .catch((error) => {
           console.error("Error fetching availableCount data:", error);
         });
-    } else {
-      console.log("Product not found for porderCode:", porderCode);
     }
   };
 
@@ -209,8 +227,8 @@ const ReceiveModal = () => {
       open={receiveModalState}
       PaperProps={{
         sx: {
-          width: "200%",
-          maxWidth: "200%",
+          width: "70%",
+          maxWidth: "70%",
           height: "100%",
           maxHeight: "md",
         },
@@ -227,14 +245,15 @@ const ReceiveModal = () => {
                 alignItems: "center",
                 height: "70px",
                 marginBottom: "16px",
+                marginLeft: "0px",
               }}
             >
               발주번호
-              <TextField value={selectedPOrderCode} onChange={handleSelectePOrderCode} />
+              <TextField size="small" value={searchPOrderCode} onChange={handleSelectePOrderCode} />
               거래처번호
-              <TextField value={selectedItemCode} onChange={handleSelectedItemCode} />
+              <TextField size="small" value={searchAccountNo} onChange={handleSelectedAccountNo} />
               담당자
-              <TextField></TextField>
+              <TextField size="small" value={searchManager} onChange={handleSelectedManger} />
               발주일
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
@@ -243,6 +262,7 @@ const ReceiveModal = () => {
                   onChange={(newDate) => setSelectedStartDate(newDate)}
                   renderInput={(props) => <TextField {...props} />}
                   format="yyyy.MM.dd"
+                  slotProps={{ textField: { size: "small" } }}
                 />
                 <DatePicker
                   label="조회 종료일"
@@ -250,9 +270,10 @@ const ReceiveModal = () => {
                   onChange={(newDate) => setSelectedEndDate(newDate)}
                   renderInput={(props) => <TextField {...props} />}
                   format="yyyy.MM.dd"
+                  slotProps={{ textField: { size: "small" } }}
                 />
               </LocalizationProvider>
-              <Button variant="contained" onClick={handleFilterData}>
+              <Button variant="contained" onClick={handleClick}>
                 조회
               </Button>
             </Box>
@@ -260,10 +281,10 @@ const ReceiveModal = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>발주번호</TableCell>
-                  <TableCell>거래처번호</TableCell>
-                  <TableCell>담당자</TableCell>
-                  <TableCell>진행상태</TableCell>
+                  <TableCell sx={{ width: 300 }}>발주번호</TableCell>
+                  <TableCell sx={{ width: 250 }}>거래처번호</TableCell>
+                  <TableCell sx={{ width: 250 }}>담당자</TableCell>
+                  <TableCell sx={{ width: 250 }}>진행상태</TableCell>
                   <TableCell>발주일</TableCell>
                 </TableRow>
               </TableHead>
@@ -271,12 +292,17 @@ const ReceiveModal = () => {
                 {currentItems.map((porders, index) => {
                   const { porderCode, accountNo, manager, state, porderDate } = porders;
                   return (
-                    <TableRow key={index} onClick={() => handleProductClick(porderCode)}
-                    sx={{
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                      }
-                    }}>
+                    <TableRow
+                      key={index}
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                        },
+                        backgroundColor:
+                          selectedRow === porderCode ? "rgba(0, 0, 0, 0.04)" : "transparent",
+                      }}
+                      onClick={() => handleProductClick(porderCode)}
+                    >
                       <TableCell>{porderCode}</TableCell>
                       <TableCell>{accountNo}</TableCell>
                       <TableCell>{manager}</TableCell>
@@ -311,7 +337,7 @@ const ReceiveModal = () => {
             </Box>
 
             <Box sx={{ overflow: "auto", maxHeight: "400px" }}>
-              <Table aria-label="simple table" sx={{ whiteSpace: "nowrap", mt: 2 }}>
+              <Table aria-label="simple table" sx={{ whiteSpace: "nowrap", mt: 0 }}>
                 <TableHead
                   sx={{
                     position: "sticky",
@@ -321,12 +347,13 @@ const ReceiveModal = () => {
                   }}
                 >
                   <TableRow sx={{ backgroundColor: "#" }}>
-                    <TableCell>발주순번</TableCell>
-                    <TableCell>품목코드</TableCell>
-                    <TableCell>수량</TableCell>
-                    <TableCell>단가</TableCell>
-                    <TableCell>총금액</TableCell>
-                    <TableCell>진행상태</TableCell>
+                    <TableCell sx={{ width: 150 }}>선택</TableCell>
+                    <TableCell sx={{ width: 150 }}>발주순번</TableCell>
+                    <TableCell sx={{ width: 150 }}>품목코드</TableCell>
+                    <TableCell sx={{ width: 150 }}>수량</TableCell>
+                    <TableCell sx={{ width: 150 }}>단가</TableCell>
+                    <TableCell sx={{ width: 150 }}>총금액</TableCell>
+                    <TableCell sx={{ width: 150 }}>진행상태</TableCell>
                     <TableCell>납기일</TableCell>
                   </TableRow>
                 </TableHead>
@@ -334,14 +361,26 @@ const ReceiveModal = () => {
                   {porderItemData.map((product, index) => (
                     <TableRow
                       key={index}
-                      onClick={() =>
-                        handleCheckboxChange(
-                          product.porderCode,
-                          product.porderItemNo,
-                          product.itemCode
-                        )
-                      }
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                        },
+                      }}
                     >
+                      <TableCell sx={{ padding: "3px" }}>
+                        <Checkbox
+                          checked={checkedRows.includes(
+                            `${product.porderCode}-${product.porderItemNo}`
+                          )}
+                          onChange={() =>
+                            handleCheckboxChange(
+                              product.porderCode,
+                              product.porderItemNo,
+                              product.itemCode
+                            )
+                          }
+                        />
+                      </TableCell>
                       <TableCell>{product.porderItemNo}</TableCell>
                       <TableCell>{product.itemCode}</TableCell>
                       <TableCell>{product.porderCount}</TableCell>
@@ -355,113 +394,20 @@ const ReceiveModal = () => {
               </Table>
             </Box>
           </Box>
-          <Box sx={{ flex: 1, padding: "16px", minWidth: "50%" }}>
-            <Table>
-              <TableBody>
-                담당자 :
-                <TableCell>
-                  <TextField
-                    value={receiveManager}
-                    onChange={(e) => setReceiveManager(e.target.value)}
-                  />
-                  {/* <TextField
-                    error={!isReceiveManagerValid}
-                    helperText={!isReceiveManagerValid && "필수 입력"}
-                    value={receiveManager}
-                    onChange={(e) => setReceiveManager(e.target.value)}
-                  /> */}
-                </TableCell>
-                입고일시 :
-                <TableCell>
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DesktopDateTimePicker
-                      value={selectedDateTime}
-                      onChange={(newDate) => setSelectedDateTime(newDate)}
-                      renderInput={(props) => <TextField {...props} />}
-                      views={["year", "month", "day", "hours", "minutes"]}
-                      format="yyyy.MM.dd / HH:mm"
-                      defaultValue={new Date()}
-                    />
-                  </LocalizationProvider>
-                  {/* <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DesktopDateTimePicker
-                      value={selectedDateTime}
-                      onChange={(newDate) => setSelectedDateTime(newDate)}
-                      renderInput={(props) => <TextField {...props} />}
-                      views={["year", "month", "day", "hours", "minutes"]}
-                      format="yyyy.MM.dd / HH:mm"
-                      defaultValue={new Date()}
-                      error={!isDateTimeValid}
-                    />
-                  </LocalizationProvider> */}
-                </TableCell>
-              </TableBody>
-            </Table>
-            <Box sx={{ flex: 1, padding: "16px", minWidth: "50%" }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>발주번호</TableCell>
-                    <TableCell>발주순번</TableCell>
-                    <TableCell>품목코드</TableCell>
-                    <TableCell>거래처번호</TableCell>
-                    <TableCell>입고수량</TableCell>
-                    <TableCell>창고선택</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {selectedProducts.map((product, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{product.porderCode}</TableCell>
-                      <TableCell>{product.porderItemNo}</TableCell>
-                      <TableCell>{product.itemCode}</TableCell>
-                      <TableCell>{product.accountNo}</TableCell>
-                      <TableCell>
-                        {/* <TextField
-                          label={`잔량: ${product.availableCount}`}
-                          value={receiveItemCount} // Add this line to bind the value
-                          onChange={(e) => setReceiveItemCount(e.target.value)} // Update only the state
-                        /> */}
-                        <TextField
-                          label={`잔량: ${product.availableCount}`}
-                          value={receiveItemCounts[index]} // Use the specific value for this row
-                          onChange={(e) => handleReceiveItemCountChange(e.target.value, index)} // Pass the index
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          label="창고선택"
-                          value={selectedWarehouses[index] || ""}
-                          onChange={(event) => handleSelectedWarehouse(event, index)}
-                          displayEmpty
-                          inputProps={{ "aria-label": "Select warehouse" }}
-                        >
-                          {warehouseOptions.map((warehouse) => (
-                            <MenuItem key={warehouse.warehouseNo} value={warehouse.warehouseNo}>
-                              {warehouse.warehouseName}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </Box>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel}>Cancel</Button>
+        <Button onClick={handleCancel} variant="outlined" color="error">
+          돌아가기
+        </Button>
         <Button
           onClick={() => {
-            setReceiveManager(receiveManager);
-            handleSave(receiveManager, selectedDateTime);
+            handleDone();
           }}
           color="primary"
           variant="contained"
         >
-          Save
+          완료
         </Button>
       </DialogActions>
     </Dialog>

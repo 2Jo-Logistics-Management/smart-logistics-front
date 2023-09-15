@@ -3,8 +3,8 @@ import { Navigate } from 'react-router-dom';
 import Loadable from '../layouts/full/shared/loadable/Loadable';
 
 /* ***Layouts**** */
-const FullLayout = Loadable(lazy(() => import('../layouts/full/FullLayout')));
-const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')));
+const FullLayout = Loadable(lazy(() => import("../layouts/full/FullLayout")));
+const BlankLayout = Loadable(lazy(() => import("../layouts/blank/BlankLayout")));
 
 /* ****Pages***** */
 const Dashboard = Loadable(lazy(() => import('../views/dashboard/Dashboard')))
@@ -21,7 +21,7 @@ const Item = Loadable(lazy(() => import('../views/dashboard/components/ItemsComp
 const Router = [
   
   {
-    path: '/',
+    path: "/",
     element: <FullLayout />,
     children: [
       { path: '/', element: <Navigate to="/dashboard" /> },
@@ -37,14 +37,13 @@ const Router = [
     ],
   },
   {
-    path: '/auth',
+    path: "/auth",
     element: <BlankLayout />,
     children: [
-      { path: '404', element: <Error /> },
-      { path: '/auth/register', element: <Register /> },
-      { path: '/auth/login', element: <Login /> },
-      { path: '*', element: <Navigate to="/auth/404" /> },
-      
+      { path: "404", element: <Error /> },
+      { path: "/auth/register", element: <Register /> },
+      { path: "/auth/login", element: <Login /> },
+      { path: "*", element: <Navigate to="/auth/404" /> },
     ],
   },
 ];
