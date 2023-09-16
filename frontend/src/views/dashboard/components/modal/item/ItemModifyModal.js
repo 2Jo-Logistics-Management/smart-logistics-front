@@ -30,62 +30,60 @@ const ItemModifyModal = (props) => {
     onClose(true);
   };
 
-  const handleModifyItem = () => {
+  const handleModifyItem = async () => {
     if (itemModifyDto.itemName === null) {
       itemModifyDto.itemName = selectedItem[0].itemName;
     }
-
+  
     if (itemModifyDto.spec === null) {
       itemModifyDto.spec = selectedItem[0].spec;
     }
-
+  
     if (itemModifyDto.unit === null) {
       itemModifyDto.unit = selectedItem[0].unit;
     }
-
+  
     if (itemModifyDto.itemPrice === null) {
       itemModifyDto.itemPrice = selectedItem[0].itemPrice;
     }
-
+  
     let timerInterval;
-
-    axios
-      .patch(
+  
+    try {
+      const response = await axios.patch(
         `http://localhost:8888/api/item/modify/${selectedItem[0].itemCode}`,
         itemModifyDto
-      )
-      .then((response) => {
-        onClose(true);
-        swal
-          .fire({
-            title: "수정 완료",
-            text: "데이터가 수정되었습니다.",
-            icon: "success",
-            timer: 1000,
-            timerProgressBar: true,
-
-            didOpen: () => {
-              swal.showLoading();
-              const b = swal.getHtmlContainer().querySelector("b");
-              timerInterval = setInterval(() => {
-                b.textContent = swal.getTimerLeft();
-              }, 1000);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
-            },
-          })
-          .then(() => {
-            isSuccessCallback(response.data.data);
-          });
-      })
-      .catch((error) => {
-        swal.fire({
-          title: "수정 실패",
-          text: `${error}`,
-          icon: "error",
+      );
+  
+      onClose(true);
+      await swal
+        .fire({
+          title: "수정 완료",
+          text: "데이터가 수정되었습니다.",
+          icon: "success",
+          timer: 1000,
+          timerProgressBar: true,
+  
+          didOpen: () => {
+            swal.showLoading();
+            const b = swal.getHtmlContainer().querySelector("b");
+            timerInterval = setInterval(() => {
+              b.textContent = swal.getTimerLeft();
+            }, 1000);
+          },
+          willClose: () => {
+            clearInterval(timerInterval);
+          },
         });
+  
+      isSuccessCallback(response.data.data);
+    } catch (error) {
+      swal.fire({
+        title: "수정 실패",
+        text: `${error}`,
+        icon: "error",
       });
+    }
   };
 
   return (

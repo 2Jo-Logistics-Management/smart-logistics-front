@@ -31,7 +31,6 @@ import { fetchSearchItemsFromApi } from "src/redux/thunks/fetchSearchItemsFromAp
 import {
   changeCurrentPage,
   WILL_BE_CHANGE_ITEM_CODE,
-  CHANGE_RELOAD_FLAG,
 } from "src/redux/slices/ItemsReducer";
 import {
   ADD_SELECTED_ITEM,
@@ -71,6 +70,7 @@ const Item = () => {
 
   const selectedItems =
     useSelector((state) => state.selectedItems.selectedItems) || [];
+
   const reducerItems = useSelector((state) => state.items.items);
   const reducerItmesToJSON = reducerItems
     ? JSON.parse(JSON.stringify(reducerItems))
@@ -89,11 +89,9 @@ const Item = () => {
     dispatch(changeCurrentPage(newPage - 1)); // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
-  const reducerFlag = useSelector((state) => state.selectedItems.reloadFlag);
-
   useEffect(() => {
     dispatch(fetchItemsFromApi());
-  }, [dispatch, reducerFlag]);
+  }, [dispatch]);
 
   const willBeChangeItemCode =
     useSelector((state) => state.items.willBeChangeItemCode) || -1;
@@ -106,14 +104,10 @@ const Item = () => {
 
     if (remainder === 0) {
       dispatch(changeCurrentPage(totalPage));
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      dispatch(fetchItemsFromApi());
     } else {
       dispatch(changeCurrentPage(totalPage - 1));
-      setTimeout(() => {
-        window.location.reload();
-      }, 300)
+      dispatch(fetchItemsFromApi());
     }
   };
 
@@ -135,6 +129,9 @@ const Item = () => {
         title: "다수의 데이터 수정 불가",
         text: "데이터 하나만 지정 해주세요!",
         icon: "error",
+      })
+      .then(() => {
+        dispatch(REMOVE_SELECTED_ALL_ITEM());
       });
     } else {
       swal.fire({
@@ -184,7 +181,7 @@ const Item = () => {
       });
       dispatch(REMOVE_SELECTED_ALL_ITEM());
       dispatch(changeCurrentPage(0));
-      dispatch(CHANGE_RELOAD_FLAG());
+      dispatch(fetchItemsFromApi());
     } catch (error) {
       swal.fire({
         title: "삭제 실패",
@@ -229,10 +226,10 @@ const Item = () => {
     });
   };
 
-  const modifySuccessCallback = (callback) => {
-    dispatch(WILL_BE_CHANGE_ITEM_CODE(callback));
+  const modifySuccessCallback = async (callbackValue) => {
+    dispatch(WILL_BE_CHANGE_ITEM_CODE(callbackValue));
     dispatch(REMOVE_SELECTED_ALL_ITEM());
-    dispatch(CHANGE_RELOAD_FLAG());
+    dispatch(fetchItemsFromApi());
   };
 
   return (
@@ -383,14 +380,12 @@ const Item = () => {
                   mb: 0.5, // 하단 간격 조절
                 }}
               >
-                {currentItems.map((item, index) => (
+                {currentItems.map((currentItem, index) => (
                   <StyledTableRow
-                    key={item.itemCode}
-                    itemCode={item.itemCode}
-                    changedItemCode={changedItemCode}
+                    key={currentItem.itemCode}
                     sx={{
                       backgroundColor:
-                        item.itemCode === changedItemCode
+                      currentItem.itemCode === changedItemCode
                           ? "#e7edd1"
                           : index % 2 !== 0
                           ? "#f3f3f3"
@@ -401,40 +396,40 @@ const Item = () => {
                       },
                     }}
                     onClick={(event) =>
-                      handleSingleSelect(event, item.itemCode)
+                      handleSingleSelect(event, currentItem.itemCode)
                     }
                   >
                     <StyledTableCell align="center">
                       <Checkbox
-                        checked={selectedItems.includes(item.itemCode)}
+                        checked={selectedItems.includes(currentItem.itemCode)}
                         onChange={(event) =>
-                          handleSingleSelect(event, item.itemCode)
+                          handleSingleSelect(event, currentItem.itemCode)
                         }
                       />
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.itemCode}
+                        {currentItem.itemCode}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="left">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.itemName}
+                        {currentItem.itemName}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="left">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.spec}
+                        {currentItem.spec}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="left">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.unit}
+                        {currentItem.unit}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.itemPrice}
+                        {currentItem.itemPrice}
                       </Typography>
                     </StyledTableCell>
                   </StyledTableRow>
