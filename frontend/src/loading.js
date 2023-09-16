@@ -41,14 +41,3 @@ const Loading = () => {
 };
 
 export default Loading;
-
-// import React from 'react';
-// import {Background, LoadingText} from './Styles';
-   
-// export default () => {
-//   return (
-//     <Background>
-//       <LoadingText>wareh</LoadingText>
-//     </Background>
-//   );
-// };
