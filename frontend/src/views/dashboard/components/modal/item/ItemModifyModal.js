@@ -1,4 +1,5 @@
 import axios from "axios";
+import swal from "sweetalert2";
 import React, { useState } from "react";
 import {
   Modal,
@@ -8,72 +9,82 @@ import {
   Paper,
   TextField,
 } from "@mui/material";
-import swal from "sweetalert2";
 
 const ItemModifyModal = (props) => {
-
-  const { open, onClose, selectedItem, isSuccessCallback } = props;
-
-  const [ itemModifyDto, setItemModifyDto ] = useState({
+  const [itemModifyDto, setItemModifyDto] = useState({
     itemName: null,
     spec: null,
     unit: null,
     itemPrice: null,
   });
 
-  const handleModifyItem = () => {
+  const { open, onClose, selectedItem, isSuccessCallback } = props;
 
+  const closeModal = () => {
+    setItemModifyDto({
+      itemName: null,
+      spec: null,
+      unit: null,
+      itemPrice: null,
+    });
+    onClose(true);
+  };
+
+  const handleModifyItem = async () => {
     if (itemModifyDto.itemName === null) {
-       itemModifyDto.itemName = selectedItem[0].itemName;
+      itemModifyDto.itemName = selectedItem[0].itemName;
     }
-
+  
     if (itemModifyDto.spec === null) {
-       itemModifyDto.spec = selectedItem[0].spec;
+      itemModifyDto.spec = selectedItem[0].spec;
     }
-
+  
     if (itemModifyDto.unit === null) {
-        itemModifyDto.unit = selectedItem[0].unit;
+      itemModifyDto.unit = selectedItem[0].unit;
     }
-
+  
     if (itemModifyDto.itemPrice === null) {
-        itemModifyDto.itemPrice = selectedItem[0].itemPrice;
+      itemModifyDto.itemPrice = selectedItem[0].itemPrice;
     }
-
-    axios.patch(`http://localhost:8888/api/item/modify/${selectedItem[0].itemCode}`, itemModifyDto)
-    .then(response => {
-      closeModal();
-      swal
+  
+    let timerInterval;
+  
+    try {
+      const response = await axios.patch(
+        `http://localhost:8888/api/item/modify/${selectedItem[0].itemCode}`,
+        itemModifyDto
+      );
+  
+      onClose(true);
+      await swal
         .fire({
           title: "수정 완료",
           text: "데이터가 수정되었습니다.",
           icon: "success",
-        })
-        .then(() => {
-          isSuccessCallback();
-          setTimeout(() => {
-            window.location.reload();
-          }, 300)
+          timer: 1000,
+          timerProgressBar: true,
+  
+          didOpen: () => {
+            swal.showLoading();
+            const b = swal.getHtmlContainer().querySelector("b");
+            timerInterval = setInterval(() => {
+              b.textContent = swal.getTimerLeft();
+            }, 1000);
+          },
+          willClose: () => {
+            clearInterval(timerInterval);
+          },
         });
-    })
-    .catch(error => {
-      closeModal();
+  
+      isSuccessCallback(response.data.data);
+    } catch (error) {
       swal.fire({
         title: "수정 실패",
         text: `${error}`,
         icon: "error",
       });
-    })
-  }
-
-  const closeModal = () => {
-    setItemModifyDto({
-        itemName: null,
-        spec: null,
-        unit: null,
-        itemPrice: null,
-      });
-    onClose(true);
-  }
+    }
+  };
 
   return (
     <Modal
@@ -102,8 +113,17 @@ const ItemModifyModal = (props) => {
             label="물품명"
             variant="outlined"
             type="text"
-            value={itemModifyDto.itemName === null ? selectedItem[0]?.itemName : itemModifyDto.itemName}
-            onChange={(e) => setItemModifyDto({...itemModifyDto, itemName: e.currentTarget.value})}
+            value={
+              itemModifyDto.itemName === null
+                ? selectedItem[0]?.itemName
+                : itemModifyDto.itemName
+            }
+            onChange={(e) =>
+              setItemModifyDto({
+                ...itemModifyDto,
+                itemName: e.currentTarget.value,
+              })
+            }
             fullWidth
             margin="normal"
             required
@@ -112,8 +132,17 @@ const ItemModifyModal = (props) => {
             label="규격"
             variant="outlined"
             type="text"
-            value={itemModifyDto.spec === null ? selectedItem[0]?.spec : itemModifyDto.spec}
-            onChange={(e) => setItemModifyDto({...itemModifyDto, spec: e.currentTarget.value})}
+            value={
+              itemModifyDto.spec === null
+                ? selectedItem[0]?.spec
+                : itemModifyDto.spec
+            }
+            onChange={(e) =>
+              setItemModifyDto({
+                ...itemModifyDto,
+                spec: e.currentTarget.value,
+              })
+            }
             fullWidth
             margin="normal"
             required
@@ -122,8 +151,17 @@ const ItemModifyModal = (props) => {
             label="단위"
             variant="outlined"
             type="text"
-            value={itemModifyDto.unit === null ? selectedItem[0]?.unit : itemModifyDto.unit}
-            onChange={(e) => setItemModifyDto({...itemModifyDto, unit: e.currentTarget.value})}
+            value={
+              itemModifyDto.unit === null
+                ? selectedItem[0]?.unit
+                : itemModifyDto.unit
+            }
+            onChange={(e) =>
+              setItemModifyDto({
+                ...itemModifyDto,
+                unit: e.currentTarget.value,
+              })
+            }
             fullWidth
             margin="normal"
             required
@@ -132,8 +170,17 @@ const ItemModifyModal = (props) => {
             label="가격"
             variant="outlined"
             type="text"
-            value={itemModifyDto.itemPrice === null ? selectedItem[0]?.itemPrice : itemModifyDto.itemPrice}
-            onChange={(e) => setItemModifyDto({...itemModifyDto, itemPrice: e.currentTarget.value})}
+            value={
+              itemModifyDto.itemPrice === null
+                ? selectedItem[0]?.itemPrice
+                : itemModifyDto.itemPrice
+            }
+            onChange={(e) =>
+              setItemModifyDto({
+                ...itemModifyDto,
+                itemPrice: e.currentTarget.value,
+              })
+            }
             fullWidth
             margin="normal"
             required
@@ -152,11 +199,7 @@ const ItemModifyModal = (props) => {
             >
               수정
             </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={closeModal}
-            >
+            <Button variant="contained" color="error" onClick={closeModal}>
               취소
             </Button>
           </Box>

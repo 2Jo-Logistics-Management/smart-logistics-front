@@ -41,9 +41,8 @@ import axios from "axios";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.common.black,
+    backgroundColor: "#505e82",
     color: theme.palette.common.white,
-    width: "200px",
   },
   [`&.${tableCellClasses.body}`]: {
     fontSize: 40,
@@ -51,21 +50,12 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   },
 }));
 
-const StyledTableRow = styled(TableRow)(
-  ({ theme, itemCode, changedItemCode }) => ({
-    backgroundColor: itemCode === changedItemCode ? "lightyellow" : "white",
-    "&:nth-of-type(odd)": {
-      backgroundColor:
-        itemCode === changedItemCode
-          ? "lightyellow"
-          : theme.palette.action.hover,
-    },
-    // hide last border
-    "&:last-child td, &:last-child th": {
-      border: 0,
-    },
-  })
-);
+const StyledTableRow = styled(TableRow)(() => ({
+  // hide last border
+  "&:last-child td, &:last-child th": {
+    border: 0,
+  },
+}));
 
 const Item = () => {
   const ITEMS_PER_PAGE = 5; // 한 페이지당 표시할 아이템 개수
@@ -80,6 +70,7 @@ const Item = () => {
 
   const selectedItems =
     useSelector((state) => state.selectedItems.selectedItems) || [];
+
   const reducerItems = useSelector((state) => state.items.items);
   const reducerItmesToJSON = reducerItems
     ? JSON.parse(JSON.stringify(reducerItems))
@@ -98,25 +89,27 @@ const Item = () => {
     dispatch(changeCurrentPage(newPage - 1)); // 페이지 변경 시 현재 페이지 상태 업데이트
   };
 
+  useEffect(() => {
+    dispatch(fetchItemsFromApi());
+  }, [dispatch]);
+
   const willBeChangeItemCode =
     useSelector((state) => state.items.willBeChangeItemCode) || -1;
 
-  const insertSuccessCallback = (callBack) => {
-    dispatch(WILL_BE_CHANGE_ITEM_CODE(callBack));
+  const insertSuccessCallback = async (callback) => {
+    dispatch(WILL_BE_CHANGE_ITEM_CODE(callback));
 
     // 전체 아이템 개수를 한 페이지당 아이템 개수로 나눈 나머지 계산
     let remainder = initItems.length % ITEMS_PER_PAGE;
 
     if (remainder === 0) {
       dispatch(changeCurrentPage(totalPage));
+      dispatch(fetchItemsFromApi());
     } else {
       dispatch(changeCurrentPage(totalPage - 1));
+      dispatch(fetchItemsFromApi());
     }
   };
-
-  useEffect(() => {
-    dispatch(fetchItemsFromApi());
-  }, [dispatch]);
 
   useEffect(() => {
     if (willBeChangeItemCode !== -1) {
@@ -136,6 +129,9 @@ const Item = () => {
         title: "다수의 데이터 수정 불가",
         text: "데이터 하나만 지정 해주세요!",
         icon: "error",
+      })
+      .then(() => {
+        dispatch(REMOVE_SELECTED_ALL_ITEM());
       });
     } else {
       swal.fire({
@@ -185,9 +181,7 @@ const Item = () => {
       });
       dispatch(REMOVE_SELECTED_ALL_ITEM());
       dispatch(changeCurrentPage(0));
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      dispatch(fetchItemsFromApi());
     } catch (error) {
       swal.fire({
         title: "삭제 실패",
@@ -232,8 +226,10 @@ const Item = () => {
     });
   };
 
-  const modifySuccessCallback = () => {
-    dispatch(WILL_BE_CHANGE_ITEM_CODE(selectedItems));
+  const modifySuccessCallback = async (callbackValue) => {
+    dispatch(WILL_BE_CHANGE_ITEM_CODE(callbackValue));
+    dispatch(REMOVE_SELECTED_ALL_ITEM());
+    dispatch(fetchItemsFromApi());
   };
 
   return (
@@ -248,7 +244,7 @@ const Item = () => {
           }}
         >
           <IconHammer />
-          <Typography variant="h4" component="div" sx={{ ml: 1}} >
+          <Typography variant="h4" component="div" sx={{ ml: 1 }}>
             품목 관리
           </Typography>
         </Box>
@@ -349,86 +345,91 @@ const Item = () => {
             >
               <TableHead>
                 <StyledTableRow>
-                  <StyledTableCell></StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "10%" }}></StyledTableCell>
+                  <StyledTableCell style={{ width: "10%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       품목코드
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       품목명
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       규격
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       단위
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       단가
                     </Typography>
                   </StyledTableCell>
                 </StyledTableRow>
               </TableHead>
+
               <TableBody
                 sx={{
                   mt: 0.5, // 상단 간격 조절
                   mb: 0.5, // 하단 간격 조절
                 }}
               >
-                {currentItems.map((item) => (
+                {currentItems.map((currentItem, index) => (
                   <StyledTableRow
-                    key={item.itemCode}
-                    itemCode={item.itemCode}
-                    changedItemCode={changedItemCode}
+                    key={currentItem.itemCode}
                     sx={{
+                      backgroundColor:
+                      currentItem.itemCode === changedItemCode
+                          ? "#e7edd1"
+                          : index % 2 !== 0
+                          ? "#f3f3f3"
+                          : "white",
                       "&:hover": {
-                        backgroundColor: "#f5f5f5",
+                        backgroundColor: "#c7d4e8",
                         cursor: "pointer",
                       },
                     }}
                     onClick={(event) =>
-                      handleSingleSelect(event, item.itemCode)
+                      handleSingleSelect(event, currentItem.itemCode)
                     }
                   >
                     <StyledTableCell align="center">
                       <Checkbox
-                        checked={selectedItems.includes(item.itemCode)}
+                        checked={selectedItems.includes(currentItem.itemCode)}
                         onChange={(event) =>
-                          handleSingleSelect(event, item.itemCode)
+                          handleSingleSelect(event, currentItem.itemCode)
                         }
                       />
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.itemCode}
+                        {currentItem.itemCode}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="left">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.itemName}
+                        {currentItem.itemName}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="left">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.spec}
+                        {currentItem.spec}
                       </Typography>
                     </StyledTableCell>
                     <StyledTableCell align="left">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.unit}
+                        {currentItem.unit}
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell align="left">
+                    <StyledTableCell align="right">
                       <Typography variant="subtitle2" fontWeight={400}>
-                        {item.itemPrice}
+                        {currentItem.itemPrice}
                       </Typography>
                     </StyledTableCell>
                   </StyledTableRow>
@@ -478,7 +479,7 @@ const Item = () => {
         open={modifyModalOpen}
         onClose={() => setModifyModalOpen(false)}
         selectedItem={initItems.filter((i) => selectedItems[0] === i.itemCode)}
-        isSuccessCallback={() => modifySuccessCallback()}
+        isSuccessCallback={modifySuccessCallback}
       />
     </>
   );

@@ -26,5 +26,5 @@ const ItemsReducer = createSlice({
   },
 });
 
-export const { fetchItemsFromApiSuccess, fetchSearchItemsFromApiSuccess, changeCurrentPage, WILL_BE_CHANGE_ITEM_CODE } = ItemsReducer.actions;
+export const { fetchItemsFromApiSuccess, fetchSearchItemsFromApiSuccess, changeCurrentPage, WILL_BE_CHANGE_ITEM_CODE, } = ItemsReducer.actions;
 export default ItemsReducer.reducer;

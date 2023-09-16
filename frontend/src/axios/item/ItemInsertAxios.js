@@ -3,9 +3,13 @@ import swal from "sweetalert2";
 
 axios.defaults.withCredentials = true;
 
-const ItemInsertAxios = (itemInsertDto, closeModal, isSuccessCallback) => {
+const ItemInsertAxios = (
+  itemInsertDto,
+  closeModal,
+  isSuccessCallback
+) => {
   let timerInterval;
-  
+
   axios
     .post(`http://localhost:8888/api/item/insert`, itemInsertDto)
     .then((response) => {
@@ -31,7 +35,6 @@ const ItemInsertAxios = (itemInsertDto, closeModal, isSuccessCallback) => {
         })
         .then(() => {
           isSuccessCallback(response.data.data);
-          window.location.reload();
         });
     })
     .catch((error) => {
