@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import {
-   IconCopy, IconLayoutDashboard, IconTypography, IconHammer
+   IconCopy, IconLayoutDashboard, IconTypography, IconHammer, IconBuildingWarehouse
 } from '@tabler/icons';
 import { uniqueId } from 'lodash';
 import { useMemo } from 'react';
@@ -40,7 +40,7 @@ const MenuItems = () => {
     {
       id: uniqueId(),
       title: '창고관리시스템',
-      icon: IconLayoutDashboard,
+      icon: IconBuildingWarehouse,
       href: '/warehouse/list',
     },
     {

@@ -269,7 +269,7 @@ const Item = () => {
               value={searchItemCode}
               onChange={(e) => setSearchItemCode(e.target.value)}
             />
-            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
               품목명
             </Typography>
             <TextField
@@ -280,7 +280,7 @@ const Item = () => {
               value={searchItemName}
               onChange={(e) => setSearchItemName(e.target.value)}
             />
-            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
               품목가격
             </Typography>
             <TextField
