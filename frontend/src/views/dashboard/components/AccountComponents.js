@@ -1,6 +1,5 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import CloseIcon from '@mui/icons-material/Close';
 import {
     Typography,
     Box,
@@ -14,10 +13,11 @@ import {
     Modal,
     Paper,
     Checkbox,
-    IconButton,
 } from '@mui/material';
+import swal from "sweetalert2";
 import DashboardCard from '../../../components/shared/DashboardCard';
 import { IconCopy } from '@tabler/icons';
+axios.defaults.withCredentials = true;
 
 const Account = () => {
 
@@ -27,8 +27,7 @@ const Account = () => {
     // 거래처 이름, 거래처 코드 검색
     const [searchName, setSearchName] = useState('');
     const [searchCode, setSearchCode] = useState('');
-
-    const [alertMessage, setAlertMessage] = useState('');
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // 체크박스 관련 state
@@ -49,6 +48,7 @@ const Account = () => {
     const [representativeError, setRepresentativeError] = useState(false);  // 대표자
     const [contactNumberError, setContactNumberError] = useState(false);    // 전화번호
     const [businessNumberError, setBusinessNumberError] = useState(false);  // 사업자번호
+
 
     const handleInputValidation = (value, maxLength) => {
       if (value.length > maxLength) {
@@ -92,11 +92,6 @@ const Account = () => {
         setSelectedAccount([]); // 선택된 멤버들을 모두 해제
     };
       
-      // DELETE 취소버튼시 함수
-      const cancelDeleteAccount = () => {
-        setDeleteConfirmationOpen(false);
-        setSelectedAccount([]); // 선택된 거래처들을 모두 해제
-    };
 
     // Enter시 검색
     const handleEnterKeyPress = (event) => {
@@ -153,21 +148,69 @@ const Account = () => {
     };
 
     // DELETE axios
-    const confirmDeleteAccount = () => {
-        let accountNoArr = selectedAccount.map(item => item.accountNo);
-        axios.delete('http://localhost:8888/api/account/delete', {
+    const confirmDeleteAccount = async () => {
+      try {
+        // Get the account numbers of selected accounts
+        const accountNoArr = selectedAccount.map(item => item.accountNo);
+    
+        // Send a DELETE request to delete the selected accounts
+        await axios.delete('http://localhost:8888/api/account/delete', {
           data: accountNoArr
+        });
+    
+        // Show a success message
+        await swal.fire({
+          title: "삭제 완료",
+          text: "계정이 삭제되었습니다.",
+          icon: "success",
+        }); 
+    
+        // Reload the page after a delay (if needed)
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+    
+        setDeleteConfirmationOpen(false);
+      } catch (error) {
+        // Handle errors and show an error message
+        swal.fire({
+          title: "삭제 실패",
+          text: `${error.message}`,
+          icon: "error",
+        });
+      }
+    };
+
+    const handleDeleteAccount = () => {
+      if (selectedAccount.length === 0) {
+        // 선택한 거래처가 없을 때
+        swal.fire({
+          title: "데이터 선택",
+          text: "한개 이상의 데이터를 선택해주세요.",
+          icon: "warning",
+        });
+        return;
+      }
+    
+      // 삭제 확인 모달을 띄우기 위한 SweetAlert2 코드
+      swal
+        .fire({
+          title: `정말로 ${selectedAccount.length}개의 거래처를 삭제하시겠습니까?`,
+          text: "삭제된 데이터는 복구할 수 없습니다.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "삭제",
+          cancelButtonText: "취소",
         })
-          .then(() => {
-            console.log(accountNoArr);
-            axios.get('http://localhost:8888/api/account/list')
-              .then(updateAccountList)
-              .catch();
-            setDeleteConfirmationOpen(false);
-            window.location.reload(); // 삭제가 완료되면 페이지 새로고침
-          })
-          .catch();
-      };
+        .then((result) => {
+          if (result.isConfirmed) {
+            // 확인 버튼이 눌렸을 때, 선택한 거래처 삭제 함수 실행
+            confirmDeleteAccount();
+          }
+        });
+    };
 
       // MODIFY axios
     const handleUpdateAccount = () => {
@@ -186,35 +229,13 @@ const Account = () => {
         }
     };
 
-    
-    // 중복체크 axios
-    const handleCheckDuplicateId = () => {
-      const accountCode = newAccount.accountCode || null; // 값이 없으면 null 할당
-      
-      if (!accountCode) {
-        setAlertMessage('거래처코드를 입력하세요.');
-        return;
-      }
-      axios.get(`http://localhost:8888/api/account/checkAccountCode/${accountCode}`)
-        .then(response => {
-          const isDuplicate = response.data.data;
-          if (isDuplicate) {
-            // 중복된 거래처코드가 존재하는 경우
-            setAlertMessage('이미 존재하는 거래처코드 입니다.');
-          } else {
-            // 중복된 거래처코드가 존재하지 않는 경우
-            setAlertMessage('사용 가능한 거래처코드 입니다.');
-          }
-        })
-        .catch();
-    };
 
     // 조회조건 axios
     const handleSearch = () => {
       const queryParams = [];
   
       if (searchCode) {
-          queryParams.push(`accountCode=${searchCode}`);
+          queryParams.push(`accountNo=${searchCode}`);
       }
       if (searchName) {
           queryParams.push(`accountName=${searchName}`);
@@ -231,15 +252,6 @@ const Account = () => {
               // 처리할 에러 핸들링 코드 추가
           });
   };
-
-    const handleDeleteAccount = () => {
-        if (selectedAccount.length === 0) {
-          console.log("선택된 거래처가 없습니다.");
-          return;
-        }
-      
-        setDeleteConfirmationOpen(true);
-    };
 
     const openAddNewAccountForm = () => {
         setNewAccount({
@@ -289,16 +301,6 @@ const Account = () => {
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
               거래처 정보 수정
             </Typography>
-            <TextField
-                label="거래처코드"
-                variant="outlined"
-                type='text'
-                value={editingAccount?.accountCode || ''}
-                onChange={(e) => setEditingAccount({ ...editingAccount, accountCode: e.target.value })}
-                fullWidth
-                margin="normal"
-                required
-            />
             <TextField
                 label="거래처명"
                 variant="outlined"
@@ -354,41 +356,6 @@ const Account = () => {
         </Paper>
     </Modal>
 
-    {/* DELETE 모달 */}
-    <Modal
-        open={deleteConfirmationOpen}
-        onClose={cancelDeleteAccount}
-        aria-labelledby="delete-confirmation-modal-title"
-        aria-describedby="delete-confirmation-modal-description"
-        style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        }}
-    >
-        <Paper className="modal-paper" style={{ padding: '20px', width: '400px' }}>
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>
-            거래처 삭제
-            </Typography>
-            <IconButton aria-label="닫기" onClick={cancelDeleteAccount}>
-              <CloseIcon />
-            </IconButton>
-          </div>
-            <Typography variant="body1" style={{ marginBottom: '20px' }}>
-            선택한 거래처를 삭제하시겠습니까?
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-            <Button variant="contained" color="primary" onClick={confirmDeleteAccount}>
-                삭제
-            </Button>
-            </Box>
-        </div>
-        </Paper>
-    </Modal>
-
-
     {/* INSERT 모달 */}
     <Modal
         open={isModalOpen}
@@ -404,29 +371,6 @@ const Account = () => {
         <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
           <div style={{ width: '400px' }}>
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 거래처 추가</Typography>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-            <TextField
-                label="거래처코드"
-                variant="outlined"
-                type='text'
-                onChange={(e) => {
-                    const value = e.target.value;
-                    setNewAccount((prevAccount) => ({
-                        ...prevAccount,
-                        accountCode: value
-                    }));
-                    setAccountNameError(handleInputValidation(value, 20));
-                }}
-                fullWidth
-                margin="normal"
-                required
-                error={alertMessage.includes('이미 존재하는 거래처코드')}
-                helperText={alertMessage}
-            />
-                <Button variant="outlined" color="primary" onClick={handleCheckDuplicateId} style={{ marginLeft: '10px', flex: 1 }} >
-                          중복 체크
-                </Button>
-            </div>
             <TextField
                 label="거래처명"
                 variant="outlined"
@@ -628,7 +572,7 @@ const Account = () => {
                                 </TableCell>
                                 <TableCell>
                                     <Typography variant="subtitle2" fontWeight={400}>
-                                        {realAccount.accountCode}
+                                        {realAccount.accountNo}
                                     </Typography>
                                 </TableCell>
                                 <TableCell>

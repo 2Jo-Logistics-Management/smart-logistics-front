@@ -36,7 +36,7 @@ const Account = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
   
     const [order, setOrder] = React.useState('asc');
-    const [orderBy, setOrderBy] = React.useState('accountCode');
+    const [orderBy, setOrderBy] = React.useState('accountNo');
     const [selected, setSelected] = React.useState([]);
     const [page, setPage] = React.useState(0);
     const [dense, setDense] = React.useState(false);
@@ -46,7 +46,7 @@ const Account = () => {
 
     // 거래처 이름, 거래처 코드 검색
     const [searchName, setSearchName] = useState('');
-    const [searchCode, setSearchCode] = useState('');
+    const [searchNo, setSearchNo] = useState('');
 
     // 수정 관련 state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -80,7 +80,7 @@ const Account = () => {
     };
 
     const [newAccount, setNewAccount] = useState({
-      accountCode: '',
+      accountNo: '',
       accountName: '',
       representative: '',
       contactNumber: '',
@@ -165,7 +165,7 @@ const Account = () => {
 
     const headCells = [
       {
-        id: 'accountCode',
+        id: 'accountNo',
         numeric: false,
         disablePadding: false,
         label: '거래처코드',
@@ -314,8 +314,8 @@ const Account = () => {
     const handleSearch = () => {
       const queryParams = [];
   
-      if (searchCode) {
-          queryParams.push(`accountCode=${searchCode}`);
+      if (searchNo) {
+          queryParams.push(`accountNo=${searchNo}`);
       }
       if (searchName) {
           queryParams.push(`accountName=${searchName}`);
@@ -342,27 +342,6 @@ const Account = () => {
           })
           .catch();
         }, []);
-      // 중복체크 axios
-      const handleCheckDuplicateId = () => {
-        const accountCode = newAccount.accountCode || null; // 값이 없으면 null 할당
-        
-        if (!accountCode) {
-          setAlertMessage('거래처코드를 입력하세요.');
-          return;
-        }
-        axios.get(`http://localhost:8888/api/account/checkAccountCode/${accountCode}`)
-          .then(response => {
-            const isDuplicate = response.data.data;
-            if (isDuplicate) {
-              // 중복된 거래처코드가 존재하는 경우
-              setAlertMessage('이미 존재하는 거래처코드 입니다.');
-            } else {
-              // 중복된 거래처코드가 존재하지 않는 경우
-              setAlertMessage('사용 가능한 거래처코드 입니다.');
-            }
-          })
-          .catch();
-      };
 
       // DELETE axios
       const handleDeleteConfirmed  = () => {
@@ -478,31 +457,24 @@ const Account = () => {
         setSelected(newSelected);
       };
 
-      const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-      };
-
-      const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-      };
-
       const handleChangeDense = (event) => {
         setDense(event.target.checked);
       };
 
       const isSelected = (name) => selected.indexOf(name) !== -1;
 
-      const emptyRows =
-        page > 0 ? Math.max(0, (1 + page) * rowsPerPage - currentAccount.length) : 0;
-
         const visibleRows = React.useMemo(
-          () => getSortedData().slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-          [order, orderBy, page, rowsPerPage, currentAccount],
+          () => getSortedData(),
+          [order, orderBy, currentAccount],
         );
         const tableBodyStyle = {
           overflowY: 'auto', // 세로 스크롤 추가
-        };
+      };
+      const leftGridStyle = {
+        overflow: 'auto',
+        maxHeight: '550px',
+  
+      };
         
 
   return (
@@ -523,29 +495,6 @@ const Account = () => {
         <Paper className="modal-paper" style={{ padding: '30px', margin: '20px' }}>
           <div style={{ width: '400px' }}>
             <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 거래처 추가</Typography>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-            <TextField
-                label="거래처코드"
-                variant="outlined"
-                type='text'
-                onChange={(e) => {
-                    const value = e.target.value;
-                    setNewAccount((prevAccount) => ({
-                        ...prevAccount,
-                        accountCode: value
-                    }));
-                    setAccountNameError(handleInputValidation(value, 20));
-                }}
-                fullWidth
-                margin="normal"
-                required
-                error={alertMessage.includes('이미 존재하는 거래처코드')}
-                helperText={alertMessage}
-            />
-                <Button variant="outlined" color="primary" onClick={handleCheckDuplicateId} style={{ marginLeft: '10px', flex: 1 }} >
-                          중복 체크
-                </Button>
-            </div>
             <TextField
                 label="거래처명"
                 variant="outlined"
@@ -685,16 +634,6 @@ const Account = () => {
               거래처 정보 수정
             </Typography>
             <TextField
-                label="거래처코드"
-                variant="outlined"
-                type='text'
-                value={editingAccount?.accountCode || ''}
-                onChange={(e) => setEditingAccount({ ...editingAccount, accountCode: e.target.value })}
-                fullWidth
-                margin="normal"
-                required
-            />
-            <TextField
                 label="거래처명"
                 variant="outlined"
                 type='text'
@@ -772,7 +711,7 @@ const Account = () => {
             <Typography variant="subtitle2" sx={{ mr: 1 }}>
                 거래처코드
             </Typography>
-            <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
+            <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchNo} onChange={(e) => setSearchNo(e.target.value)}
              onKeyDown={handleEnterKeyPress} />
             <Typography variant="subtitle2" sx={{ mr: 1 }}>
                 거래처명
@@ -816,7 +755,7 @@ const Account = () => {
       </Button> 
     </div>
     <Box sx={{ width: '100%', padding:'10px' }}>
-      <Paper elevation={3} sx={{ width: '100%', mb: 2 }}>
+      <Paper sx={ leftGridStyle }>
         <EnhancedTableToolbar numSelected={selected.length} />
         <TableContainer>
           <Table
@@ -869,7 +808,7 @@ const Account = () => {
                         fontWeight: 400, // 글꼴 두께를 400으로 설정
                       }}
                     >
-                      {realAccount.accountCode}
+                      {realAccount.accountNo}
                     </TableCell>
                     <TableCell
                       component="th"
@@ -916,27 +855,9 @@ const Account = () => {
                   </TableRow>
                 );
               })}
-              {emptyRows > 0 && (
-                <TableRow
-                  style={{
-                    height: (dense ? 33 : 53) * emptyRows,
-                  }}
-                >
-                  <TableCell colSpan={6} />
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={currentAccount.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </Paper>
       <FormControlLabel
         control={<Switch checked={dense} onChange={handleChangeDense} />}
