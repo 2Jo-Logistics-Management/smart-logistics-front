@@ -14,8 +14,10 @@ import {
   Select,
   MenuItem,
   FormControl,
+  styled,
 } from "@mui/material";
-import { Edit, Done, Delete } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Edit, Done, GifBox } from "@mui/icons-material";
 import DashboardCard from "../../../components/shared/DashboardCard";
 import swal from "sweetalert2";
 import receiveItemUpdateAxios from "src/axios/receiveItemUpdateAxios";
@@ -23,8 +25,32 @@ import axios from "axios";
 import receiveInsertAxios from "src/axios/receiveInsertAxios";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { lightBlue } from "@mui/material/colors";
-import { log } from "util";
+import FeedOutlinedIcon from "@mui/icons-material/FeedOutlined";
+import IconButton from "@mui/material/IconButton";
+import { tableCellClasses } from "@mui/material/TableCell";
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: "#505e82",
+    color: theme.palette.common.white,
+    width: "200px",
+  },
+  [`&.${tableCellClasses.body}`]: {
+    fontSize: 40,
+    minWidth: 100,
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme, receiveCode }) => ({
+  backgroundColor: receiveCode ? "lightyellow" : "white",
+  "&:nth-of-type(odd)": {
+    backgroundColor: receiveCode ? "lightyellow" : theme.palette.action.hover,
+  },
+  // hide last border
+  "&:last-child td, &:last-child th": {
+    border: 0,
+  },
+}));
 
 const ReceiveComponents2 = (props) => {
   const [visibleCount, setVisibleCount] = useState(10);
@@ -36,7 +62,7 @@ const ReceiveComponents2 = (props) => {
   const [detailPorder, setDetailPorder] = useState(null);
   const [selectWarehouse, setSelectWarehouse] = useState("");
   const [receiveCounts, setReceiveCounts] = useState("");
-  const [modifyReceiveItemData, setModfiyReceiveItemData] = useState(null);
+  const [modifyReceiveItemData, setModifyReceiveItemData] = useState(null);
   const [addPOrderProducts, setAddPOrderProducts] = useState([]);
   const [addReceiveManager, setAddReceiveManager] = useState(null);
   const [addSelectedDateTime, setAddSelectedDateTime] = useState("");
@@ -46,6 +72,8 @@ const ReceiveComponents2 = (props) => {
   const [selectedWarehouses, setSelectedWarehouses] = useState(
     Array(addPOrderProducts.length).fill("")
   );
+  const [modifyCode, setModifyCode] = useState("");
+
   useEffect(() => {
     axios
       .get("http://localhost:8888/api/warehouse/list")
@@ -59,11 +87,13 @@ const ReceiveComponents2 = (props) => {
   useEffect(() => {
     if (props.receiveItemData && props.receiveItemData.data) {
       setReceiveProducts(props.receiveItemData.data);
+      props.modifyReceiveItemCode(modifyCode);
+      setModifyCode("");
     }
     if (props.receiveItemData.data === undefined) {
       setReceiveProducts([]);
     }
-  }, [props.receiveItemData]);
+  }, [props.receiveItemData, modifyCode]);
   useEffect(() => {
     setVisibleProducts(receiveProducts.slice(0, visibleCount));
   }, [visibleCount, receiveProducts]);
@@ -75,8 +105,8 @@ const ReceiveComponents2 = (props) => {
   }, [props.receiveCheckData]);
 
   useEffect(() => {
-    if (props.modifyReceiveCode !== null) {
-      setModfiyReceiveItemData(props.modifyReceiveCode);
+    if (props.modifyReceiveCode !== "null") {
+      setModifyReceiveItemData(props.modifyReceiveCode);
     }
   }, [props.modifyReceiveCode]);
 
@@ -87,16 +117,6 @@ const ReceiveComponents2 = (props) => {
       setAddPOrderProducts([]);
     }
   }, [props.modalSelectedProducts]);
-
-  const handleScroll = (e) => {
-    const { scrollTop, clientHeight, scrollHeight } = e.target;
-
-    if (scrollTop + clientHeight >= scrollHeight - 10) {
-      const newVisibleCount = visibleCount + 10;
-      setVisibleCount(newVisibleCount);
-    }
-    e.target = clientHeight;
-  };
 
   const handleEdit = (receiveCode, receiveItemNo) => {
     setEditMode((prevState) => ({
@@ -124,9 +144,12 @@ const ReceiveComponents2 = (props) => {
         });
       } else if (receiveCounts !== "" || selectWarehouse !== "") {
         receiveItemUpdateAxios(receiveCode, receiveItemNo, receiveCounts, selectWarehouse);
+        setModifyCode(receiveCode);
       }
+      setModifyReceiveItemData(null);
       setReceiveCounts("");
       setSelectWarehouse("");
+      props.modifyData(true);
     }
   };
 
@@ -219,14 +242,20 @@ const ReceiveComponents2 = (props) => {
         { insertData },
       ]);
       const receiveNewData = response.data.data;
-      setAddPOrderProducts([]);
-      setAddReceiveManager(null);
-      setAddSelectedDateTime(null);
-      props.addPOrdersClear([]);
+      // setAddPOrderProducts([]);
+      // setAddReceiveManager(null);
+      // setAddSelectedDateTime(null);
+      // props.addPOrdersClear([]);
       props.newReceiveCode(receiveNewData);
     } catch (error) {
       console.log("오류발생 : ", error.message);
     }
+    setAddPOrderProducts([]);
+    setAddReceiveManager(null);
+    setAddSelectedDateTime(null);
+    props.addPOrdersClear([]);
+    setReceiveItemCounts([]);
+    setSelectedWarehouses([]);
   };
   const handleCancel = () => {
     setAddPOrderProducts([]);
@@ -236,56 +265,60 @@ const ReceiveComponents2 = (props) => {
   };
 
   return (
-    <DashboardCard sx={{}} disabled={receiveProducts.length !== 0}>
+    <DashboardCard disabled={receiveProducts.length !== 0}>
       <Box
         sx={{
-          overflow: "auto",
-          maxHeight: "800px",
-          height: "800px",
-          padding: "3px",
-          marginTop: "-40px",
-          marginLeft: "-15px",
+          display: "flex",
+          flexDirection: "column", // Set the direction to column
+          alignItems: "center",
+          mb: 2,
+          padding: "10px",
         }}
-        onScroll={handleScroll}
       >
         {addPOrderProducts.length !== 0 && (
           <Table>
-            <TableRow sx={{ backgroundColor: "rgba(200, 200, 200, 0.5)" }}>
-              <TableCell
-                sx={{ fontSize: "13px", paddingLeft: 30, textAlign: "center", paddingRight: 0 }}
-              >
-                입고담당자
-              </TableCell>
-              <TableCell sx={{ fontSize: "13px", textAlign: "center", paddingLeft: "0px" }}>
+            <TableRow sx={{ backgroundColor: "rgba(200, 200, 200, 0.5)", textAlign: "center" }}>
+              <StyledTableCell sx={{ paddingLeft: 30, textAlign: "right", paddingRight: 0 }}>
+                <Typography variant="h6" fontWeight={600}>
+                  입고담당자
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 4 }}>
                 <TextField
-                  label="입고담당자"
+                  label="입고담당자를 입력해주세요"
                   size="small"
                   value={addReceiveManager}
                   onChange={(e) => setAddReceiveManager(e.target.value)}
                 />
-              </TableCell>
+              </StyledTableCell>
 
-              <TableCell sx={{ fontSize: "13px" }}>입고일</TableCell>
-              <TableCell sx={{ fontSize: "13px" }}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="입고일"
-                    value={addSelectedDateTime}
-                    onChange={(newDate) => setAddSelectedDateTime(newDate)}
-                    renderInput={(props) => <TextField {...props} />}
-                    views={["year", "month", "day"]}
-                    format="yyyy.MM.dd"
-                    defaultValue={new Date()}
-                    slotProps={{ textField: { size: "small" } }}
-                  />
-                </LocalizationProvider>
-              </TableCell>
-              <TableCell sx={{ textAlign: "right" }}>
+              <StyledTableCell sx={{ textAlign: "right" }}>
+                <Typography variant="h6" fontWeight={600}>
+                  입고일
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell sx={{ textAlign: "left" }}>
+                <Typography variant="h6" fontWeight={600}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      label="입고일을 입력해주세요"
+                      value={addSelectedDateTime}
+                      onChange={(newDate) => setAddSelectedDateTime(newDate)}
+                      renderInput={(props) => <TextField {...props} />}
+                      views={["year", "month", "day"]}
+                      format="yyyy.MM.dd"
+                      defaultValue={new Date()}
+                      slotProps={{ textField: { size: "small" } }}
+                    />
+                  </LocalizationProvider>
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell sx={{ textAlign: "right" }}>
                 <Button onClick={handleCancel} variant="contained" color="error">
                   등록취소
                 </Button>
-              </TableCell>
-              <TableCell sx={{ textAlign: "right", width: 120 }}>
+              </StyledTableCell>
+              <StyledTableCell sx={{ textAlign: "right", width: 120 }}>
                 <Button
                   color="primary"
                   variant="contained"
@@ -306,53 +339,90 @@ const ReceiveComponents2 = (props) => {
                 >
                   등록완료
                 </Button>
-              </TableCell>
+              </StyledTableCell>
             </TableRow>
           </Table>
         )}
-        <Table aria-label="simple table" sx={{ whiteSpace: "nowrap", mt: 2, marginLeft: "-5px" }}>
-          <TableHead
-            sx={{
-              position: "sticky",
-              top: 0,
-              zIndex: 1,
-              backgroundColor: "#fff",
-              padding: "3px",
-            }}
-          >
-            <TableRow sx={{ padding: "3px" }}>
-              <TableCell sx={{ width: 215 }}>
-                {addPOrderProducts.length === 0 ? "선택" : "발주번호"}
-              </TableCell>
-              <TableCell sx={{ width: 200 }}>순번</TableCell>
-              <TableCell sx={{ width: 200 }}>품목코드</TableCell>
-              <TableCell sx={{ width: 200 }}>
-                {addPOrderProducts.length === 0 ? "품목이름" : "거래처번호"}
-              </TableCell>
-              <TableCell sx={{ width: 200 }}>입고수량</TableCell>
-              <TableCell sx={{ width: 200 }}>창고</TableCell>
-              <TableCell sx={{ width: 200 }}>
-                {addPOrderProducts.length === 0 ? "발주정보" : ""}
-              </TableCell>
-              <TableCell sx={{ visibility: "hidden" }}>수정</TableCell>
-            </TableRow>
+        <Table
+          aria-label="simple table"
+          sx={{
+            whiteSpace: "nowrap",
+            mt: 2,
+          }}
+        >
+          <TableHead>
+            <StyledTableRow>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  {addPOrderProducts.length === 0 ? "선택" : "발주번호"}
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  순번
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  품목코드
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  {addPOrderProducts.length === 0 ? "품목이름" : "거래처번호"}
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  입고수량
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  창고
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell>
+                <Typography variant="h6" fontWeight={600}>
+                  {addPOrderProducts.length === 0 ? "발주정보" : ""}
+                </Typography>
+              </StyledTableCell>
+              <StyledTableCell></StyledTableCell>
+            </StyledTableRow>
           </TableHead>
           {addPOrderProducts.length !== 0 && (
             <TableBody>
               {addPOrderProducts.map((product, index) => (
-                <TableRow
+                <StyledTableRow
                   key={index}
                   sx={{
                     "&:hover": {
-                      backgroundColor: "rgba(0, 0, 0, 0.04)",
+                      backgroundColor: "#f5f5f5",
                     },
                   }}
                 >
-                  <TableCell>{product.porderCode}</TableCell>
-                  <TableCell>{product.porderItemNo}</TableCell>
-                  <TableCell>{product.itemCode}</TableCell>
-                  <TableCell>{product.accountNo}</TableCell>
-                  <TableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.porderCode}
+                    </Typography>
+                  </StyledTableCell>
+
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.porderItemNo}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.itemCode}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.accountNo}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
                     <TextField
                       size="small"
                       sx={{ width: 100 }}
@@ -360,8 +430,8 @@ const ReceiveComponents2 = (props) => {
                       value={receiveItemCounts[index]}
                       onChange={(e) => handleReceiveItemCountChange(e.target.value, index)}
                     />
-                  </TableCell>
-                  <TableCell>
+                  </StyledTableCell>
+                  <StyledTableCell>
                     <FormControl sx={{ width: 80 }} size="small">
                       <Select
                         value={selectedWarehouses[index] || ""}
@@ -376,19 +446,26 @@ const ReceiveComponents2 = (props) => {
                         ))}
                       </Select>
                     </FormControl>
-                  </TableCell>
-                  <TableCell>
-                    <Button onClick={() => handleRemoveRow(index)}>✖️</Button>
-                  </TableCell>
-                </TableRow>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleRemoveRow(index)}
+                    ></Button>
+                  </StyledTableCell>
+                  <StyledTableCell></StyledTableCell>
+                </StyledTableRow>
               ))}
             </TableBody>
           )}
           {addPOrderProducts.length === 0 && (
             <TableBody sx={{ padding: "3px" }} disabled={false}>
               {visibleProducts.map((product, index) => (
-                <TableRow key={index}>
-                  <TableCell sx={{ padding: "3px" }}>
+                <StyledTableRow key={index} receiveCode={visibleProducts.receiveCode}>
+                  <StyledTableCell sx={{ padding: "3px" }}>
                     <Checkbox
                       checked={selectedProducts.some(
                         (selectedProduct) =>
@@ -399,76 +476,84 @@ const ReceiveComponents2 = (props) => {
                         handleCheckboxChange(product.receiveCode, product.receiveItemNo)
                       }
                     />
-                  </TableCell>
-                  <TableCell>{product.receiveItemNo}</TableCell>
-                  <TableCell>{product.itemCode}</TableCell>
-                  <TableCell>{product.itemName}</TableCell>
-                  <TableCell>
-                    {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                    (product.receiveCount !== null || product.warehouseNo !== null) ? (
-                      <TextField
-                        value={receiveCounts[index] || product.receiveCount}
-                        onChange={(e) => handleReceiveCountChange(e.target.value, index)}
-                        size="small"
-                        sx={{ width: "80px" }}
-                      />
-                    ) : (
-                      <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                        {product.receiveCount}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <FormControl sx={{ width: 80 }} size="small">
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.receiveItemNo}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.itemCode}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {product.itemName}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
                       {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
                       (product.receiveCount !== null || product.warehouseNo !== null) ? (
-                        <Select
-                          value={selectWarehouse[index] || product.warehouseName}
-                          onChange={(e) =>
-                            handleChange(
-                              `${product.receiveCode}-${product.receiveItemNo}`,
-                              "warehouseNo",
-                              e.target.value,
-                              index
-                            )
-                          }
+                        <TextField
+                          value={receiveCounts[index] || product.receiveCount}
+                          onChange={(e) => handleReceiveCountChange(e.target.value, index)}
+                          size="small"
                           sx={{ width: "80px" }}
-                        >
-                          {warehouseOptions.map((option) => (
-                            <MenuItem key={option.warehouseNo} value={option.warehouseNo}>
-                              {option.warehouseName}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                        />
                       ) : (
-                        <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
-                          {product.warehouseName}
-                        </Typography>
+                        product.receiveCount
                       )}
-                    </FormControl>
-                  </TableCell>
-                  <TableCell>
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      <FormControl sx={{ width: 80 }} size="small">
+                        {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
+                        (product.receiveCount !== null || product.warehouseNo !== null) ? (
+                          <Select
+                            value={selectWarehouse[index] || product.warehouseName}
+                            onChange={(e) =>
+                              handleChange(
+                                `${product.receiveCode}-${product.receiveItemNo}`,
+                                "warehouseNo",
+                                e.target.value,
+                                index
+                              )
+                            }
+                            sx={{ width: "80px" }}
+                          >
+                            {warehouseOptions.map((option) => (
+                              <MenuItem key={option.warehouseNo} value={option.warehouseNo}>
+                                {option.warehouseName}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        ) : (
+                          product.warehouseName
+                        )}
+                      </FormControl>
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
                     <Tooltip
                       title={
                         <div>
                           발주코드: {product.porderCode}
                           <br />
                           발주순번: {product.porderItemNo}
+                          <br />
+                          발주상태: {product.porderState}
                         </div>
                       }
-                      sx={{ marginRight: "50px" }}
                     >
-                      <Button
-                        sx={{
-                          marginRight: 10,
-                          marginLeft: 0,
-                        }}
-                      >
-                        ℹ️
-                      </Button>
+                      <IconButton>
+                        <FeedOutlinedIcon />
+                      </IconButton>
                     </Tooltip>
-                  </TableCell>
-                  <TableCell>
+                  </StyledTableCell>
+                  <StyledTableCell>
                     <Button
                       variant="contained"
                       size="small"
@@ -480,14 +565,17 @@ const ReceiveComponents2 = (props) => {
                         )
                       }
                       onClick={() => handleEdit(product.receiveCode, product.receiveItemNo)}
-                      disabled={String(modifyReceiveItemData) !== String(product.receiveCode)}
+                      disabled={
+                        product.porderState === "완료" ||
+                        String(modifyReceiveItemData) !== String(product.receiveCode)
+                      }
                     >
                       {editMode[`${product.receiveCode}-${product.receiveItemNo}`]
                         ? "Save"
                         : "Edit"}
                     </Button>
-                  </TableCell>
-                </TableRow>
+                  </StyledTableCell>
+                </StyledTableRow>
               ))}
             </TableBody>
           )}

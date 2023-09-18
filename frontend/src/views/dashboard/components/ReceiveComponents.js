@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Box,
@@ -11,8 +11,13 @@ import {
   Button,
   Checkbox,
   Pagination,
-  MenuItem,
+  styled,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import { tableCellClasses } from "@mui/material/TableCell";
 import DashboardCard from "../../../components/shared/DashboardCard";
 import swal from "sweetalert2";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -30,25 +35,42 @@ import ReceviveComponents2 from "./ReceiveComponents2";
 import axios from "axios";
 import { open_Modal } from "../../../redux/slices/receiveModalDuck";
 import ReceiveModal from "./modal/ReceiveModal";
-import { Select } from "@mui/material";
-import receiveInsertAxios from "src/axios/receiveInsertAxios";
 import pOrderWaitIngAxios from "src/axios/pOrderWaitIngAxios";
 import receiveItemDeleteAxios from "src/axios/receiveItemDeleteAxios";
 import receiveUpdateAxios from "src/axios/receiveUpdateAxios";
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: "#505e82",
+    color: theme.palette.common.white,
+    width: 100,
+  },
+  [`&.${tableCellClasses.body}`]: {
+    fontSize: 40,
+    minWidth: 100,
+  },
+}));
 
+const StyledTableRow = styled(TableRow)(({ theme, receiveCode, modifyReceive }) => ({
+  backgroundColor: receiveCode === modifyReceive ? "lightyellow" : "white",
+  "&:nth-of-type(odd)": {
+    backgroundColor: receiveCode === modifyReceive ? "lightyellow" : theme.palette.action.hover,
+  },
+  // hide last border
+  "&:last-child td, &:last-child th": {
+    border: 0,
+  },
+}));
 axios.defaults.withCredentials = true;
 
 const ReceiveComponents = () => {
   const [isSaveCompleted, setIsSaveCompleted] = useState(false);
   const [modalSelectedProducts, setModalSelectedProducts] = useState([]);
-  const [deleteSelectedReceiveItems, setDeleteSelectedReceiveItems] = useState([]);
-  const [addSelectedDateTime, setAddSelectedDateTime] = useState("");
-  const [addReceiveManager, setAddReceiveManager] = useState("");
   const [receiveCheckData, setReceiveCheckData] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [modifyReceiveCode, setModifyReceiveCode] = useState("null");
   const [newReceive, setNewReceive] = useState("");
   const [modifyReceive, setModifyReceive] = useState("");
+  const [modifyReceiveItem, setModifyReceiveItem] = useState("");
 
   const handleChildSave = () => {
     setIsSaveCompleted(true);
@@ -76,16 +98,19 @@ const ReceiveComponents = () => {
     Array(modalSelectedProducts.length).fill("")
   );
   const [currentPage, setCurrentPage] = useState(0);
-  const [warehouseOptions, setWarehouseOptions] = useState([]);
   const [findReceiveCode, setFindReceiveCode] = useState("");
-  const [selectedWarehouses, setSelectedWarehouses] = useState(
-    Array(modalSelectedProducts.length).fill("")
-  );
 
   useEffect(() => {
-    if (newReceive !== "") {
+    if (newReceive !== "" || modifyReceive !== "") {
       dispatch(receiveListAll());
-      setFindReceiveCode(newReceive);
+      if (newReceive != "") {
+        setFindReceiveCode(newReceive);
+        setModifyReceive("");
+      }
+      if (modifyReceive != "") {
+        setFindReceiveCode(modifyReceive);
+        setNewReceive("");
+      }
     }
     if (newReceive === "") {
       dispatch(receiveListAll());
@@ -193,41 +218,54 @@ const ReceiveComponents = () => {
   };
 
   const handleModify = () => {
-    swal
-      .fire({
-        title: "정말로 수정하시겠습니까?",
-        text: "해당하는 데이터의 창고재고도 함께 수정됩니다.",
+    if (selectedProducts.length === 0) {
+      swal.fire({
+        title: "선택 사항 없음",
+        text: "수정할 입고를 선택해주세요",
         icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085",
-        confirmButtonText: "수정",
-        cancelButtonText: "취소",
-      })
-      .then((result) => {
-        if (result.isConfirmed) {
-          axios
-            .get(`http://localhost:8888/api/receive-item/list?receiveCode=${selectedProducts}`)
-            .then((data) => {
-              const findData = JSON.stringify(data.data.data[0].porderCode);
-              pOrderWaitIngAxios(findData)
-                .then((data) => {
-                  if (findData.length > 0) {
-                    setModifyReceiveCode(selectedProducts);
-                    setEditMode({});
-                  } else if (findData.length === 0) {
-                    alert("완료 처리된 발주가 있어 수정 불가합니다.");
-                  }
-                })
-                .catch((error) => {
-                  console.error(error);
-                });
-            })
-            .catch((error) => {
-              console.error("Error fetching data:", error);
-            });
-        }
       });
+    } else if (selectedProducts.length >= 2) {
+      swal.fire({
+        title: "선택 사항 초과",
+        text: "수정할 입고를 하나씩 선택해주세요",
+        icon: "warning",
+      });
+    } else if (selectedProducts.length === 1) {
+      swal
+        .fire({
+          title: "정말로 수정하시겠습니까?",
+          text: "해당하는 데이터의 창고재고도 함께 수정됩니다.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085",
+          confirmButtonText: "수정",
+          cancelButtonText: "취소",
+        })
+        .then((result) => {
+          if (result.isConfirmed) {
+            axios
+              .get(`http://localhost:8888/api/receive-item/list?receiveCode=${selectedProducts}`)
+              .then((data) => {
+                const findData = JSON.stringify(data.data.data[0].porderCode);
+                pOrderWaitIngAxios(findData)
+                  .then((data) => {
+                    if (findData.length > 0) {
+                      setModifyReceiveCode(selectedProducts);
+                    } else if (findData.length === 0) {
+                      alert("완료 처리된 발주가 있어 수정 불가합니다.");
+                    }
+                  })
+                  .catch((error) => {
+                    console.error(error);
+                  });
+              })
+              .catch((error) => {
+                console.error("Error fetching data:", error);
+              });
+          }
+        });
+    }
   };
 
   const handleDelete = () => {
@@ -242,18 +280,23 @@ const ReceiveComponents = () => {
         confirmButtonText: "삭제",
         cancelButtonText: "취소",
       })
-      .then((result) => {
+      .then(async (result) => {
         if (result.isConfirmed) {
           if (selectedProducts.length > 0) {
             receiveDeleteAxios(selectedProducts);
+            dispatch(receiveListAll());
+            setReceiveItemData([]);
           }
           if (childReceiveItem.length > 0) {
             receiveItemDeleteAxios(childReceiveItem);
+            const deleteReceiveCode = childReceiveItem[0].receiveCode;
+            setReceiveItemData([]);
           }
         }
       });
   };
   const handleEdit = async (receiveCode) => {
+    setFindReceiveCode("");
     try {
       setEditMode((prevState) => ({
         ...prevState,
@@ -286,6 +329,7 @@ const ReceiveComponents = () => {
         }
         setEditedManagers("");
         setEditedDates("");
+        setModifyReceiveCode("null");
       }
     } catch (error) {
       console.log("오류발생 : ", error.message);
@@ -308,6 +352,7 @@ const ReceiveComponents = () => {
             receiveCode: selectReceiveCode,
           },
         });
+        setModifyReceiveItem("");
         setReceiveItemData(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -322,11 +367,14 @@ const ReceiveComponents = () => {
   };
 
   const handleInsert = () => {
+    setFindReceiveCode("");
     dispatch(open_Modal());
   };
+
   const handleSearchManagerChange = (e) => {
     setSearchManager(e.target.value);
   };
+
   const handleSearchReceiveCodeChange = (e) => {
     setSearchReceiveCode(e.target.value);
   };
@@ -338,6 +386,20 @@ const ReceiveComponents = () => {
   const handleNewReceiveCode = (receiveNewData) => {
     setNewReceive(receiveNewData);
   };
+
+  const handleModifyReceiveItemDetail = (param) => {
+    setModifyReceiveCode("null");
+  };
+
+  const handleModifyCode = (modifyCode) => {
+    setModifyReceiveItem(modifyCode);
+  };
+
+  useEffect(() => {
+    if (modifyReceiveItem !== "") {
+      handleProductClick(modifyReceiveItem);
+    }
+  }, [modifyReceiveItem]);
 
   const handleChildCheckboxChange = (receiveCode, receiveItemNo, isChecked) => {
     const newItem = { receiveCode, receiveItemNo };
@@ -372,135 +434,170 @@ const ReceiveComponents = () => {
           modalUpdateSelectedProducts={handleUpdateModalSelectedProducts}
         />
       )}
-      <DashboardCard title="입고 관리" variant="poster">
+      <DashboardCard>
         <Box
           sx={{
             display: "flex",
-            flexDirection: "column",
-            gap: "2px",
+            alignItems: "center",
+            mb: 2,
+            padding: "10px",
           }}
         >
-          <Box
-            sx={{
-              mt: "0px",
-              padding: "3px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginLeft: "0px",
-            }}
-          >
-            <span style={{ marginRight: "1rem" }}>
-              <Typography variant="subtitle2">입고번호</Typography>
-            </span>
+          <Typography variant="h4" component="div" sx={{ ml: 1 }}>
+            입고 관리
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+            padding: "10px",
+            flexWrap: "nowrap",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
+              입고 번호
+            </Typography>
             <TextField
-              label="입고번호"
+              label="입고번호를 입력해주세요"
               variant="outlined"
               size="small"
-              sx={{ marginRight: 2 }}
+              sx={{ mr: 2 }}
               value={searchReceiveCode}
               onChange={handleSearchReceiveCodeChange}
             />
-            <span style={{ marginRight: "1rem" }}>
-              <Typography variant="subtitle2">담당자</Typography>
-            </span>
+            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+              담당자
+            </Typography>
             <TextField
-              label="담당자명"
+              label="담당자명을 입력해주세요"
               variant="outlined"
               size="small"
-              sx={{ marginRight: 2 }}
+              sx={{ mr: 2 }}
               value={searchManager}
               onChange={handleSearchManagerChange}
             />
-            <span style={{ marginRight: "1rem" }}>
-              <Typography variant="subtitle2">입고일</Typography>
-            </span>
+            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+              입고일
+            </Typography>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
-                label="조회 시작일"
+                label="조회 시작일을 입력해주세요"
                 value={selectedStartDate}
                 onChange={(newDate) => setSelectedStartDate(newDate)}
                 renderInput={(props) => <TextField {...props} />}
                 slotProps={{ textField: { size: "small" } }}
+                sx={{ mr: 2 }}
               />
               <DatePicker
-                label="조회 종료일"
+                label="조회 종료일을 입력해주세요"
                 value={selectedEndDate}
                 onChange={(newDate) => setSelectedEndDate(newDate)}
                 renderInput={(props) => <TextField {...props} />}
                 slotProps={{ textField: { size: "small" } }}
               />
             </LocalizationProvider>
-            <Button onClick={handleClick} color="primary" variant="contained">
+          </Box>
+
+          <Box>
+            <Button
+              variant="contained"
+              color="success"
+              size="large"
+              startIcon={<PageviewOutlinedIcon />}
+              onClick={handleClick}
+              sx={{ mr: 2 }}
+            >
               조회
             </Button>
-            <Button onClick={handleModify} color="info" variant="contained">
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<AddCircleOutlineOutlinedIcon />}
+              onClick={handleInsert}
+              sx={{ mr: 2 }}
+            >
+              발주적용
+            </Button>
+            <Button
+              variant="contained"
+              color="info"
+              size="large"
+              startIcon={<AutoFixHighOutlinedIcon />}
+              onClick={handleModify}
+              sx={{ mr: 2 }}
+            >
               수정
             </Button>
             <Button
               variant="contained"
               color="error"
+              size="large"
+              startIcon={<DeleteIcon />}
               onClick={handleDelete}
               disabled={selectedProducts.length === 0 && childReceiveItem.length === 0}
+              sx={{ mr: 2 }}
             >
               삭제
-            </Button>
-            <Button onClick={handleInsert} color="primary" variant="contained">
-              발주적용
             </Button>
           </Box>
         </Box>
 
-        <br />
         <Box
           sx={{
             overflow: "auto",
             maxHeight: "550px",
-            margin: "-16px",
           }}
         >
           <Table
             aria-label="simple table"
             sx={{
               whiteSpace: "nowrap",
-              mt: 2,
+              mt: 0,
               mb: 0,
             }}
           >
-            <TableHead
-              sx={{
-                position: "sticky",
-                top: 0,
-                zIndex: 1,
-                backgroundColor: "#fff",
-                padding: "3px",
-              }}
-            >
-              <TableRow sx={{ padding: "3px" }}>
-                <TableCell sx={{ width: 200 }}></TableCell>
-                <TableCell sx={{ width: 430 }}>
-                  <Typography variant="subtitle2" fontWeight={600}>
+            <TableHead>
+              <StyledTableRow>
+                <StyledTableCell sx={{ width: 200 }}>
+                  <Typography variant="h6" fontWeight={600}>
+                    선택
+                  </Typography>
+                </StyledTableCell>
+                <StyledTableCell>
+                  <Typography variant="h6" fontWeight={600}>
                     입고번호
                   </Typography>
-                </TableCell>
-                <TableCell sx={{ width: 350 }}>
-                  <Typography variant="subtitle2" fontWeight={600}>
+                </StyledTableCell>
+                <StyledTableCell>
+                  <Typography variant="h6" fontWeight={600}>
                     담당자
                   </Typography>
-                </TableCell>
-                <TableCell sx={{ width: 350 }}>
-                  <Typography variant="subtitle2" fontWeight={600}>
+                </StyledTableCell>
+                <StyledTableCell>
+                  <Typography variant="h6" fontWeight={600}>
                     입고일
                   </Typography>
-                </TableCell>
-              </TableRow>
+                </StyledTableCell>
+                <StyledTableCell></StyledTableCell>
+              </StyledTableRow>
             </TableHead>
-            <TableBody sx={{ padding: "3px" }}>
+            <TableBody
+              sx={{
+                mt: 0.5,
+                mb: 0.5,
+              }}
+            >
               {currentItems.map((realProduct) => (
-                <TableRow
+                <StyledTableRow
                   sx={{
                     "&:hover": {
-                      backgroundColor: "rgba(0, 0, 0, 0.04)",
+                      backgroundColor: "#f5f5f5",
+                      cursor: "pointer",
                     },
                     backgroundColor:
                       selectedRow === realProduct.receiveCode
@@ -511,9 +608,11 @@ const ReceiveComponents = () => {
                         : "transparent",
                   }}
                   key={realProduct.receiveCode}
+                  receiveCode={realProduct.receiveCode}
+                  modifyReceive={modifyReceive}
                   onClick={() => handleProductClick(realProduct.receiveCode)}
                 >
-                  <TableCell
+                  <StyledTableCell
                     sx={{
                       padding: "3px",
                     }}
@@ -522,52 +621,58 @@ const ReceiveComponents = () => {
                       checked={selectedProducts.includes(realProduct.receiveCode)}
                       onChange={(event) => handleCheckboxChange(event, realProduct.receiveCode)}
                     />
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
                       {realProduct.receiveCode}
                     </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {editMode[`${realProduct.receiveCode}`] ? (
-                      <TextField
-                        size="small"
-                        value={editedManagers[`${realProduct.receiveCode}`] || realProduct.manager}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setEditedManagers((prevManagers) => ({
-                            ...prevManagers,
-                            [`${realProduct.receiveCode}`]: value,
-                          }));
-                        }}
-                      />
-                    ) : (
-                      realProduct.manager
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    {editMode[`${realProduct.receiveCode}`] ? (
-                      <LocalizationProvider dateAdapter={AdapterDateFns}>
-                        <DatePicker
-                          label="수정날짜"
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {editMode[`${realProduct.receiveCode}`] ? (
+                        <TextField
+                          size="small"
                           value={
-                            editedDates[`${realProduct.receiveCode}`] ||
-                            new Date(realProduct.receiveDate.split(" ")[0])
+                            editedManagers[`${realProduct.receiveCode}`] || realProduct.manager
                           }
-                          slotProps={{ textField: { size: "small" } }}
-                          onChange={(newDate) => {
-                            setEditedDates(newDate);
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setEditedManagers((prevManagers) => ({
+                              ...prevManagers,
+                              [`${realProduct.receiveCode}`]: value,
+                            }));
                           }}
-                          renderInput={(params) => <TextField {...params} />}
                         />
-                      </LocalizationProvider>
-                    ) : (
-                      realProduct.receiveDate.split(" ")[0]
-                    )}
-                  </TableCell>
+                      ) : (
+                        realProduct.manager
+                      )}
+                    </Typography>
+                  </StyledTableCell>
 
-                  <TableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={400}>
+                      {editMode[`${realProduct.receiveCode}`] ? (
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DatePicker
+                            label="수정날짜"
+                            value={
+                              editedDates[`${realProduct.receiveCode}`] ||
+                              new Date(realProduct.receiveDate.split(" ")[0])
+                            }
+                            slotProps={{ textField: { size: "small" } }}
+                            onChange={(newDate) => {
+                              setEditedDates(newDate);
+                            }}
+                            renderInput={(params) => <TextField {...params} />}
+                          />
+                        </LocalizationProvider>
+                      ) : (
+                        realProduct.receiveDate.split(" ")[0]
+                      )}
+                    </Typography>
+                  </StyledTableCell>
+
+                  <StyledTableCell>
                     <Button
                       variant="contained"
                       size="small"
@@ -577,8 +682,8 @@ const ReceiveComponents = () => {
                     >
                       {editMode[`${realProduct.receiveCode}`] ? "Save" : "Edit"}
                     </Button>
-                  </TableCell>
-                </TableRow>
+                  </StyledTableCell>
+                </StyledTableRow>
               ))}
             </TableBody>
           </Table>
@@ -615,6 +720,8 @@ const ReceiveComponents = () => {
         modalSelectedProducts={modalSelectedProducts}
         addPOrdersClear={handleAddPOrdersClear}
         newReceiveCode={handleNewReceiveCode}
+        modifyReceiveItemCode={handleModifyCode}
+        modifyData={handleModifyReceiveItemDetail}
       />
     </Box>
   );
