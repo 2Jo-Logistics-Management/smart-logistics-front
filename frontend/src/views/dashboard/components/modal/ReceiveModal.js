@@ -273,13 +273,43 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                 marginBottom: "16px",
               }}
             >
-              발주번호
-              <TextField size="small" value={searchPOrderCode} onChange={handleSelectePOrderCode} />
-              거래처번호
-              <TextField size="small" value={searchAccountNo} onChange={handleSelectedAccountNo} />
-              담당자
-              <TextField size="small" value={searchManager} onChange={handleSelectedManger} />
-              발주일
+              <Typography variant="h6" fontWeight={600}>
+                발주번호
+              </Typography>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 2 }}>
+                <TextField
+                  label="발주번호 입력"
+                  size="small"
+                  value={searchPOrderCode}
+                  onChange={handleSelectePOrderCode}
+                />
+              </StyledTableCell>
+              <Typography variant="h6" fontWeight={600}>
+                거래처번호
+              </Typography>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 2 }}>
+                <TextField
+                  type="number"
+                  label="거래처 번호 입력"
+                  size="small"
+                  value={searchAccountNo}
+                  onChange={handleSelectedAccountNo}
+                />
+              </StyledTableCell>
+              <Typography variant="h6" fontWeight={600}>
+                담당자
+              </Typography>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 2 }}>
+                <TextField
+                  label="발주 담당자 입력"
+                  size="small"
+                  value={searchManager}
+                  onChange={handleSelectedManger}
+                />
+              </StyledTableCell>
+              <Typography variant="h6" fontWeight={600} sx={{ mr: 2 }}>
+                발주일
+              </Typography>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="조회 시작일"
@@ -304,7 +334,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                 size="large"
                 startIcon={<PageviewOutlinedIcon />}
                 onClick={handleClick}
-                sx={{ mr: 2 }}
+                sx={{ ml: 2 }}
               >
                 조회
               </Button>
@@ -313,27 +343,27 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       발주번호
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       거래처번호
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       담당자
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       진행상태
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
                     <Typography variant="h6" fontWeight={600}>
                       발주일
                     </Typography>
@@ -356,27 +386,27 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                       onClick={() => handleProductClick(porderCode)}
                     >
                       <StyledTableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
                           {porderCode}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
+                        <Typography variant="subtitle2" fontWeight={400} align="right">
                           {accountNo}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
                           {manager}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
                           {state}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Typography variant="subtitle2" fontWeight={400}>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
                           {porderDate.split(" ")[0]}
                         </Typography>
                       </StyledTableCell>
@@ -419,42 +449,42 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                   }}
                 >
                   <StyledTableRow sx={{ backgroundColor: "#" }}>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         선택
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         발주순번
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         품목코드
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         수량
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         단가
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         총금액
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         진행상태
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         납기일
                       </Typography>
@@ -471,7 +501,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                         },
                       }}
                     >
-                      <StyledTableCell sx={{ padding: "3px" }}>
+                      <StyledTableCell sx={{ padding: "3px" }} align="center">
                         <Checkbox
                           checked={checkedRows.includes(
                             `${product.porderCode}-${product.porderItemNo}`
@@ -485,37 +515,37 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                           }
                         />
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderItemNo}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.itemCode}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderCount}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderPrice}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderItemPrice}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="left">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderState}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell>
+                      <StyledTableCell align="left">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.receiveDeadline.split(" ")[0]}
                         </Typography>

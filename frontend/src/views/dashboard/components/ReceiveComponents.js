@@ -13,6 +13,7 @@ import {
   Pagination,
   styled,
 } from "@mui/material";
+import { IconHammer } from "@tabler/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
@@ -244,28 +245,11 @@ const ReceiveComponents = () => {
         })
         .then((result) => {
           if (result.isConfirmed) {
-            axios
-              .get(`http://localhost:8888/api/receive-item/list?receiveCode=${selectedProducts}`)
-              .then((data) => {
-                const findData = JSON.stringify(data.data.data[0].porderCode);
-                pOrderWaitIngAxios(findData)
-                  .then((data) => {
-                    if (findData.length > 0) {
-                      setModifyReceiveCode(selectedProducts);
-                    } else if (findData.length === 0) {
-                      alert("완료 처리된 발주가 있어 수정 불가합니다.");
-                    }
-                  })
-                  .catch((error) => {
-                    console.error(error);
-                  });
-              })
-              .catch((error) => {
-                console.error("Error fetching data:", error);
-              });
+            setModifyReceiveCode(selectedProducts);
           }
         });
     }
+    setModifyReceiveCode("null");
   };
 
   const handleDelete = () => {
@@ -289,7 +273,6 @@ const ReceiveComponents = () => {
           }
           if (childReceiveItem.length > 0) {
             receiveItemDeleteAxios(childReceiveItem);
-            const deleteReceiveCode = childReceiveItem[0].receiveCode;
             setReceiveItemData([]);
           }
         }
@@ -443,6 +426,7 @@ const ReceiveComponents = () => {
             padding: "10px",
           }}
         >
+          <IconHammer />
           <Typography variant="h4" component="div" sx={{ ml: 1 }}>
             입고 관리
           </Typography>
@@ -469,7 +453,7 @@ const ReceiveComponents = () => {
               value={searchReceiveCode}
               onChange={handleSearchReceiveCodeChange}
             />
-            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
               담당자
             </Typography>
             <TextField
@@ -480,7 +464,7 @@ const ReceiveComponents = () => {
               value={searchManager}
               onChange={handleSearchManagerChange}
             />
-            <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
               입고일
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -563,27 +547,23 @@ const ReceiveComponents = () => {
           >
             <TableHead>
               <StyledTableRow>
-                <StyledTableCell sx={{ width: 200 }}>
-                  <Typography variant="h6" fontWeight={600}>
-                    선택
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell>
+                <StyledTableCell style={{ width: "10%" }}></StyledTableCell>
+                <StyledTableCell style={{ width: "30%" }}>
                   <Typography variant="h6" fontWeight={600}>
                     입고번호
                   </Typography>
                 </StyledTableCell>
-                <StyledTableCell>
+                <StyledTableCell style={{ width: "20%" }}>
                   <Typography variant="h6" fontWeight={600}>
                     담당자
                   </Typography>
                 </StyledTableCell>
-                <StyledTableCell>
+                <StyledTableCell style={{ width: "20%" }}>
                   <Typography variant="h6" fontWeight={600}>
                     입고일
                   </Typography>
                 </StyledTableCell>
-                <StyledTableCell></StyledTableCell>
+                <StyledTableCell style={{ width: "20%" }}></StyledTableCell>
               </StyledTableRow>
             </TableHead>
             <TableBody
@@ -613,6 +593,7 @@ const ReceiveComponents = () => {
                   onClick={() => handleProductClick(realProduct.receiveCode)}
                 >
                   <StyledTableCell
+                    align="center"
                     sx={{
                       padding: "3px",
                     }}
@@ -622,12 +603,12 @@ const ReceiveComponents = () => {
                       onChange={(event) => handleCheckboxChange(event, realProduct.receiveCode)}
                     />
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell align="left">
                     <Typography variant="subtitle2" fontWeight={400}>
                       {realProduct.receiveCode}
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell>
+                  <StyledTableCell align="left">
                     <Typography variant="subtitle2" fontWeight={400}>
                       {editMode[`${realProduct.receiveCode}`] ? (
                         <TextField
@@ -649,7 +630,7 @@ const ReceiveComponents = () => {
                     </Typography>
                   </StyledTableCell>
 
-                  <StyledTableCell>
+                  <StyledTableCell align="left">
                     <Typography variant="subtitle2" fontWeight={400}>
                       {editMode[`${realProduct.receiveCode}`] ? (
                         <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -672,7 +653,7 @@ const ReceiveComponents = () => {
                     </Typography>
                   </StyledTableCell>
 
-                  <StyledTableCell>
+                  <StyledTableCell align="center">
                     <Button
                       variant="contained"
                       size="small"
