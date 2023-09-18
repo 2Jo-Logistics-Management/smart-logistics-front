@@ -37,7 +37,7 @@ const Header = (props) => {
         if(response.data.success) {
           dispatch(close())
           navigate("/auth/login");  
-          
+          localStorage.clear();
         }
       })
     } catch (error) {
