@@ -19,10 +19,12 @@ import DashboardCard from '../../../components/shared/DashboardCard';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from 'axios';
 import { Pagination } from '@mui/material';
-import { LocalizationProvider, DesktopDateTimePicker,DatePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider, DesktopDateTimePicker, DatePicker } from '@mui/x-date-pickers';
 import swal from 'sweetalert2'
 import { toggleCheckbox } from 'src/redux/slices/pOrderInfoCheckboxReducer';
 import { REMOVE_ALL_SELECTED_PRODUCTS } from 'src/redux/slices/selectedProductsReducer';
+import { seletedPOrderList } from '../../../redux/thunks/SelectedPOrderList';
+import reload from 'src/redux/slices/pOrderListReducer';
 
 
 const PorderComponets2 = () => {
@@ -38,16 +40,16 @@ const PorderComponets2 = () => {
   const [isDataUpdated, setDataUpdated] = useState(false);
   const [pOrderCount, setPOrderCount] = useState("");
   const [pOrderItemState, setPOrderItemState] = useState("");
+  const dispatch = useDispatch();
   useEffect(() => {
     if (products.data) {
       const newVisibleProducts = products.data.slice(0, visibleCount);
       if (JSON.stringify(newVisibleProducts) !== JSON.stringify(visibleProducts)) {
         setVisibleProducts(newVisibleProducts);
+        setDataUpdated(true);
       }
-      setDataUpdated(false);
     }
-
-  }, [products.data, visibleCount, visibleProducts, isDataUpdated]);
+  }, [products.data, visibleCount, visibleProducts,dispatch,visibleProducts,isDataUpdated]);
 
   useEffect(() => {
 
@@ -56,10 +58,9 @@ const PorderComponets2 = () => {
       setPOrderCode(realPOrderCode);
     }
 
-  }, [visibleProducts,])
+  }, [visibleProducts, dispatch])
 
 
-  const dispatch = useDispatch();
   const selectedProducts = useSelector((state) => state.pOrderInfoCheckbox.selectedCheckBox);
   const removeCheckboxPOrder = useSelector((state) => state.selectedProduct.selectedProduct);
 
@@ -68,7 +69,6 @@ const PorderComponets2 = () => {
       dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
       dispatch(toggleCheckbox(selectedPOrder))
     }
-
   };
 
   const handleScroll = (e) => {
@@ -90,7 +90,7 @@ const PorderComponets2 = () => {
     return formattedDate
   }
   const pOrderitemInsert = () => {
-    if (noAddState == true) {
+    if (noAddState === true) {
       swal.fire({
         title: '발주추가 실패',
         text: '발주가 완료되어 추가할 수 없습니다',
@@ -99,36 +99,52 @@ const PorderComponets2 = () => {
       });
       return;
     }
-    try {
-      const data = {
-        itemCode: itemCode,
-        receiveDeadline: formatDate(selectedDateTime),
-        pOrderPrice: pOrderPrice,
-        pOrderItemPrice: pOrderItemPrice,
-        pOrderCode: pOrderCode,
-        pOrderCount: pOrderCount,
 
-      }
-      axios.post('http://localhost:8888/api/porder-item/insert', data)
-        .then((response) => {
-          setDataUpdated(true);
-          window.location.reload();
-          // localStorage.clear(); 
-        })
-        .catch((error) => {
-          console.error(error);
+    const newProduct = {
+      itemCode: itemCode,
+      receiveDeadline: formatDate(selectedDateTime),
+      pOrderPrice: pOrderPrice,
+      pOrderItemPrice: pOrderItemPrice,
+      pOrderCode: pOrderCode,
+      pOrderCount: pOrderCount,
+    };
+
+    axios.post('http://localhost:8888/api/porder-item/insert', newProduct)
+      .then((response) => {
+        // 서버 응답에서 할당된 porderItemNo를 가져옵니다.
+
+        const newPorderItemNo = response.data.data;
+
+        // 새 제품 데이터에 porderItemNo를 할당
+        newProduct.porderItemNo = newPorderItemNo;
+        const updatedVisibleProducts = [...visibleProducts, newProduct];
+        setVisibleProducts(updatedVisibleProducts);
+        // 나머지 초기화 및 알림 처리
+        setDataUpdated(true);
+        swal.fire({
+          title: '발주추가 성공',
+          text: '데이터를 모두 입력해주시기 바랍니다',
+          icon: 'success',
+          showConfirmButton: false,
         });
 
-    } catch (error) {
-      swal.fire({
-        title: '발주추가 실패',
-        text: '데이터를 모두 입력해주시기 바랍니다',
-        icon: 'error',
-        showConfirmButton: false,
-      });
-    }
 
+        // 생성한 newProduct을 콘솔에 출력하여 확인
+        console.log('새로운 제품:', newProduct);
+        // dispatch(reload(false)) // 이 부분을 주석 처리
+        console.log('업데이트된 visibleProducts:', updatedVisibleProducts);
+        setItemCode("");
+        setSelectedDateTime("");
+        setPOrderItemPrice("");
+        setPOrderCode(pOrderCode);
+        dispatch(seletedPOrderList(pOrderCode));
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   };
+
+
 
 
   // 모달창으로 품목 가져오기
@@ -143,6 +159,7 @@ const PorderComponets2 = () => {
   const [itemCode, setItemCode] = useState("");
   const [pOrderPrice, setPOrderPrice] = useState("");
   const [pOrderItemPrice, setPOrderItemPrice] = useState("");
+  const [itemName, setItemName] = useState("");
   const handleTextFieldClick = () => {
     setIsModalOpen(true); // 모달 열기
   };
@@ -181,16 +198,18 @@ const PorderComponets2 = () => {
   const [editReceiveDeadLine, setEditReceiveDeadLine] = useState('');
   const [editPOrderCount, setEditPOrderCount] = useState('');
   const [editPOrderItemPrice, setEditPOrderItemPrice] = useState('');
-
+  const [editItemName, setEditItemName] = useState('')
   const [pOrderItemNo, setPOrderItemNo] = useState('');
 
   const handleRowClick = (item) => {
     setPOrderPrice(item.itemPrice);
     setPOrderItemPrice(item.itemPrice);
+    setItemName(item.itemName);
     setItemCode(item.itemCode);
-
+    setEditItemName(item.itemName);
     setEditItemCode(item.itemCode);
     setEditPOrderItemPrice(item.itemPrice);
+    setIsModalOpen(false);
   }
 
 
@@ -231,12 +250,15 @@ const PorderComponets2 = () => {
 
       axios.patch(`http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`, pOrderItemStateModifyDto)
         .then(() => {
-          window.location.reload();
-
+          dispatch(seletedPOrderList(pOrderCode));
+          setItemCode("");
+          setSelectedDateTime("");
+          setPOrderItemPrice("");
+          setPOrderCode(pOrderCode);
         })
     } catch (error) {
       swal.fire({
-        title: '발주추가 실패',
+        title: '발주수정 실패',
         text: '데이터를 모두 입력해주시기 바랍니다',
         icon: 'error',
         showConfirmButton: false,
@@ -252,7 +274,6 @@ const PorderComponets2 = () => {
   }
   useEffect(() => {
     const allCompleted = areAllCompleted();
-    // '완료' 상태인 경우 noAddState를 true로 설정
     if (allCompleted) {
       setNoAddState(true);
     } else {
@@ -281,6 +302,7 @@ const PorderComponets2 = () => {
               <TableCell>선택</TableCell>
               <TableCell>발주상태</TableCell>
               <TableCell>품목번호</TableCell>
+              <TableCell>품목명</TableCell>
               <TableCell>가격</TableCell>
               <TableCell>수량</TableCell>
               <TableCell>금액</TableCell>
@@ -292,15 +314,29 @@ const PorderComponets2 = () => {
 
               <TableCell></TableCell>
               <TableCell sx={{ display: "none" }}><TextField value={lastPorderItemNo} /></TableCell>
-              <TableCell><TextField value={"WAIT"} disabled></TextField></TableCell>
+              <TableCell><Typography sx={{ fontSize: '15px', fontWeight: '500' }} >준비</Typography></TableCell>
               <TableCell><TextField value={itemCode} onClick={handleTextFieldClick} /></TableCell>
-              <TableCell><TextField value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
-              <TableCell><TextField onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
-              <TableCell>{pOrderPrice * pOrderCount}</TableCell>
+              <TableCell><div
+
+                sx={{
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  borderBottom: '1px solid #ccc',
+                  padding: '4px 8px',
+                  border: 'none',
+                }}
+                contentEditable={true}
+                onInput={(e) => setItemName(e.target.textContent)}
+              >
+                {itemName}
+              </div></TableCell>
+              <TableCell><TextField   type="number" value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
+              <TableCell><TextField   type="number" onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
+              <TableCell><Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{pOrderPrice * pOrderCount}</Typography></TableCell>
               <TableCell>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
-                    label= {`금일 (${formattedToday})`}
+                    label={`금일 (${formattedToday})`}
                     value={selectedDateTime}
                     onChange={(newDate) => setSelectedDateTime(newDate)}
                     views={['year', 'month', 'day']}
@@ -314,7 +350,7 @@ const PorderComponets2 = () => {
 
               </TableCell>
               <TableCell><Button variant="contained"
-                size="small" ><Done onClick={() => pOrderitemInsert()} /></Button></TableCell>
+                size="small" onClick={() => pOrderitemInsert()}><Done /></Button></TableCell>
             </TableRow>
             {visibleProducts.length === 0 ? (
               <TableRow>
@@ -323,20 +359,19 @@ const PorderComponets2 = () => {
             ) : (
               visibleProducts.map((product, index) => (
                 <TableRow key={index}>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2 }}>
                     <Checkbox
                       checked={selectedProducts.includes(product.porderItemNo)}
                       onChange={() => {
                         handleCheckboxChange(product.porderItemNo)
                         setPOrderItemState(product.porderState)
-
                       }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2 }}>
                     <Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{product.porderState}</Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2, textAlign: 'right'}}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemCode}
@@ -353,9 +388,26 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2}}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
+                        value={editItemName}
+                        onChange={(e) => {
+                          handleChange(product.itemName, 'itemName', e.target.value);
+                          setEditItemName(e.target.value)
+                          setItemName(product.itemName)
+                        }}
+                      />
+                    ) : (
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        {product.itemName}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell  sx={{ padding: 2, textAlign: 'right'}}>
+                    {editMode[product.porderItemNo] ? (
+                      <TextField
+                        type="number"
                         value={editPOrderItemPrice}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderPrice', e.target.value)
@@ -369,10 +421,11 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2, textAlign: 'right'}}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        defaultvalue={product.porderCount}
+                      type="number"
+                        value={product.porderCount}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderCount', e.target.value)
                           setEditPOrderCount(e.target.value)
@@ -384,7 +437,7 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <Typography variant="subtitle2" fontWeight={600}>
                         {editPOrderItemPrice * editPOrderCount}</Typography>
@@ -394,22 +447,29 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
+
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
-                        <DesktopDateTimePicker
+                        <DatePicker
+                          label={`금일 (${formattedToday})`}
                           value={selectedDateTime}
                           onChange={(newDate) => setEditReceiveDeadLine(newDate)}
+                          views={['year', 'month', 'day']}
+                          format='yyyy-MM-dd'
+                          slotProps={{ textField: { variant: 'outlined', size: "small" } }}
                           renderInput={(props) => <TextField {...props} />}
-                          views={["year", "month", "day", "hours", "minutes"]}
+                          minDate={new Date()}
+                          maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
                         />
-                      </LocalizationProvider>)
+                      </LocalizationProvider>
+                    )
                       : (
                         <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.receiveDeadline}</Typography>
                       )
                     }
                   </TableCell>
-                  <TableCell>
+                  <TableCell  sx={{ padding: 2 }}>
                     {product.porderState !== "준비" ?
                       (
                         <Button
@@ -443,7 +503,7 @@ const PorderComponets2 = () => {
                     }
                   </TableCell>
 
-                  <TableCell sx={{ display: "none" }} >
+                  <TableCell sx={{ display: "none", padding: 2 }} >
                     <Typography
                       value={product.porderCode}
                       onChange={(e) => setPOrderCode(e.target.value)}
@@ -457,7 +517,14 @@ const PorderComponets2 = () => {
         </Table>
 
       </Box>
-      <Dialog open={isModalOpen} onClose={handleCloseModal}>
+      <Dialog open={isModalOpen} onClose={handleCloseModal}
+        PaperProps={{
+          style: {
+            width: '70%', 
+            height: '57%', 
+            overflowY: 'auto', // 필요한 경우 스크롤을 허용
+          },
+        }}>
         <DialogTitle>품목추가</DialogTitle>
         <DialogContent>
           <h2>품목선택리스트</h2>
@@ -496,7 +563,9 @@ const PorderComponets2 = () => {
 
             <TableFooter>
               <TableRow>
+                <TableCell> </TableCell>
                 <TableCell colSpan={5}>
+                  &nbsp;&nbsp;&nbsp;&nbsp;
                   <Pagination
                     count={Math.ceil(items.length / itemsPerPage)}
                     variant="outlined"
