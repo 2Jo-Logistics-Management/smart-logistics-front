@@ -17,13 +17,13 @@ import {
   DialogTitle,
   TableContainer,
   Paper,
+  styled,
 } from '@mui/material';
 import { IconHammer } from "@tabler/icons";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
-
+import { tableCellClasses } from "@mui/material/TableCell";
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
 import { Edit, Delete, Save } from '@mui/icons-material';
@@ -47,7 +47,6 @@ import pOrderItemsDeleteAxios from 'src/axios/pOrderItemsDeleteAxios';
 import { useLocation } from 'react-router';
 import { resetRecentPOrderNumber } from '../../../redux/slices/searchRecentPOrderNumber';
 import { format } from 'date-fns';
-
 const PorderComponets = () => {
   const dispatch = useDispatch();
   const [selectAll, setSelectAll] = useState(false);
@@ -84,8 +83,25 @@ const PorderComponets = () => {
     }
   }, [recentPOrderNumber]);
 
-
-
+  
+  
+  const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    [`&.${tableCellClasses.head}`]: {
+      backgroundColor: "#505e82",
+      color: theme.palette.common.white,
+    },
+    [`&.${tableCellClasses.body}`]: {
+      fontSize: 40,
+      minWidth: 100,
+    },
+  }));
+  
+  const StyledTableRow = styled(TableRow)(() => ({
+    // hide last border
+    "&:last-child td, &:last-child th": {
+      border: 0,
+    },
+  }));
 
 
   const handleInsert = () => {
@@ -425,70 +441,72 @@ const PorderComponets = () => {
             >
             
             <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
-              <TableRow sx={{
+              <StyledTableRow sx={{
                 height: '10px'
                 , '&:hover': {
                   backgroundColor: 'rgba(0, 0, 0, 0.04)'
                 }
               }} >
-                <TableCell>
+                <StyledTableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
                     선택
                   </Typography>
-                </TableCell>
-                <TableCell>
+                </StyledTableCell>
+                <StyledTableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
                     발주번호
                   </Typography>
-                </TableCell>
-                <TableCell>
+                </StyledTableCell>
+                <StyledTableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
                     거래처번호
                   </Typography>
-                </TableCell>
-                <TableCell>
+                </StyledTableCell>
+                <StyledTableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
                     생성일
                   </Typography>
-                </TableCell>
-                <TableCell>
+                </StyledTableCell>
+                <StyledTableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
                     상태
                   </Typography>
-                </TableCell>
-                <TableCell align="right">
+                </StyledTableCell>
+                <StyledTableCell align="right">
                   <Typography variant="subtitle2" fontWeight={600}>
                     담당자
                   </Typography>
-                </TableCell>
-                <TableCell align="right">
+                </StyledTableCell>
+                <StyledTableCell align="right">
                   <Typography variant="subtitle2" fontWeight={600}>
                     수정
                   </Typography>
-                </TableCell>
-              </TableRow>
+                </StyledTableCell>
+              </StyledTableRow>
             </TableHead>
             <TableBody>
-              {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct) => (
-                <TableRow key={realProduct.porderCode} sx={{
-                  backgroundColor: realProduct.porderCode === porderCodeState ? 'lightyellow' : 'white',
+              {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct,index) => (
+                <StyledTableRow key={realProduct.porderCode} sx={{
+                  backgroundColor: realProduct.porderCode === porderCodeState 
+                    ? 'lightyellow' 
+                    : (index % 2 !== 0 ? "#f3f3f3" : "white"),
                   '&:hover': {
                     backgroundColor: 'rgba(0, 0, 0, 0.04)'
                   }
                 }}
                   onClick={() => { setTableRowClickValue(realProduct.porderCode) }}
                 >
-                  <TableCell sx={{ padding: 0 }}>
+                  <StyledTableCell sx={{ padding: 0 }}>
                     <Checkbox
                       checked={selectedProducts.includes(realProduct.porderCode)}
                       onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
 
                     />
-                  </TableCell>
-                  <TableCell sx={{ padding: 0 }}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 0 }}>
                     <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
-                  </TableCell>
-                  <TableCell sx={{ padding: 0 }}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Box>
                         {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
@@ -507,13 +525,13 @@ const PorderComponets = () => {
                         </Typography>
                       </Box>
                     </Box>
-                  </TableCell>
-                  <TableCell sx={{ padding: 0 }}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 0 }}>
                     <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
                      {formattedDate(realProduct.createDate)}
                     </Typography>
-                  </TableCell>
-                  <TableCell>
+                  </StyledTableCell>
+                  <StyledTableCell>
                     <Chip
                       size="small"
                       label={realProduct.state}
@@ -534,8 +552,8 @@ const PorderComponets = () => {
                         },
                       }}
                     />
-                  </TableCell>
-                  <TableCell align="right" sx={{ padding: 0 }}>
+                  </StyledTableCell>
+                  <StyledTableCell align="right" sx={{ padding: 0 }}>
                     {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
                       <TextField
                         value={editingProduct.manager}
@@ -544,9 +562,9 @@ const PorderComponets = () => {
                     ) : (
                       <Typography variant="h6">{realProduct.manager}</Typography>
                     )}
-                  </TableCell>
+                  </StyledTableCell>
 
-                  <TableCell align="right" sx={{ padding: 0 }}>
+                  <StyledTableCell align="right" sx={{ padding: 0 }}>
                     {realProduct.state === "준비" ? (
                       <Button
                         variant="outlined"
@@ -574,8 +592,8 @@ const PorderComponets = () => {
                         수정
                       </Button>
                     )}
-                  </TableCell>
-                </TableRow>
+                  </StyledTableCell>
+                </StyledTableRow>
               ))}
             </TableBody>
           </Table>
@@ -607,17 +625,17 @@ const PorderComponets = () => {
 
         <Table title="거래처선택" style={{ textAlign: 'center' }}>
           <TableHead>
-            <TableRow>
+            <StyledTableRow>
               <TableCell>거래처명</TableCell>
               <TableCell>거래처코드</TableCell>
               <TableCell>대표자</TableCell>
               <TableCell>거래처번호</TableCell>
               <TableCell>사업자번호</TableCell>
-            </TableRow>
+            </StyledTableRow>
           </TableHead>
           <TableBody>
             {currentAccountList.map((accountList, index) => (
-              <TableRow key={index} sx={{
+              <StyledTableRow key={index} sx={{
                 '&:hover': {
                   backgroundColor: 'rgba(0, 0, 0, 0.04)'
                 }
@@ -632,7 +650,7 @@ const PorderComponets = () => {
                 <TableCell >{accountList.representative}</TableCell>
                 <TableCell >{accountList.contactNumber}</TableCell>
                 <TableCell >{accountList.businessNumber}</TableCell>
-              </TableRow>
+              </StyledTableRow>
             ))}
 
           </TableBody>
