@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
+  Typography,
   Box,
   Table,
   TableBody,
@@ -14,13 +15,39 @@ import {
   DialogActions,
   Pagination,
   Checkbox,
+  styled,
 } from "@mui/material";
 import { close_Modal } from "../../../../redux/slices/receiveModalDuck";
 import pOrderWaitIngAxios from "src/axios/pOrderWaitIngAxios";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker, LocalizationProvider, DesktopDateTimePicker } from "@mui/x-date-pickers";
 import { TextField } from "@mui/material";
+import { tableCellClasses } from "@mui/material/TableCell";
 import axios from "axios";
+import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: "#505e82",
+    color: theme.palette.common.white,
+    width: "200px",
+  },
+  [`&.${tableCellClasses.body}`]: {
+    fontSize: 40,
+    minWidth: 100,
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme, receiveCode }) => ({
+  backgroundColor: receiveCode ? "lightyellow" : "white",
+  "&:nth-of-type(odd)": {
+    backgroundColor: receiveCode ? "lightyellow" : theme.palette.action.hover,
+  },
+  // hide last border
+  "&:last-child td, &:last-child th": {
+    border: 0,
+  },
+}));
+
 axios.defaults.withCredentials = true;
 const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
   const dispatch = useDispatch();
@@ -104,7 +131,6 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
   };
   const handleDone = async () => {
     modalUpdateSelectedProducts(modalSelectedProducts);
-
     dispatch(close_Modal());
     onSave();
     setModalSelectedProducts([]);
@@ -227,8 +253,8 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
       open={receiveModalState}
       PaperProps={{
         sx: {
-          width: "70%",
-          maxWidth: "70%",
+          width: "80%",
+          maxWidth: "80%",
           height: "100%",
           maxHeight: "md",
         },
@@ -245,16 +271,45 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                 alignItems: "center",
                 height: "70px",
                 marginBottom: "16px",
-                marginLeft: "0px",
               }}
             >
-              발주번호
-              <TextField size="small" value={searchPOrderCode} onChange={handleSelectePOrderCode} />
-              거래처번호
-              <TextField size="small" value={searchAccountNo} onChange={handleSelectedAccountNo} />
-              담당자
-              <TextField size="small" value={searchManager} onChange={handleSelectedManger} />
-              발주일
+              <Typography variant="h6" fontWeight={600}>
+                발주번호
+              </Typography>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 2 }}>
+                <TextField
+                  label="발주번호 입력"
+                  size="small"
+                  value={searchPOrderCode}
+                  onChange={handleSelectePOrderCode}
+                />
+              </StyledTableCell>
+              <Typography variant="h6" fontWeight={600}>
+                거래처번호
+              </Typography>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 2 }}>
+                <TextField
+                  type="number"
+                  label="거래처 번호 입력"
+                  size="small"
+                  value={searchAccountNo}
+                  onChange={handleSelectedAccountNo}
+                />
+              </StyledTableCell>
+              <Typography variant="h6" fontWeight={600}>
+                담당자
+              </Typography>
+              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 2 }}>
+                <TextField
+                  label="발주 담당자 입력"
+                  size="small"
+                  value={searchManager}
+                  onChange={handleSelectedManger}
+                />
+              </StyledTableCell>
+              <Typography variant="h6" fontWeight={600} sx={{ mr: 2 }}>
+                발주일
+              </Typography>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="조회 시작일"
@@ -273,7 +328,14 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                   slotProps={{ textField: { size: "small" } }}
                 />
               </LocalizationProvider>
-              <Button variant="contained" onClick={handleClick}>
+              <Button
+                variant="contained"
+                color="success"
+                size="large"
+                startIcon={<PageviewOutlinedIcon />}
+                onClick={handleClick}
+                sx={{ ml: 2 }}
+              >
                 조회
               </Button>
             </Box>
@@ -281,34 +343,74 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: 300 }}>발주번호</TableCell>
-                  <TableCell sx={{ width: 250 }}>거래처번호</TableCell>
-                  <TableCell sx={{ width: 250 }}>담당자</TableCell>
-                  <TableCell sx={{ width: 250 }}>진행상태</TableCell>
-                  <TableCell>발주일</TableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      발주번호
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      거래처번호
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      담당자
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      진행상태
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ width: "20%" }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      발주일
+                    </Typography>
+                  </StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {currentItems.map((porders, index) => {
                   const { porderCode, accountNo, manager, state, porderDate } = porders;
                   return (
-                    <TableRow
+                    <StyledTableRow
                       key={index}
                       sx={{
                         "&:hover": {
-                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                          backgroundColor: "#f5f5f5",
                         },
                         backgroundColor:
                           selectedRow === porderCode ? "rgba(0, 0, 0, 0.04)" : "transparent",
                       }}
                       onClick={() => handleProductClick(porderCode)}
                     >
-                      <TableCell>{porderCode}</TableCell>
-                      <TableCell>{accountNo}</TableCell>
-                      <TableCell>{manager}</TableCell>
-                      <TableCell>{state}</TableCell>
-                      <TableCell>{porderDate.split(" ")[0]}</TableCell>
-                    </TableRow>
+                      <StyledTableCell>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
+                          {porderCode}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography variant="subtitle2" fontWeight={400} align="right">
+                          {accountNo}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
+                          {manager}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
+                          {state}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography variant="subtitle2" fontWeight={400} align="left">
+                          {porderDate.split(" ")[0]}
+                        </Typography>
+                      </StyledTableCell>
+                    </StyledTableRow>
                   );
                 })}
               </TableBody>
@@ -346,28 +448,60 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                     backgroundColor: "#fff",
                   }}
                 >
-                  <TableRow sx={{ backgroundColor: "#" }}>
-                    <TableCell sx={{ width: 150 }}>선택</TableCell>
-                    <TableCell sx={{ width: 150 }}>발주순번</TableCell>
-                    <TableCell sx={{ width: 150 }}>품목코드</TableCell>
-                    <TableCell sx={{ width: 150 }}>수량</TableCell>
-                    <TableCell sx={{ width: 150 }}>단가</TableCell>
-                    <TableCell sx={{ width: 150 }}>총금액</TableCell>
-                    <TableCell sx={{ width: 150 }}>진행상태</TableCell>
-                    <TableCell>납기일</TableCell>
-                  </TableRow>
+                  <StyledTableRow sx={{ backgroundColor: "#" }}>
+                    <StyledTableCell style={{ width: "10%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        선택
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        발주순번
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        품목코드
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        수량
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        단가
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        총금액
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        진행상태
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "15%" }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        납기일
+                      </Typography>
+                    </StyledTableCell>
+                  </StyledTableRow>
                 </TableHead>
                 <TableBody>
                   {porderItemData.map((product, index) => (
-                    <TableRow
+                    <StyledTableRow
                       key={index}
                       sx={{
                         "&:hover": {
-                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                          backgroundColor: "#f5f5f5",
                         },
                       }}
                     >
-                      <TableCell sx={{ padding: "3px" }}>
+                      <StyledTableCell sx={{ padding: "3px" }} align="center">
                         <Checkbox
                           checked={checkedRows.includes(
                             `${product.porderCode}-${product.porderItemNo}`
@@ -380,15 +514,43 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                             )
                           }
                         />
-                      </TableCell>
-                      <TableCell>{product.porderItemNo}</TableCell>
-                      <TableCell>{product.itemCode}</TableCell>
-                      <TableCell>{product.porderCount}</TableCell>
-                      <TableCell>{product.porderPrice}</TableCell>
-                      <TableCell>{product.porderItemPrice}</TableCell>
-                      <TableCell>{product.porderState}</TableCell>
-                      <TableCell>{product.receiveDeadline.split(" ")[0]}</TableCell>
-                    </TableRow>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.porderItemNo}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.itemCode}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.porderCount}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.porderPrice}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.porderItemPrice}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell align="left">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.porderState}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell align="left">
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {product.receiveDeadline.split(" ")[0]}
+                        </Typography>
+                      </StyledTableCell>
+                    </StyledTableRow>
                   ))}
                 </TableBody>
               </Table>
