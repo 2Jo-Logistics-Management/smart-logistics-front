@@ -37,9 +37,7 @@ import { fetchProducts } from '../../../redux/thunks/fetchProduct'; // fetchProd
 import PorderModal from './modal/PorderModal';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import ko from 'date-fns/locale/ko';
 import { searchPOrderList } from '../../../redux/thunks/searchPOrderList';
-import Loading from '../../../loading';
 import axios from 'axios';
 import SearchIcon from '@mui/icons-material/Search';
 import { removePOrderInfo } from '../../../redux/slices/pOrderInfoCheckboxReducer';
@@ -47,6 +45,8 @@ import pOrderItemsDeleteAxios from 'src/axios/pOrderItemsDeleteAxios';
 import { useLocation } from 'react-router';
 import { resetRecentPOrderNumber } from '../../../redux/slices/searchRecentPOrderNumber';
 import { format } from 'date-fns';
+import { reload } from 'src/redux/slices/pOrderListReducer';
+
 const PorderComponets = () => {
   const dispatch = useDispatch();
   const [selectAll, setSelectAll] = useState(false);
@@ -58,7 +58,7 @@ const PorderComponets = () => {
       dispatch(fetchProducts());
     }
     dispatch(resetRecentPOrderNumber());
-  }, [porderModalState, dispatch]);
+  }, [porderModalState, dispatch,fetchProducts]);
 
   useEffect(() => {
     dispatch(resetRecentPOrderNumber());
@@ -109,14 +109,14 @@ const PorderComponets = () => {
   };
   const underSelectedPOrder = useSelector((state) => state.pOrderInfoCheckbox.selectedCheckBox);// 밑에 selectbox값
   const selectedPOrderNumbers = useSelector((state) => state.selectedPOrderList.selectedPOrderList)
-  // const selectedPOrderNumber = selectedPOrderNumbers.data[0].porderCode
+
 
   const selectedPOrderNumber = selectedPOrderNumbers.data ? selectedPOrderNumbers.data[0]?.porderCode || [] : [];
 
   const handleCheckboxChange = (event, productId) => {
     if (event.target.checked) {
       if (selectedPOrderNumber) {
-        dispatch(removePOrderInfo(selectedPOrderNumber));
+        dispatch(removePOrderInfo());
         dispatch(dispatch(ADD_SELECTED_PRODUCT(productId)));
       } else {
         dispatch(dispatch(ADD_SELECTED_PRODUCT(productId)));
@@ -126,7 +126,7 @@ const PorderComponets = () => {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async() => {
     swal
       .fire({
         title: '정말로 삭제하시겠습니까?',
@@ -138,15 +138,17 @@ const PorderComponets = () => {
         confirmButtonText: '삭제',
         cancelButtonText: '취소',
       })
-      .then(() => {
+      .then(async () => {
         try {
           if (selectedProducts.length >= 0 && underSelectedPOrder.length === 0) {
-            pOrderDeleteAxios(selectedProducts);
+            
+            await pOrderDeleteAxios(selectedProducts);
             dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
-            window.location.reload();
+            dispatch(fetchProducts())
           } else if (selectedProducts.length === 0 && underSelectedPOrder.length >= 0) {
-            pOrderItemsDeleteAxios(selectedPOrderNumber, underSelectedPOrder)
-            window.location.reload();
+             pOrderItemsDeleteAxios(selectedPOrderNumber, underSelectedPOrder)
+              dispatch(removePOrderInfo());
+              dispatch(reload(true))
           }
         } catch (error) {
           swal.fire({
@@ -173,25 +175,6 @@ const PorderComponets = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableRowClickValue]);
 
-  const handleSelectAllChange = () => {
-
-    if (selectAll) {
-      realProducts.forEach(item => {
-        dispatch(REMOVE_SELECTED_PRODUCT(item.porderCode));
-        if (selectedPOrderNumber) {
-          dispatch(removePOrderInfo(selectedPOrderNumber));
-        }
-      });
-    } else {
-      realProducts.forEach(item => {
-        dispatch(ADD_SELECTED_PRODUCT(item.porderCode));
-        if (selectedPOrderNumber) {
-          dispatch(removePOrderInfo(selectedPOrderNumber));
-        }
-      });
-    }
-    setSelectAll(!selectAll);
-  };
 
   const [pOrderCode, setPOrderCode] = useState('');
   const [accountNo, setAccountNo] = useState('');
@@ -570,7 +553,7 @@ const PorderComponets = () => {
                         variant="outlined"
                         size="small"
                         startIcon={editingProduct && editingProduct.porderCode === realProduct.porderCode ? <Save /> : <Edit />}
-                        color="success"
+                        color="primary"
                         onClick={() => {
                           if (editingProduct && editingProduct.porderCode === realProduct.porderCode) {
                             handleEditEnd();
