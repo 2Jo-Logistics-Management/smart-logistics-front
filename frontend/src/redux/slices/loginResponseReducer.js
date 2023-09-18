@@ -9,7 +9,6 @@ const loginResponseReducer = createSlice({
   initialState,
   reducers: {
     success: (state, action) => {
-      console.log(action.payload);
       state.memberData = action.payload;
     }, 
     close: (state) => {
