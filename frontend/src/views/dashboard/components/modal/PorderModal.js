@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import swal from 'sweetalert2';
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TableFooter, TextField, Typography } from '@mui/material';
+import { Box, Table, styled, TableBody, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TableFooter, TextField, Typography, TableCell } from '@mui/material';
 import { close_Modal } from '../../../../redux/slices/porderModalDuck';
 import { Delete } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -11,6 +11,7 @@ import { Pagination } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { searchRecentPK } from '../../../../redux/thunks/searchRecentPK'
+import { tableCellClasses } from "@mui/material/TableCell";
 axios.defaults.withCredentials = true;
 
 
@@ -18,7 +19,24 @@ const PorderModal = () => {
   const dispatch = useDispatch();
   const porderModalState = useSelector((state) => state.porderModal.openModal);
 
+  const StyledTableRow = styled(TableRow)(() => ({
+    // hide last border
+    "&:last-child td, &:last-child th": {
+      border: 0,
+    },
+  }));
 
+  const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    [`&.${tableCellClasses.head}`]: {
+      backgroundColor: "#505e82",
+      color: theme.palette.common.white,
+    },
+    [`&.${tableCellClasses.body}`]: {
+      fontSize: 40,
+      minWidth: 100,
+      textAlign: 'right', // 이 부분에서 textAlign를 설정
+    },
+  }));
 
   // 디비에서 selectbox 데이터 가져오기
 
@@ -201,6 +219,7 @@ const PorderModal = () => {
     setTotalAmount(newTotalAmount);
   }, [selectedItems]);
 
+
   return (
     <Dialog
       open={porderModalState}
@@ -214,11 +233,18 @@ const PorderModal = () => {
       }}
     >
 
-      <DialogTitle>발주 작성</DialogTitle>
+      <DialogTitle>발주 추가</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex' }}>
 
-          <Dialog open={accountModal}>
+          <Dialog open={accountModal}
+            PaperProps={{
+              style: {
+                width: '70%',
+                height: '50%',
+                overflowY: 'auto', // 필요한 경우 스크롤을 허용
+              },
+            }}>
             <DialogTitle>거래처 찾기</DialogTitle>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
               <p style={{ marginRight: '8px' }}>거래처명:</p>
@@ -229,19 +255,20 @@ const PorderModal = () => {
 
             <Table title="거래처선택" style={{ textAlign: 'center' }}>
               <TableHead>
-                <TableRow>
-                  <TableCell>거래처명</TableCell>
-                  <TableCell>거래처코드</TableCell>
-                  <TableCell>대표자</TableCell>
-                  <TableCell>거래처번호</TableCell>
-                  <TableCell>사업자번호</TableCell>
-                </TableRow>
+                <StyledTableRow>
+                  <StyledTableCell>거래처명</StyledTableCell>
+                  <StyledTableCell>거래처코드</StyledTableCell>
+                  <StyledTableCell>대표자</StyledTableCell>
+                  <StyledTableCell>거래처번호</StyledTableCell>
+                  <StyledTableCell>사업자번호</StyledTableCell>
+                </StyledTableRow>
               </TableHead>
               <TableBody>
                 {currentAccountList.map((accountList, index) => (
                   <TableRow key={index} sx={{
+                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
                     '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
                     }
                   }}
                     onClick={() => {
@@ -260,6 +287,7 @@ const PorderModal = () => {
               </TableBody>
               <TableFooter>
                 <TableRow>
+                  <TableCell></TableCell>
                   <TableCell colSpan={5}>
                     <Pagination
                       count={Math.ceil(accountList.length / accountsPerPage)}
@@ -274,7 +302,14 @@ const PorderModal = () => {
             </Table>
           </Dialog>
 
-          <Dialog open={itemModal} sx={{ margin: 0 }} >
+          <Dialog open={itemModal}
+            PaperProps={{
+              style: {
+                width: '70%',
+                height: '50%',
+                overflowY: 'auto', // 필요한 경우 스크롤을 허용
+              },
+            }} >
             <DialogTitle>신규 발주품목 추가</DialogTitle>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
               <p style={{ marginRight: '8px' }}>품목명:</p>
@@ -284,19 +319,20 @@ const PorderModal = () => {
             </Box>
             <Table style={{ textAlign: 'center' }}>
               <TableHead>
-                <TableRow>
-                  <TableCell>품목코드</TableCell>
-                  <TableCell>명칭</TableCell>
-                  <TableCell>규격</TableCell>
-                  <TableCell>단위</TableCell>
-                  <TableCell>금액</TableCell>
-                </TableRow>
+                <StyledTableRow>
+                  <StyledTableCell>품목코드</StyledTableCell>
+                  <StyledTableCell>명칭</StyledTableCell>
+                  <StyledTableCell>규격</StyledTableCell>
+                  <StyledTableCell>단위</StyledTableCell>
+                  <StyledTableCell>금액</StyledTableCell>
+                </StyledTableRow>
               </TableHead>
               <TableBody>
                 {currentItems.map((item, index) => (
                   <TableRow key={index} onClick={() => handleRowClick(item)} sx={{
+                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
                     '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
                     }
                   }}>
                     <TableCell >{item.itemCode}</TableCell>
@@ -309,6 +345,7 @@ const PorderModal = () => {
               </TableBody>
               <TableFooter>
                 <TableRow>
+                  <TableCell />
                   <TableCell colSpan={5}>
                     <Pagination
                       count={Math.ceil(items.length / itemsPerPage)}
@@ -356,21 +393,26 @@ const PorderModal = () => {
 
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell style={{ minWidth: '80px' }}>품번</TableCell>
-                  <TableCell style={{ minWidth: '80px' }}>품명</TableCell>
-                  <TableCell style={{ minWidth: '120px' }}>규격</TableCell>
-                  <TableCell style={{ minWidth: '100px' }}>단가</TableCell>
-                  <TableCell style={{ minWidth: '100px' }}>count</TableCell>
-                  <TableCell style={{ minWidth: '100px' }}>금액</TableCell>
-                  <TableCell style={{ minWidth: '200px' }}>납기일</TableCell>
-                  <TableCell style={{ minWidth: '150px' }}>Actions</TableCell>
-                </TableRow>
+                <StyledTableRow>
+                  <StyledTableCell style={{ minWidth: '80px' }}>품번</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '80px' }}>품명</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '120px' }}>규격</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '100px' }}>단가</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '100px' }}>count</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '100px' }}>금액</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '200px' }}>납기일</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '150px' }}>Actions</StyledTableCell>
+                </StyledTableRow>
               </TableHead>
               <TableBody>
                 {selectedItems.map((item, index) => (
                   <TableRow key={`selected-${index}`}
-                    sx={{ padding: 1, marigin: 0 }}>
+                  sx={{
+                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
+                    }
+                  }}>
                     <TableCell sx={{ padding: 1 }}>{item.itemCode}</TableCell>
                     <TableCell sx={{ padding: 1 }}>{item.itemName}</TableCell>
                     <TableCell sx={{ padding: 1 }}>{item.spec}</TableCell>
