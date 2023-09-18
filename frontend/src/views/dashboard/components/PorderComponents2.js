@@ -12,7 +12,8 @@ import {
   Button,
   Checkbox,
   Dialog, DialogContent, DialogTitle,
-  TableFooter
+  TableFooter,
+  styled,
 } from '@mui/material';
 import { Edit, Done } from '@mui/icons-material';
 import DashboardCard from '../../../components/shared/DashboardCard';
@@ -25,7 +26,7 @@ import { toggleCheckbox } from 'src/redux/slices/pOrderInfoCheckboxReducer';
 import { REMOVE_ALL_SELECTED_PRODUCTS } from 'src/redux/slices/selectedProductsReducer';
 import { seletedPOrderList } from '../../../redux/thunks/SelectedPOrderList';
 import reload from 'src/redux/slices/pOrderListReducer';
-
+import { tableCellClasses } from "@mui/material/TableCell";
 
 const PorderComponets2 = () => {
   const [visibleCount, setVisibleCount] = useState(10);
@@ -40,6 +41,7 @@ const PorderComponets2 = () => {
   const [isDataUpdated, setDataUpdated] = useState(false);
   const [pOrderCount, setPOrderCount] = useState("");
   const [pOrderItemState, setPOrderItemState] = useState("");
+
   const dispatch = useDispatch();
   useEffect(() => {
     if (products.data) {
@@ -49,7 +51,7 @@ const PorderComponets2 = () => {
         setDataUpdated(true);
       }
     }
-  }, [products.data, visibleCount, visibleProducts,dispatch,visibleProducts,isDataUpdated]);
+  }, [products.data, visibleCount, visibleProducts, dispatch, visibleProducts, isDataUpdated]);
 
   useEffect(() => {
 
@@ -82,6 +84,25 @@ const PorderComponets2 = () => {
   };
 
   // const porderModalState = useSelector((state) => state.porderModal);
+  const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    [`&.${tableCellClasses.head}`]: {
+      backgroundColor: "#505e82",
+      color: theme.palette.common.white,
+      textAlign: 'center',
+    },
+    [`&.${tableCellClasses.body}`]: {
+      fontSize: 10,
+      minWidth: 10,
+      textAlign: 'center'
+    },
+  }));
+
+  const StyledTableRow = styled(TableRow)(() => ({
+    // hide last border
+    "&:last-child td, &:last-child th": {
+      border: 0,
+    },
+  }));
 
 
   function formatDate(receiveDeadline) {
@@ -127,8 +148,6 @@ const PorderComponets2 = () => {
           icon: 'success',
           showConfirmButton: false,
         });
-
-
         // 생성한 newProduct을 콘솔에 출력하여 확인
         console.log('새로운 제품:', newProduct);
         // dispatch(reload(false)) // 이 부분을 주석 처리
@@ -185,7 +204,6 @@ const PorderComponets2 = () => {
         setItems(itemSearchData);
       })
   }
-
 
   // visibleProducts 배열의 마지막 항목의 product.porderItemNo 값을 갱신
   useEffect(() => {
@@ -298,42 +316,44 @@ const PorderComponets2 = () => {
               backgroundColor: '#fff',
             }}
           >
-            <TableRow>
-              <TableCell>선택</TableCell>
-              <TableCell>발주상태</TableCell>
-              <TableCell>품목번호</TableCell>
-              <TableCell>품목명</TableCell>
-              <TableCell>가격</TableCell>
-              <TableCell>수량</TableCell>
-              <TableCell>금액</TableCell>
-              <TableCell>납기일</TableCell>
-            </TableRow>
+            <StyledTableRow>
+              <StyledTableCell>선택</StyledTableCell>
+              <StyledTableCell>발주상태</StyledTableCell>
+              <StyledTableCell>품목번호</StyledTableCell>
+              <StyledTableCell>품목명</StyledTableCell>
+              <StyledTableCell>가격</StyledTableCell>
+              <StyledTableCell>수량</StyledTableCell>
+              <StyledTableCell>금액</StyledTableCell>
+              <StyledTableCell>납기일</StyledTableCell>
+              <StyledTableCell></StyledTableCell>
+            </StyledTableRow>
           </TableHead>
           <TableBody>
             <TableRow>
-
               <TableCell></TableCell>
-              <TableCell sx={{ display: "none" }}><TextField value={lastPorderItemNo} /></TableCell>
-              <TableCell><Typography sx={{ fontSize: '15px', fontWeight: '500' }} >준비</Typography></TableCell>
-              <TableCell><TextField value={itemCode} onClick={handleTextFieldClick} /></TableCell>
-              <TableCell><div
-
-                sx={{
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  borderBottom: '1px solid #ccc',
-                  padding: '4px 8px',
-                  border: 'none',
-                }}
-                contentEditable={true}
-                onInput={(e) => setItemName(e.target.textContent)}
-              >
-                {itemName}
-              </div></TableCell>
-              <TableCell><TextField   type="number" value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
-              <TableCell><TextField   type="number" onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
-              <TableCell><Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{pOrderPrice * pOrderCount}</Typography></TableCell>
-              <TableCell>
+              <TableCell sx={{ display: "none", textAlign: 'center' }}><TextField value={lastPorderItemNo} /></TableCell>
+              <TableCell style={{ textAlign: 'center' }}><Typography sx={{ fontSize: '15px', fontWeight: '500' }} >준비</Typography></TableCell>
+              <TableCell style={{ textAlign: 'center' }}><TextField value={itemCode} onClick={handleTextFieldClick} /></TableCell>
+              <TableCell style={{ textAlign: 'center' }}>
+                <div
+                  sx={{
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    borderBottom: '1px solid #ccc',
+                    padding: '4px 8px',
+                    border: 'none',
+                    textAlign: 'center',
+                  }}
+                  contentEditable={true}
+                  onInput={(e) => setItemName(e.target.textContent)}
+                >
+                  {itemName}
+                </div>
+              </TableCell>
+              <TableCell style={{ textAlign: 'Right' }}><TextField type="number" value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
+              <TableCell style={{ textAlign: 'Right' }}><TextField type="number" onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
+              <TableCell style={{ textAlign: 'Right' }}><Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{pOrderPrice * pOrderCount}</Typography></TableCell>
+              <TableCell style={{ textAlign: 'center' }}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
                     label={`금일 (${formattedToday})`}
@@ -345,21 +365,27 @@ const PorderComponets2 = () => {
                     minDate={new Date()}
                     maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
                   />
-
                 </LocalizationProvider>
-
               </TableCell>
-              <TableCell><Button variant="contained"
-                size="small" onClick={() => pOrderitemInsert()}><Done /></Button></TableCell>
+              <TableCell style={{ textAlign: 'center' }}>
+                <Button variant="contained" size="small" onClick={() => pOrderitemInsert()}><Done /></Button>
+              </TableCell>
             </TableRow>
             {visibleProducts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">데이터가 없습니다.</TableCell>
-              </TableRow>
+              <StyledTableRow>
+                <StyledTableCell colSpan={4} align="center">데이터가 없습니다.</StyledTableCell>
+              </StyledTableRow>
             ) : (
               visibleProducts.map((product, index) => (
-                <TableRow key={index}>
-                  <TableCell  sx={{ padding: 2 }}>
+                <StyledTableRow key={index}
+                  sx={{
+                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
+                    }
+                  }}ㄴ
+                >
+                  <StyledTableCell sx={{ padding: 2 }}>
                     <Checkbox
                       checked={selectedProducts.includes(product.porderItemNo)}
                       onChange={() => {
@@ -367,11 +393,11 @@ const PorderComponets2 = () => {
                         setPOrderItemState(product.porderState)
                       }}
                     />
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2 }}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 2 }}>
                     <Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{product.porderState}</Typography>
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2, textAlign: 'right'}}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 2, textAlign: 'right' }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemCode}
@@ -387,8 +413,8 @@ const PorderComponets2 = () => {
                         {product.itemCode}
                       </Typography>
                     )}
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2}}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 2, textAlign: 'right' }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemName}
@@ -403,8 +429,8 @@ const PorderComponets2 = () => {
                         {product.itemName}
                       </Typography>
                     )}
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2, textAlign: 'right'}}>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         type="number"
@@ -420,11 +446,11 @@ const PorderComponets2 = () => {
                         {product.porderPrice}
                       </Typography>
                     )}
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2, textAlign: 'right'}}>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                      type="number"
+                        type="number"
                         value={product.porderCount}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderCount', e.target.value)
@@ -436,8 +462,8 @@ const PorderComponets2 = () => {
                         {product.porderCount}
                       </Typography>
                     )}
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2 }}>
+                  </StyledTableCell>
+                  <StyledTableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <Typography variant="subtitle2" fontWeight={600}>
                         {editPOrderItemPrice * editPOrderCount}</Typography>
@@ -446,8 +472,8 @@ const PorderComponets2 = () => {
                         {(+product.porderCount) * (+product.porderPrice)}
                       </Typography>
                     )}
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2 }}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
 
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -468,8 +494,8 @@ const PorderComponets2 = () => {
                         <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.receiveDeadline}</Typography>
                       )
                     }
-                  </TableCell>
-                  <TableCell  sx={{ padding: 2 }}>
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ padding: 2 }}>
                     {product.porderState !== "준비" ?
                       (
                         <Button
@@ -501,15 +527,15 @@ const PorderComponets2 = () => {
                         </Button>
                       )
                     }
-                  </TableCell>
+                  </StyledTableCell>
 
-                  <TableCell sx={{ display: "none", padding: 2 }} >
+                  <StyledTableCell sx={{ display: "none", padding: 2 }} >
                     <Typography
                       value={product.porderCode}
                       onChange={(e) => setPOrderCode(e.target.value)}
                     />
-                  </TableCell>
-                </TableRow>
+                  </StyledTableCell>
+                </StyledTableRow>
               ))
             )}
           </TableBody>
@@ -520,8 +546,8 @@ const PorderComponets2 = () => {
       <Dialog open={isModalOpen} onClose={handleCloseModal}
         PaperProps={{
           style: {
-            width: '70%', 
-            height: '57%', 
+            width: '70%',
+            height: '57%',
             overflowY: 'auto', // 필요한 경우 스크롤을 허용
           },
         }}>
@@ -536,35 +562,35 @@ const PorderComponets2 = () => {
           </Box>
           <Table style={{ textAlign: 'center' }}>
             <TableHead>
-              <TableRow>
-                <TableCell>품목코드</TableCell>
-                <TableCell>명칭</TableCell>
-                <TableCell>규격</TableCell>
-                <TableCell>단위</TableCell>
-                <TableCell>금액</TableCell>
-              </TableRow>
+              <StyledTableRow>
+                <StyledTableCell>품목코드</StyledTableCell>
+                <StyledTableCell>명칭</StyledTableCell>
+                <StyledTableCell>규격</StyledTableCell>
+                <StyledTableCell>단위</StyledTableCell>
+                <StyledTableCell>금액</StyledTableCell>
+              </StyledTableRow>
             </TableHead>
             <TableBody>
               {currentItems.map((item, index) => (
-                <TableRow key={index} onClick={() => handleRowClick(item)} sx={{
+                <StyledTableRow key={index} onClick={() => handleRowClick(item)} sx={{
                   '&:hover': {
                     backgroundColor: 'rgba(0, 0, 0, 0.04)'
                   }
                 }}>
-                  <TableCell sx={{ height: '10px !important' }}>{item.itemCode}</TableCell>
-                  <TableCell sx={{ height: '10px !important' }}>{item.itemName}</TableCell>
-                  <TableCell sx={{ height: '10px !important' }}>{item.spec}</TableCell>
-                  <TableCell sx={{ height: '10px !important' }}>{item.unit}</TableCell>
-                  <TableCell sx={{ height: '10px !important' }}>{item.itemPrice}</TableCell>
-                </TableRow>
+                  <StyledTableCell sx={{ height: '10px !important' }}>{item.itemCode}</StyledTableCell>
+                  <StyledTableCell sx={{ height: '10px !important' }}>{item.itemName}</StyledTableCell>
+                  <StyledTableCell sx={{ height: '10px !important' }}>{item.spec}</StyledTableCell>
+                  <StyledTableCell sx={{ height: '10px !important' }}>{item.unit}</StyledTableCell>
+                  <StyledTableCell sx={{ height: '10px !important' }}>{item.itemPrice}</StyledTableCell>
+                </StyledTableRow>
               ))}
 
             </TableBody>
 
             <TableFooter>
-              <TableRow>
-                <TableCell> </TableCell>
-                <TableCell colSpan={5}>
+              <StyledTableRow>
+                <StyledTableCell> </StyledTableCell>
+                <StyledTableCell colSpan={5}>
                   &nbsp;&nbsp;&nbsp;&nbsp;
                   <Pagination
                     count={Math.ceil(items.length / itemsPerPage)}
@@ -573,8 +599,8 @@ const PorderComponets2 = () => {
                     page={currentPage}
                     onChange={(event, value) => setCurrentPage(value)}
                   />
-                </TableCell>
-              </TableRow>
+                </StyledTableCell>
+              </StyledTableRow>
             </TableFooter>
 
           </Table>
