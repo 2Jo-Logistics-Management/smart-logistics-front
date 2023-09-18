@@ -9,7 +9,6 @@ import {
   TableRow,
   TextField,
   Button,
-  Checkbox,
   Pagination,
   DialogTitle,
   Dialog,
@@ -22,20 +21,11 @@ import {
 import DashboardCard from "../../../components/shared/DashboardCard";
 import swal from "sweetalert2";
 import axios from "axios";
-
-import {
-  ADD_SELECTED_PRODUCT,
-  REMOVE_SELECTED_PRODUCT,
-  REMOVE_ALL_SELECTED_PRODUCTS,
-} from "../../../redux/slices/selectedProductsReducer";
 import { useDispatch, useSelector } from "react-redux";
 import porderAxios from "./../../../axios/porderAxios";
 import { Delete } from "@mui/icons-material";
 import { warehouseList } from "../../../redux/thunks/warehouseList";
 import Loading from "../../../loading";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import ko from "date-fns/locale/ko";
 import { warehouseSectionList } from "../../../redux/thunks/warehouseSectionList";
 import { searchWarehouseList } from "src/redux/thunks/searchWarehouseList";
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
@@ -51,7 +41,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.body}`]: {
     fontSize: 40,
     minWidth: 100,
-    padding: "30px",
+    padding: "27px",
   },
 }));
 
@@ -71,8 +61,6 @@ const Warehouse = () => {
   const productsData = useSelector((state) => state.warehouseList.products);
   const products = JSON.parse(JSON.stringify(productsData));
   const realProducts = products?.data || [];
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const ITEMS_PER_PAGE = 5; // 한 페이지당 표시할 아이템 개수
 
   const [currentPage, setCurrentPage] = useState(0); // 현재 페이지 상태
@@ -92,18 +80,6 @@ const Warehouse = () => {
   );
 
   useEffect(() => {
-    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
-    setSelectAll(false);
-  }, [currentPage]);
-
-  useEffect(() => {
-    const allSelectedOnCurrentPage = currentItems.every((item) =>
-      selectedProducts.includes(item.warehouseNo)
-    );
-    setSelectAll(allSelectedOnCurrentPage);
-  }, [selectedProducts, currentItems]);
-
-  useEffect(() => {
     if (selectedProducts.length === 1) {
       porderAxios(selectedProducts, dispatch);
     }
@@ -112,11 +88,11 @@ const Warehouse = () => {
 
   const [warehouseName, setWarehouseName] = useState("");
   const [itemName, setItemName] = useState("");
-  const [createId, setCreateId] = useState("");
+  const [manager, setManager] = useState("");
 
   const handleClick = () => {
     let timerInterval;
-    dispatch(searchWarehouseList(warehouseName, itemName));
+    dispatch(searchWarehouseList(warehouseName, itemName, manager));
     swal.fire({
       title: "입고물품 조회중",
       html: "잠시만 기다려주세요",
@@ -133,38 +109,6 @@ const Warehouse = () => {
         clearInterval(timerInterval);
       },
     });
-  };
-
-  const handleCheckboxChange = (event, productId) => {
-    if (event.type === "click") {
-      if (selectedProducts.includes(productId)) {
-        dispatch(REMOVE_SELECTED_PRODUCT(productId));
-        return;
-      } else {
-        dispatch(ADD_SELECTED_PRODUCT(productId));
-        return;
-      }
-    }
-  };
-
-  useEffect(() => {
-    // 컴포넌트가 마운트되었을 때 모든 상품 선택을 해제한다.
-    dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
-  }, []);
-
-  const [selectAll, setSelectAll] = useState(false);
-
-  const handleSelectAllChange = () => {
-    if (selectAll) {
-      currentItems.forEach((item) => {
-        dispatch(REMOVE_SELECTED_PRODUCT(item.warehouseNo));
-      });
-    } else {
-      currentItems.forEach((item) => {
-        dispatch(ADD_SELECTED_PRODUCT(item.warehouseNo));
-      });
-    }
-    setSelectAll(!selectAll);
   };
 
   const [sectionAddOpen, setSectionAddOpen] = useState(false);
@@ -196,6 +140,10 @@ const Warehouse = () => {
       warehouseName: sectionName,
     };
 
+    setSectionName("");
+    setSectionAddOpen(false);
+    setOpen(false);
+
     axios
       .post("http://localhost:8888/api/warehouse/insert", warehouseInsertDto)
       .then(() => {
@@ -206,9 +154,8 @@ const Warehouse = () => {
           showConfirmButton: false,
         });
       });
-    setSectionName("");
-    setSectionAddOpen(false);
-    setOpen(false);
+
+    dispatch(warehouseSectionList());
   };
 
   const sectionListData = useSelector(
@@ -224,33 +171,48 @@ const Warehouse = () => {
       (warehouse) => warehouse.warehouseName === selectedWarehouseSection
     );
 
+    console.log("selectedWarehouse " + selectedWarehouse.warehouseName);
+
+    //TODO: 삭제 로직 구현해야함
+
+    const isExistWarehouseStock = realProducts.some(
+      (i) => i.warehouseName === selectedWarehouse.warehouseName
+    );
+    // realProducts.map(i => console.log(i.warehouseName));
+
+    console.log(isExistWarehouseStock);
+
     if (!selectedWarehouse) {
       console.error("해당 창고 구역을 찾을 수 없습니다.");
       return;
     }
 
+    if (isExistWarehouseStock) {
+      alert("해당 창고 구역은 삭제할 수 없습니다.");
+    }
+
     const warehouseNo = selectedWarehouse.warehouseNo;
 
-    axios
-      .delete(`http://localhost:8888/api/warehouse/delete/${warehouseNo}`)
-      .then(() => {
-        swal.fire({
-          title: "창고구역 삭제완료.",
-          text: "창고구역이 삭제되었습니다.",
-          icon: "success",
-          showConfirmButton: false,
-        });
-        setSelectedWarehouseSection("");
-        dispatch(warehouseSectionList()); // 추가
-      })
-      .catch((error) => {
-        console.error("창고 구역 삭제 오류:", error);
-        swal.fire({
-          title: "오류 발생",
-          text: "창고구역 삭제 중 오류가 발생했습니다.",
-          icon: "error",
-        });
-      });
+    // axios
+    //   .delete(`http://localhost:8888/api/warehouse/delete/${warehouseNo}`)
+    //   .then(() => {
+    //     swal.fire({
+    //       title: "창고구역 삭제완료.",
+    //       text: "창고구역이 삭제되었습니다.",
+    //       icon: "success",
+    //       showConfirmButton: false,
+    //     });
+    //     setSelectedWarehouseSection("");
+    //     dispatch(warehouseSectionList()); // 추가
+    //   })
+    //   .catch((error) => {
+    //     console.error("창고 구역 삭제 오류:", error);
+    //     swal.fire({
+    //       title: "오류 발생",
+    //       text: "창고구역 삭제 중 오류가 발생했습니다.",
+    //       icon: "error",
+    //     });
+    //   });
   };
 
   return (
@@ -441,48 +403,11 @@ const Warehouse = () => {
                 variant="outlined"
                 size="small"
                 sx={{ marginRight: 2 }}
-                value={createId}
+                value={manager}
                 onChange={(e) => {
-                  setCreateId(e.target.value);
+                  setManager(e.target.value);
                 }}
               />
-              {/* <LocalizationProvider
-                dateAdapter={AdapterDateFns}
-                adapterLocale={ko}
-              >
-                <Typography variant="h6" sx={{ mr: 1 }}>
-                  재고생성일
-                </Typography>
-                <DatePicker
-                  renderInput={(props) => <TextField {...props} />}
-                  label="조회시작일"
-                  views={["year", "month", "day"]}
-                  value={startDate}
-                  format="yyyy-MM-dd"
-                  slotProps={{ textField: { size: "small" } }}
-                  minDate={new Date("2022-07-01")}
-                  maxDate={new Date("2100-01-01")}
-                  onChange={(date) => setStartDate(date)}
-                  sx={{ marginRight: 1 }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{ fontSize: "0.7rem", marginRight: "1rem" }}
-                >
-                  ~
-                </Typography>
-                <DatePicker
-                  renderInput={(props) => <TextField {...props} />}
-                  label="조회 마감일"
-                  views={["year", "month", "day"]}
-                  format="yyyy-MM-dd"
-                  slotProps={{ textField: { size: "small" } }}
-                  value={endDate}
-                  minDate={new Date("2022-07-01")}
-                  maxDate={new Date("2100-01-01")}
-                  onChange={(date) => setEndDate(date)}
-                />
-              </LocalizationProvider> */}
             </Box>
             <Box>
               <Button
@@ -508,27 +433,12 @@ const Warehouse = () => {
               </Button>
             </Box>
           </Box>
-          {/* <Box>
-            {selectedProducts.length >= 2 && (
-              <Typography
-                variant="h6"
-                style={{ color: "red", fontWeight: "bold" }}
-              >
-                선택된 상품 개수: {selectedProducts.length} 입니다
-              </Typography>
-            )}
-          </Box> */}
           <Box sx={{ overflow: "auto", maxHeight: "650px" }}>
             <TableContainer component={Paper}>
               <Table aria-label="customized table" sx={{ minWidth: 700 }}>
                 <TableHead>
                   <StyledTableRow>
-                    <StyledTableCell style={{ width: "10%" }}>
-                      {/* <Checkbox
-                        checked={selectAll}
-                        onChange={handleSelectAllChange}
-                      /> */}
-                    </StyledTableCell>
+                    <StyledTableCell style={{ width: "10%" }}></StyledTableCell>
                     <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         창고구역명
@@ -567,51 +477,27 @@ const Warehouse = () => {
                           cursor: "pointer",
                         },
                       }}
-                      style={{ height: "20%"}}
+                      style={{ height: "20%" }}
                     >
-                      <TableCell>
-                        {/* <Checkbox
-                          checked={selectedProducts.includes(
-                            realProduct.warehouseStockNo
-                          )}
-                          onChange={(event) =>
-                            handleCheckboxChange(
-                              event,
-                              realProduct.warehouseStockNo
-                            )
-                          }
-                          sx={{
-                            maxheight: "32px",
-                          }}
-                        /> */}
-                      </TableCell>
+                      <TableCell></TableCell>
                       <StyledTableCell align="left">
                         <Typography sx={{ fontWeight: "400" }}>
                           {realProduct.warehouseName}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell align="left">
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={400}
-                        >
+                        <Typography variant="subtitle2" fontWeight={400}>
                           {realProduct.itemName}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={400}
-                        >
-                          {realProduct.count}
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {realProduct.totalCount}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell align="left">
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={400}
-                        >
-                          {realProduct.createId}
+                        <Typography variant="subtitle2" fontWeight={400}>
+                          {realProduct.manager}
                         </Typography>
                       </StyledTableCell>
                     </StyledTableRow>
