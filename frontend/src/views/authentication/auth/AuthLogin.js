@@ -3,10 +3,8 @@ import {
     Box,
     Typography,
     FormGroup,
-    FormControlLabel,
     Button,
     Stack,
-    Checkbox
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,21 +44,14 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
 
 
     useEffect(() => {
-        console.log(loginData);
         if (loginData.success === true) {
             dispatch(success);
             navigate('/');
         } else if (loginData.success === false) {
-            console.log(loginData.success)
-            setAlertMessage('아이디와 비밀번호를 확인해주세요.');
+            setAlertMessage('아이디(로그인 전용 아이디) 또는 비밀번호를 잘못 입력했습니다.')
             setShowAlert(true);
         }
     }, [dispatch, loginData, navigate]);
-
-    
-    const handleAlertClose = () => {
-        setShowAlert(false);
-    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -116,22 +107,6 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
                 }}
             >
                 <div>{alertMessage}</div>
-                <button
-                    style={{
-                        backgroundColor: '#bbb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '5px 10px',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.3s', // hover 효과에 사용할 전환 효과
-                    }}
-                    onClick={handleAlertClose}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#444'} // hover 효과 적용
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#bbb'} // hover 효과 해제
-                >
-                    닫기
-                </button>
             </div>
         )}
     <form onSubmit={handleFormSubmit}>
@@ -140,20 +115,16 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
                 <Typography variant="subtitle1"
                     fontWeight={600} component="label" htmlFor='userId' mb="5px">ID</Typography>
                 <CustomTextField id="userId" variant="outlined" fullWidth
-                onChange={(e) => {setUserId(e.target.value)}} required  />
+                onChange={(e) => {setUserId(e.target.value)}} />
             </Box>
             <Box mt="25px">
                 <Typography variant="subtitle1"
                     fontWeight={600} component="label" htmlFor='password' mb="5px" >Password</Typography>
                 <CustomTextField id="password" type="password" variant="outlined" fullWidth 
-                onChange={(e) => {setPassword(e.target.value)}} required/>
+                onChange={(e) => {setPassword(e.target.value)}} />
             </Box>
             <Stack justifyContent="space-between" direction="row" alignItems="center" my={2}>
                 <FormGroup>
-                    <FormControlLabel
-                        control={<Checkbox defaultChecked />}
-                        label="Remeber this Device"
-                    />
                 </FormGroup>
             </Stack>
         </Stack>

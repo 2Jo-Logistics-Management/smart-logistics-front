@@ -22,7 +22,6 @@ axios.defaults.withCredentials = true;
 const Account = () => {
 
     const [currentAccount, setCurrentAccount] = useState([]);
-    const [accountList, setAccountList] = useState([]);
 
     // 거래처 이름, 거래처 코드 검색
     const [searchName, setSearchName] = useState('');
@@ -35,9 +34,6 @@ const Account = () => {
 
     // 전체 선택 체크박스 관련 state
     const [selectAll, setSelectAll] = useState(false);
-
-    // 삭제 알림창 
-    const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
     
     // 수정 관련 state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -104,19 +100,18 @@ const Account = () => {
     useEffect(() => {
     axios.get('http://localhost:8888/api/account/list')
       .then(response => {
-        setAccountList(response.data.data);
         setCurrentAccount(response.data.data);
       })
       .catch();
     }, []);
 
     const updateAccountList = response => {
-        setAccountList(response.data.data);
         setCurrentAccount(response.data.data);
       };
 
     // INSERT axios
     const handleSaveNewAccount = () => {
+      let timerInterval = null;
       // 필수 입력 값 확인
       if (
         !newAccount.accountName ||
@@ -139,8 +134,29 @@ const Account = () => {
       axios
         .post('http://localhost:8888/api/account/insert', newAccount)
         .then((response) => {
+          swal
+              .fire({
+                title: "회원 추가 완료",
+                text: "회원이 추가되었습니다.",
+                icon: "success",
+                timer: 1000,
+                timerProgressBar: true,
+    
+                didOpen: () => {
+                  swal.showLoading();
+                  const b = swal.getHtmlContainer().querySelector("b");
+                  timerInterval = setInterval(() => {
+                    b.textContent = swal.getTimerLeft();
+                  }, 1000);
+                },
+                willClose: () => {
+                  clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
+                },
+              });
+
           axios.get('http://localhost:8888/api/account/list').then(updateAccountList);
           setIsModalOpen(false);
+          
         })
         .catch((error) => {
           console.error(error);
@@ -170,7 +186,6 @@ const Account = () => {
           window.location.reload();
         }, 300);
     
-        setDeleteConfirmationOpen(false);
       } catch (error) {
         // Handle errors and show an error message
         swal.fire({
@@ -212,26 +227,52 @@ const Account = () => {
         });
     };
 
-      // MODIFY axios
-    const handleUpdateAccount = () => {
+    // MODIFY axios
+    const handleUpdateAccount = async() => {
+      let timerInterval = null;
+      try {
         if (editingAccount.accountName && editingAccount.representative && editingAccount.contactNumber && editingAccount.businessNumber) {
           axios.patch(`http://localhost:8888/api/account/modify?accountNo=${editingAccount.accountNo}`, editingAccount)
             .then(response => {
               setIsEditModalOpen(false);
-              axios.get('http://localhost:8888/api/account/list')
-                .then(updateAccountList)
-                .catch();
-              window.location.reload(); // 수정이 완료되면 페이지 새로고침
+              swal
+                .fire({
+                  title: "수정 완료",
+                  text: "데이터가 수정되었습니다.",
+                  icon: "success",
+                  timer: 1000,
+                  timerProgressBar: true,
+
+                  didOpen: () => {
+                    swal.showLoading();
+                    const b = swal.getHtmlContainer().querySelector("b");
+                    timerInterval = setInterval(() => {
+                      b.textContent = swal.getTimerLeft();
+                    }, 1000);
+                  },
+                  willClose: () => {
+                    clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
+                  },
+                })
+              
+              axios.get('http://localhost:8888/api/account/list').then(updateAccountList);
+                setIsModalOpen(false)
             })
-            .catch();
-        } else {
-          console.log("모든 필드를 입력하세요.");
+        }
+        } catch (error) {
+          swal.fire({
+            title: "수정 실패",
+            text: `${error}`,
+            icon: "error",
+          });
         }
     };
 
 
     // 조회조건 axios
     const handleSearch = () => {
+
+      let timerInterval = null;
       const queryParams = [];
   
       if (searchCode) {
@@ -245,7 +286,22 @@ const Account = () => {
   
       axios.get(`http://localhost:8888/api/account/list?${queryString}`)
           .then(response => {
-              setAccountList(response.data.data);
+              swal.fire({
+                title: "입고물품 조회중",
+                html: "잠시만 기다려주세요",
+                timer: 700,
+                timerProgressBar: true,
+                didOpen: () => {
+                  swal.showLoading();
+                  const b = swal.getHtmlContainer().querySelector("b");
+                  timerInterval = setInterval(() => {
+                    b.textContent = swal.getTimerLeft();
+                  }, 1000);
+                },
+                willClose: () => {
+                  clearInterval(timerInterval);
+                },
+              });
               setCurrentAccount(response.data.data);
           })
           .catch(error => {

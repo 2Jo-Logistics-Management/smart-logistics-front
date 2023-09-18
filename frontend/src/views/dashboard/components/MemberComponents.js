@@ -22,9 +22,8 @@
 
   const Member = () => {
     const [currentMember, setCurrentMember] = useState([]);
-    const [memberList, setMemberList] = useState([]);
 
-    const [searchName, setSearchName] = useState('');
+    const [searchCode, setSearchCode] = useState('');
     const [searchId, setSearchId] = useState('');
 
     const [alertMessage, setAlertMessage] = useState('');
@@ -37,9 +36,6 @@
 
     // 전체 선택 체크박스 관련 state
     const [selectAll, setSelectAll] = useState(false);
-
-    // 삭제 알림창 
-    const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
     
     // 수정 관련 state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,8 +43,6 @@
 
     // 수정 중복선택 경고 alert창
     const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
-
-    const [selectedMemberDetail, setSelectedMemberDetail] = useState(null);
 
     const [newMember, setNewMember] = useState({
       memberName: '',
@@ -81,7 +75,6 @@
     useEffect(() => {
       axios.get('http://localhost:8888/api/member/list',{ data: {memberNo : 1}})
         .then(response => {
-          setMemberList(response.data.data);
           setCurrentMember(response.data.data);
         })
         .catch(handleError);
@@ -91,7 +84,6 @@
     const handleError = error => {
       if (error.response && error.response.data) {
         const errorMessage = error.response.data;
-        console.log("에러 +++++++++++++ : " + errorMessage)
         if (errorMessage.includes('not logged in')) {
           setAlertMessage('로그인이 필요합니다.');
           setIsAlertOpen(true);
@@ -111,37 +103,64 @@
       }));
     };
 
-
     // INSERT axios
-    const handleSaveNewMember = () => {
-      if (newMember.memberName && newMember.memberId && newMember.password && newMember.memberRole) {
-        axios.get(`http://localhost:8888/api/member/checkId/${newMember.memberId}`)
-          .then(response => {
-            const isDuplicate = response.data.data;
-            if (isDuplicate) {
-              setAlertMessage('이미 존재하는 아이디입니다.');
-            } else {
-              axios.post('http://localhost:8888/api/member/insert', newMember)
-                .then(response => {
-                  axios.get('http://localhost:8888/api/member/list')
-                    .then(updateMemberList)
-                    .catch(handleError);
-                  setIsModalOpen(false);
-                  window.location.reload(); // 회원 추가 후 페이지 새로고침
-                })
-                .catch(handleError);
-            }
-          })
-          .catch(handleError);
-      } else {
-        console.log("모든 필드를 입력하세요.");
+    const handleSaveNewMember = async () => {
+      let timerInterval = null; // 변수를 초기화
+    
+      try {
+        if (!newMember.memberName || !newMember.memberId || !newMember.password || !newMember.memberRole) {
+          console.log("모든 필수 항목을 입력하세요.");
+          return;
+        }
+    
+        const response = await axios.get(`http://localhost:8888/api/member/checkId/${newMember.memberId}`);
+        const isDuplicate = response.data.data;
+        
+        if (isDuplicate) {
+          setAlertMessage('이미 존재하는 아이디입니다.');
+        } else {
+          axios
+            .post('http://localhost:8888/api/member/insert', newMember)
+            .then(response => {
+              swal
+                .fire({
+                  title: "회원 추가 완료",
+                  text: "회원이 추가되었습니다.",
+                  icon: "success",
+                  timer: 1000,
+                  timerProgressBar: true,
+      
+                  didOpen: () => {
+                    swal.showLoading();
+                    const b = swal.getHtmlContainer().querySelector("b");
+                    timerInterval = setInterval(() => {
+                      b.textContent = swal.getTimerLeft();
+                    }, 1000);
+                  },
+                  willClose: () => {
+                    clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
+                  },
+                });
+              
+              axios.get('http://localhost:8888/api/member/list').then(updateMemberList);
+              setIsModalOpen(false)
+            });
+          
+        }
+
+        } catch (error) {
+        swal.fire({
+          title: "삽입 실패",
+          text: `${error}`,
+          icon: "error",
+        });
       }
     };
+
     
     // DELETE axios
     const confirmDeleteMembers = async () => {
       try {
-        // Check if the admin member is selected for deletion
         if (selectedMembers.some(member => member.memberId === 'admin')) {
           swal.fire({
             title: "삭제 실패",
@@ -151,29 +170,21 @@
           return;
         }
     
-        // Get the member numbers of selected members
         const memberNoArr = selectedMembers.map(item => item.memberNo);
-    
-        // Send a DELETE request to delete the selected members
         await axios.delete('http://localhost:8888/api/member/delete', {
           data: memberNoArr
         });
-    
-        // Show a success message
         await swal.fire({
           title: "삭제 완료",
           text: "회원이 삭제되었습니다.",
           icon: "success",
         });
-    
-        // Reload the page after a delay (if needed)
+
         setTimeout(() => {
           window.location.reload();
         }, 300);
     
-        setDeleteConfirmationOpen(false);
       } catch (error) {
-        // Handle errors and show an error message
         swal.fire({
           title: "삭제 실패",
           text: `${error.message}`,
@@ -215,20 +226,45 @@
     
 
     // MODIFY axios
-    const handleUpdateMember = () => {
-      if (editingMember.memberName && editingMember.memberId && editingMember.memberRole) {
-        axios.patch(`http://localhost:8888/api/member/modify?memberNo=${editingMember.memberNo}`, editingMember)
-          .then(response => {
+    const handleUpdateMember = async() => {
+      let timerInterval = null;
+      try {
+        if (editingMember.memberName && editingMember.memberId && editingMember.memberRole) {
+          axios.patch(`http://localhost:8888/api/member/modify?memberNo=${editingMember.memberNo}`, editingMember)
+            .then((response) => {
+              setIsEditModalOpen(false);
+              swal
+                  .fire({
+                    title: "수정 완료",
+                    text: "데이터가 수정되었습니다.",
+                    icon: "success",
+                    timer: 1000,
+                    timerProgressBar: true,
+  
+                    didOpen: () => {
+                      swal.showLoading();
+                      const b = swal.getHtmlContainer().querySelector("b");
+                      timerInterval = setInterval(() => {
+                        b.textContent = swal.getTimerLeft();
+                      }, 1000);
+                    },
+                    willClose: () => {
+                      clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
+                    },
+                  })
+              axios.get('http://localhost:8888/api/member/list').then(updateMemberList)
+                setIsModalOpen(false)
+            })
+      }  
+      } catch(error) {
             setIsEditModalOpen(false);
-            axios.get('http://localhost:8888/api/member/list')
-              .then(updateMemberList)
-              .catch(handleError);
-            window.location.reload(); // 수정이 완료되면 페이지 새로고침
-          })
-          .catch(handleError);
-      } else {
-        console.log("모든 필드를 입력하세요.");
-      }
+            swal.fire({
+              title: "수정 실패",
+              text: `${error}`,
+              icon: "error",
+
+          });
+      } 
     };
     
     // 중복체크 axios
@@ -247,18 +283,7 @@
         .catch();
     };
 
-    useEffect(() => {
-      // 초기 로드 시에 memberNo가 1인 항목의 데이터를 가져오는 axios 요청
-      axios.get(`http://localhost:8888/api/member/detail/1`)
-        .then((response) => {
-          setSelectedMemberDetail(response.data.data);
-        })
-        .catch(handleError);
-    }, []);
-    
-
     const updateMemberList = response => {
-      setMemberList(response.data.data);
       setCurrentMember(response.data.data);
     };
 
@@ -275,13 +300,43 @@
     
     // 이름, 아이디 검색기능
     const handleSearch = () => {
-      const filteredMembers = memberList.filter((member) => {
-        const nameMatches = member.memberName.includes(searchName);
-        const idMatches = member.memberId.includes(searchId);
-        return nameMatches && idMatches;
-      });
-    
-      setCurrentMember(filteredMembers);
+
+      let timerInterval = null;
+      const queryParams = [];
+
+      if (searchCode) {
+        queryParams.push(`memberNo=${searchCode}`);
+      }
+      if (searchId) {
+          queryParams.push(`memberId=${searchId}`);
+      }
+
+      const queryString = queryParams.join('&');
+
+      axios.get(`http://localhost:8888/api/member/list?${queryString}`)
+          .then(response => {
+              swal.fire({
+                title: "사용자 조회중",
+                html: "잠시만 기다려주세요",
+                timer: 700,
+                timerProgressBar: true,
+                didOpen: () => {
+                  swal.showLoading();
+                  const b = swal.getHtmlContainer().querySelector("b");
+                  timerInterval = setInterval(() => {
+                    b.textContent = swal.getTimerLeft();
+                  }, 1000);
+                },
+                willClose: () => {
+                  clearInterval(timerInterval);
+                },
+              });
+              setCurrentMember(response.data.data);
+          })
+          .catch(error => {
+              // 처리할 에러 핸들링 코드 추가
+          });
+
     };
 
     // 권한 부여(접근제한)
@@ -537,14 +592,14 @@
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                 <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                  사원 이름
+                  사원 코드
                 </Typography>
-                <TextField label="사원 이름" variant="outlined" type='text' size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)}
+                <TextField label="사원 코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
                 onKeyDown={handleEnterKeyPress} />
                 <Typography variant="subtitle2" sx={{ mr: 1 }}>
                   아이디
                 </Typography>
-                <TextField label="아이디" variant="outlined" size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} 
+                <TextField label="아이디" variant="outlined" type='text' size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} 
                 onKeyDown={handleEnterKeyPress} />
             </Box>
         </DashboardCard>
