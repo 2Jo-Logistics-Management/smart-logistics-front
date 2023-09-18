@@ -15,7 +15,15 @@ import {
   TableFooter,
   Dialog,
   DialogTitle,
+  TableContainer,
+  Paper,
 } from '@mui/material';
+import { IconHammer } from "@tabler/icons";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
+import DeleteIcon from "@mui/icons-material/Delete";
+
 import DashboardCard from '../../../components/shared/DashboardCard';
 import swal from 'sweetalert2';
 import { Edit, Delete, Save } from '@mui/icons-material';
@@ -38,7 +46,7 @@ import { removePOrderInfo } from '../../../redux/slices/pOrderInfoCheckboxReduce
 import pOrderItemsDeleteAxios from 'src/axios/pOrderItemsDeleteAxios';
 import { useLocation } from 'react-router';
 import { resetRecentPOrderNumber } from '../../../redux/slices/searchRecentPOrderNumber';
-
+import { format } from 'date-fns';
 
 const PorderComponets = () => {
   const dispatch = useDispatch();
@@ -115,7 +123,6 @@ const PorderComponets = () => {
         cancelButtonText: '취소',
       })
       .then(() => {
-        // console.log(selectedPOrderNumber)
         try {
           if (selectedProducts.length >= 0 && underSelectedPOrder.length === 0) {
             pOrderDeleteAxios(selectedProducts);
@@ -183,9 +190,17 @@ const PorderComponets = () => {
     setCurrentPage(newPage - 1);
   };
   function formatDate(receiveDeadline) {
-    const { format } = require('date-fns');
-    const formattedDate = format(receiveDeadline, 'yyyy-MM-dd');
-    return formattedDate
+    if (!receiveDeadline) {
+      return '';
+    }
+    try {
+      const { format } = require('date-fns');
+      const formattedDate = format(receiveDeadline, 'yyyy-MM-dd');
+      return formattedDate;
+    } catch (error) {
+      return;
+    }
+
   }
   const handleClick = () => {
     const formatedStartDate = formatDate(startDate);
@@ -193,7 +208,7 @@ const PorderComponets = () => {
     let timerInterval;
     dispatch(searchPOrderList(accountNo, pOrderCode, formatedStartDate, formatedEndDate))
     swal.fire({
-      title: '입고물품 조회중',
+      title: '발주물품 조회중',
       html: '잠시만 기다려주세요',
       timer: 1000,
       timerProgressBar: true,
@@ -244,6 +259,13 @@ const PorderComponets = () => {
 
   };
 
+  function formattedDate(dateString) {
+    // dateString은 ISO 8601 형식의 날짜 문자열이라고 가정합니다.
+    const date = new Date(dateString);
+    const formattedDate = format(date, 'yyyy-MM-dd'); // 원하는 형식으로 포맷
+    return formattedDate;
+  }
+
   // 거래처모달
   const [accountList, setAccountList] = useState([]);
   const [currentAccountPage, setCurrentAccountPage] = useState(1);
@@ -283,42 +305,56 @@ const PorderComponets = () => {
   return (
     <Box style={{ width: '100%' }}>
       <DashboardCard variant="poster" sx={{ Width: '100%' }}>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, padding: '10px' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-            <Typography variant="h4" component="div"> 발주관리시스템</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-            <Button onClick={handleClick} variant="contained" size="small" sx={{ marginRight: 1 }}>
-              조회
-            </Button>
-            <Button onClick={handleInsert} variant="contained" size="small" sx={{ marginRight: 1 }}>
-              발주생성
-            </Button>
-            <Button
-              variant="outlined"
-              size="big"
-              startIcon={<Delete />}
-              color="error"
-              onClick={() => { handleDelete() }}
-              disabled={selectedProducts.length === 0 && selectedPOrderNumber.length === 0} // 선택된 상품이 없을 때 버튼 비활성화
-            />
-          </Box>
+      <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            mb: 2, // 하단 간격 조절
+            padding: "10px",
+          }}
+        >
+          <IconHammer />
+          <Typography variant="h4" component="div" sx={{ ml: 1}} >
+            발주 관리
+          </Typography>
         </Box>
-
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ marginRight: '0.5rem' }}>
-            <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>발주번호:</Typography>
-          </span>
-          <TextField label="발주번호" variant="outlined" size="small" value={pOrderCode} onChange={(e) => setPOrderCode(e.target.value)} sx={{ width: '10rem', marginRight: 1 }} />
-          <span style={{ marginRight: '0.5rem' }}>
-            <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>거래처번호:</Typography>
-          </span>
-          <TextField label="거래품목 품목" variant="outlined" size="small" value={accountNo} onChange={(e) => setAccountNo(e.target.value)} sx={{ width: '10rem', marginRight: 1 }} />
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box display="flex" alignItems="center">
-              <Typography sx={{ fontSize: '0.7rem', marginRight: '1rem' }}>기간 설정:</Typography>
-
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+            padding: "10px",
+            flexWrap: "nowrap",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ mr: 1 }}>
+              발주 코드
+            </Typography>
+            <TextField
+              label="발주 코드를 입력해주세요"
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+              value={pOrderCode}
+              onChange={(e) => setPOrderCode(e.target.value)}
+            />
+            <Typography variant="h6" sx={{ mr: 1 }}>
+              거래처코드
+            </Typography>
+            <TextField
+              label="거래처코드를 입력해주세요"
+              variant="outlined"
+              size="small"
+              sx={{ mr: 2 }}
+              value={accountNo}
+              onChange={(e) => setAccountNo(e.target.value)}
+            />
+            <Typography variant="h6" sx={{ mr: 1 }}>
+              발주생성일
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 label={`시작일`}
                 value={startDate}
@@ -327,10 +363,10 @@ const PorderComponets = () => {
                 format='yyyy-MM-dd'
                 slotProps={{ textField: { variant: 'outlined', size: "small" } }}
                 minDate={new Date('2000-01-01')}
-                maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                maxDate={new Date('2100-12-31')}
               />
               &nbsp;
-                <Typography sx={{ fontSize: '1rem', marginRight: '1rem' }}>~</Typography>
+              <Typography sx={{ fontSize: '1rem', marginRight: '1rem' }}>~</Typography>
               <DatePicker
                 label={`시작일`}
                 value={endDate}
@@ -339,15 +375,55 @@ const PorderComponets = () => {
                 format='yyyy-MM-dd'
                 slotProps={{ textField: { variant: 'outlined', size: "small" } }}
                 minDate={startDate}
-                maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                maxDate={new Date('2100-12-31')}
               />
-            </Box>
-          </LocalizationProvider>
-
+            </LocalizationProvider>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Button
+              variant="contained"
+              color="success"
+              size="large"
+              startIcon={<PageviewOutlinedIcon />}
+              sx={{ mr: 2 }}
+              onClick={handleClick}
+            >
+              검색
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<AddCircleOutlineOutlinedIcon />}
+              sx={{ mr: 2 }}
+              onClick={handleInsert}
+            >
+              발주생성
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              size="large"
+              startIcon={<DeleteIcon />}
+              sx={{ mr: 2 }}
+              onClick={() => { handleDelete() }}
+              disabled={selectedProducts.length === 0 && selectedPOrderNumber.length === 0}
+            >
+              삭제
+            </Button>
+          </Box>
         </Box>
+
         <br />
-        <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
-          <Table aria-label="simple table" sx={{ whiteSpace: 'nowrap', mt: 2 }}>
+        <Box sx={{ overflow: "auto", maxHeight: "650px" }}>
+          <TableContainer component={Paper}>
+          <Table
+              aria-label="customized table"
+              sx={{
+                minWidth: 700,
+              }}
+            >
+            
             <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
               <TableRow sx={{
                 height: '10px'
@@ -356,7 +432,9 @@ const PorderComponets = () => {
                 }
               }} >
                 <TableCell>
-                  <Checkbox checked={selectAll} onChange={handleSelectAllChange} />
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    선택
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
@@ -375,7 +453,7 @@ const PorderComponets = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight={600}>
-                    state
+                    상태
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
@@ -432,7 +510,7 @@ const PorderComponets = () => {
                   </TableCell>
                   <TableCell sx={{ padding: 0 }}>
                     <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                      {realProduct.createDate}
+                     {formattedDate(realProduct.createDate)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -501,6 +579,7 @@ const PorderComponets = () => {
               ))}
             </TableBody>
           </Table>
+          </TableContainer>
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
           {realProducts.length ? (

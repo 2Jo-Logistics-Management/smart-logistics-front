@@ -1,7 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  products: [], // 초기 상태는 빈 배열로 설정
+  products: [],
+  reload: false,
 };
 
 const pOrderListReducer = createSlice({
@@ -15,9 +16,12 @@ const pOrderListReducer = createSlice({
     searchPOrder: (state, action) =>{
       
       state.products = action.payload;
+    },
+    reload: (state,action) => {
+      state.reload = action.payload;
     }
   }
 });
 
-export const { fetchProductsSuccess,searchPOrder } = pOrderListReducer.actions;
+export const { fetchProductsSuccess,searchPOrder,reload } = pOrderListReducer.actions;
 export default pOrderListReducer.reducer;
