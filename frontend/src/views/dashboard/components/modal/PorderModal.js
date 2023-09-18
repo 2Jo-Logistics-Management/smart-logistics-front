@@ -250,7 +250,7 @@ const PorderModal = () => {
                     }}
                   >
                     <TableCell>{accountList.accountName}</TableCell>
-                    <TableCell>{accountList.axcountNo}</TableCell>
+                    <TableCell>{accountList.accountCode}</TableCell>
                     <TableCell >{accountList.representative}</TableCell>
                     <TableCell >{accountList.contactNumber}</TableCell>
                     <TableCell >{accountList.businessNumber}</TableCell>
