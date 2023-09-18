@@ -21,7 +21,6 @@
     TableCell, 
     TableContainer, 
     TableHead,
-    TablePagination,
     TableRow,
     TableSortLabel,
     Toolbar,
@@ -35,13 +34,11 @@
 
   const Member = () => {
 
-    
+    // 정렬 변수선언
     const [order, setOrder] = React.useState('asc');
     const [orderBy, setOrderBy] = React.useState('memberNo');
     const [selected, setSelected] = React.useState([]);
-    const [page, setPage] = React.useState(0);
     const [dense, setDense] = React.useState(false);
-    const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
     const [currentMember, setCurrentMember] = useState([]);
     const [memberList, setMemberList] = useState([]);
@@ -69,6 +66,8 @@
 
     const [selectedMemberDetail, setSelectedMemberDetail] = useState(null);
 
+    const [originalData, setOriginalData] = useState(null);
+
     const [newMember, setNewMember] = useState({
       memberName: '',
       memberId: '',
@@ -76,6 +75,42 @@
       memberRole: '',
       createDate: '',
     });
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedData, setEditedData] = useState({
+      memberName: '',
+      memberId: '',
+      memberRole: '',
+      createDate: '',
+    });
+
+    // 수정 버튼 클릭 시 편집 모드로 전환
+    const handleEditClick = () => {
+      setIsEditing(true);
+      setOriginalData({ ...selectedMemberDetail });
+      setEditedData({
+        memberName: selectedMemberDetail.memberName,
+        memberId: selectedMemberDetail.memberId,
+        memberRole: selectedMemberDetail.memberRole,
+        createDate: selectedMemberDetail.createDate,
+      });
+    };
+
+    // 되돌리기 버튼 클릭 시 원래 데이터로 복원
+    const handleCancelClick = () => {
+      setIsEditing(false);
+      setEditedData({ ...originalData });
+    };
+
+    
+    // 입력 필드 변경 시 상태 업데이트
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      setEditedData({
+        ...editedData,
+        [name]: value,
+      });
+    };
 
     // Enter시 검색
     const handleEnterKeyPress = (event) => {
@@ -89,11 +124,6 @@
       setIsModalOpen(false);
       setSelectedMembers([]); // 선택된 멤버들을 모두 해제
       window.location.reload();
-    };
-    // MODIFY 취소버튼시 함수
-    const handleCloseEditModal = () => {
-      setIsEditModalOpen(false); // 수정 모달을 닫습니다.
-      setSelectedMembers([]); // 선택된 멤버들을 모두 해제
     };
 
     // DELETE 취소버튼시 함수
@@ -153,66 +183,7 @@
       },
     ];
 
-    function EnhancedTableHead(props) {
-      const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
-        props;
-      const createSortHandler = (property) => (event) => {
-        onRequestSort(event, property);
-      };
-
-      return (
-        <TableHead>
-          <TableRow>
-            <TableCell padding="checkbox">
-              <Checkbox
-                color="primary"
-                indeterminate={numSelected > 0 && numSelected < rowCount}
-                checked={rowCount > 0 && numSelected === rowCount}
-                onChange={onSelectAllClick}
-                inputProps={{
-                  'aria-label': 'select all desserts',
-                }}
-              />
-            </TableCell>
-            {headCells.map((headCell) => (
-              <TableCell
-                key={headCell.id}
-                align={headCell.numeric ? 'right' : 'left'}
-                padding={headCell.disablePadding ? 'none' : 'normal'}
-                sortDirection={orderBy === headCell.id ? order : false}
-                sx={{
-                  fontSize: 'h6.fontSize', // 글자 크기를 h6로 설정
-                  fontWeight: 600, // 글꼴 두께를 600으로 설정
-                }}
-              >
-                <TableSortLabel
-                  active={orderBy === headCell.id}
-                  direction={orderBy === headCell.id ? order : 'asc'}
-                  onClick={createSortHandler(headCell.id)}
-                >
-                  {headCell.label}
-                  {orderBy === headCell.id ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-      );
-    }
-
-    // Enhance 함수
-    EnhancedTableHead.propTypes = {
-      numSelected: PropTypes.number.isRequired,
-      onRequestSort: PropTypes.func.isRequired,
-      onSelectAllClick: PropTypes.func.isRequired,
-      order: PropTypes.oneOf(['asc', 'desc']).isRequired,
-      orderBy: PropTypes.string.isRequired,
-      rowCount: PropTypes.number.isRequired,
-    };
+ 
 
     function EnhancedTableToolbar(props) {
       const { numSelected } = props;
@@ -324,15 +295,13 @@
     
     // DELETE axios
     const confirmDeleteMembers = () => {
-      if (selected.some(member => member.memberId === 'admin')) {
+      if (selected.includes(1)) {
         setAlertMessage('관리자 계정은 삭제할 수 없습니다.');
         return;
       }
-    
       setDeletionInProgress(true); // Mark deletion process as initiated
-        
-      axios.delete('http://localhost:8888/api/member/delete', {
-        data: selected,
+      axios.delete('http://localhost:8888/api/member/delete', {  
+        data: selected,    
       })
         .then(() => {
           
@@ -442,16 +411,6 @@
       window.location.href = '/auth/login';
     };
 
-    // 오른쪽 그리드 스타일
-    const rightGridStyle = {
-      overflow: 'auto',
-      maxHeight: '650px',
-      padding: '8px', // 상자 내부 공백
-      borderRadius: '6px', // 모서리를 둥글게 만듭니다.
-      border: '1px solid #e0e0e0', // 테두리를 추가합니다.
-      margin: '8px 8px 8px 8px', // 위쪽에 16px, 나머지 방향은 8px의 공백
-    };
-
     const handleRequestSort = (event, property) => {
       const isAsc = orderBy === property && order === 'asc';
       setOrder(isAsc ? 'desc' : 'asc');
@@ -492,32 +451,89 @@
       setSelected(newSelected);
     };
 
-    const handleChangePage = (event, newPage) => {
-      setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event) => {
-      setRowsPerPage(parseInt(event.target.value, 10));
-      setPage(0);
-    };
-
     const handleChangeDense = (event) => {
       setDense(event.target.checked);
     };
 
     const isSelected = (name) => selected.indexOf(name) !== -1;
 
-    const emptyRows =
-      page > 0 ? Math.max(0, (1 + page) * rowsPerPage - currentMember.length) : 0;
+    // 정렬
+    const visibleRows = React.useMemo(
+      () => getSortedData(),
+      [order, orderBy, currentMember],
+    );
 
-      const visibleRows = React.useMemo(
-        () => getSortedData().slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-        [order, orderBy, page, rowsPerPage, currentMember],
-      );
-      const tableBodyStyle = {
-        overflowY: 'auto', // 세로 스크롤 추가
+    const tableBodyStyle = {
+      overflowY: 'auto', // 세로 스크롤 추가
+    };
+
+    const leftGridStyle = {
+      overflow: 'auto',
+      maxHeight: '550px',
+
+    };
+
+    function EnhancedTableHead(props) {
+      const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
+        props;
+      const createSortHandler = (property) => (event) => {
+        onRequestSort(event, property);
       };
-    
+
+      return (
+        <TableHead>
+          <TableRow>
+            <TableCell padding="checkbox">
+              <Checkbox
+                color="primary"
+                indeterminate={numSelected > 0 && numSelected < rowCount}
+                checked={rowCount > 0 && numSelected === rowCount}
+                onChange={onSelectAllClick}
+                inputProps={{
+                  'aria-label': 'select all desserts',
+                }}
+              />
+            </TableCell>
+            {headCells.map((headCell) => (
+              <TableCell
+                key={headCell.id}
+                align={headCell.numeric ? 'right' : 'left'}
+                padding={headCell.disablePadding ? 'none' : 'normal'}
+                sortDirection={orderBy === headCell.id ? order : false}
+                sx={{
+                  fontSize: 'h6.fontSize', // 글자 크기를 h6로 설정
+                  fontWeight: 600, // 글꼴 두께를 600으로 설정
+                }}
+              >
+                <TableSortLabel
+                  active={orderBy === headCell.id}
+                  direction={orderBy === headCell.id ? order : 'asc'}
+                  onClick={createSortHandler(headCell.id)}
+                >
+                  {headCell.label}
+                  {orderBy === headCell.id ? (
+                    <Box component="span" sx={visuallyHidden}>
+                      {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
+                    </Box>
+                  ) : null}
+                </TableSortLabel>
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+      );
+    }
+
+    // Enhance 함수
+    EnhancedTableHead.propTypes = {
+      numSelected: PropTypes.number.isRequired,
+      onRequestSort: PropTypes.func.isRequired,
+      onSelectAllClick: PropTypes.func.isRequired,
+      order: PropTypes.oneOf(['asc', 'desc']).isRequired,
+      orderBy: PropTypes.string.isRequired,
+      rowCount: PropTypes.number.isRequired,
+    };
+  
 
     return (
       <>
@@ -548,7 +564,7 @@
                       <Typography variant="body1" style={{ marginBottom: '20px' }}>
                           삭제 진행 중...
                       </Typography>
-                  ) : selectedMembers.some(member => member.memberId === 'admin') ? (
+                  ) : selected.includes(1) ? (
                       <Typography variant="body1" style={{ marginBottom: '20px', color: 'red', fontWeight: 'bold' }}>
                           관리자 계정은 삭제할 수 없습니다.
                       </Typography>
@@ -558,7 +574,7 @@
                               선택한 회원을 삭제하시겠습니까?
                           </Typography>
                           <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                              {!selectedMembers.some(member => member.memberId === 'admin') && (
+                              {!selected.includes(1) && (
                                   <Button variant="contained" color="primary" onClick={confirmDeleteMembers} disabled={deletionInProgress}>
                                       삭제
                                   </Button>
@@ -752,7 +768,7 @@
             </div>
 
             <Box sx={{ width: '100%', padding:'10px' }}>
-              <Paper sx={{ width: '100%', mb: 2 }}>
+              <Paper sx={ leftGridStyle }>
                 <EnhancedTableToolbar numSelected={selected.length} />
                 <TableContainer>
                   <Table
@@ -769,6 +785,7 @@
                       onSelectAllClick={handleSelectAllClick}
                       onRequestSort={handleRequestSort}
                       rowCount={currentMember.length}
+
                     />
                     <TableBody sx={tableBodyStyle}>
                       {visibleRows.map((realMember, index) => {
@@ -830,28 +847,10 @@
                             </TableCell>
                           </TableRow>
                         );
-                      })}
-                      {emptyRows > 0 && (
-                        <TableRow
-                          style={{
-                            height: (dense ? 33 : 53) * emptyRows,
-                          }}
-                        >
-                          <TableCell colSpan={6} />
-                        </TableRow>
-                      )}
+                      })}     
                     </TableBody>
                   </Table>
                 </TableContainer>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25]}
-                  component="div"
-                  count={currentMember.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                />
               </Paper>
               <FormControlLabel
                 control={<Switch checked={dense} onChange={handleChangeDense} />}
@@ -873,7 +872,6 @@
               }}
             >
             <IconListDetails style={{ fontSize: '1rem', marginRight: '8px' }} /> {/* 아이콘 크기 조절 */}
-              사원 상세정보
             </Typography>
             <Box sx={{ width: '100%', padding:'10px' }}>
               <Paper sx={{ width: '100%', mb: 2 }}>
@@ -900,29 +898,77 @@
                       height: '120px',
                     }}
                   />
-                  <Typography variant="h5" gutterBottom>
-                    사원 상세 정보
-                  </Typography>
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell><strong>이름:</strong></TableCell>
-                        <TableCell>{selectedMemberDetail.memberName}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell><strong>아이디:</strong></TableCell>
-                        <TableCell>{selectedMemberDetail.memberId}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell><strong>사용자 권한:</strong></TableCell>
-                        <TableCell>{selectedMemberDetail.memberRole}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell><strong>생성 일자:</strong></TableCell>
-                        <TableCell>{selectedMemberDetail.createDate}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                  {isEditing ? (
+                    // 수정 모드에서 편집할 데이터 표시
+                    <div>
+                      <TextField
+                        label="이름"
+                        name="memberName"
+                        value={editedData.memberName}
+                        onChange={handleInputChange}
+                        fullWidth
+                      />
+                      <TextField
+                        label="아이디"
+                        name="memberId"
+                        value={editedData.memberId}
+                        onChange={handleInputChange}
+                        fullWidth
+                      />
+                      <TextField
+                        label="사용자 권한"
+                        name="memberRole"
+                        value={editedData.memberRole}
+                        onChange={handleInputChange}
+                        fullWidth
+                      />
+                      <TextField
+                        label="생성 일자"
+                        name="createDate"
+                        value={editedData.createDate}
+                        onChange={handleInputChange}
+                        fullWidth
+                      />
+                    </div>
+                  ) : (
+                    
+                    // 읽기 모드에서 데이터 표시
+                    <div>
+                      <Typography variant="h5" gutterBottom>
+                        사원 상세 정보
+                      </Typography>
+                      <Table>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell><strong>이름:</strong></TableCell>
+                            <TableCell>{selectedMemberDetail.memberName}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>아이디:</strong></TableCell>
+                            <TableCell>{selectedMemberDetail.memberId}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>사용자 권한:</strong></TableCell>
+                            <TableCell>{selectedMemberDetail.memberRole}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>생성 일자:</strong></TableCell>
+                            <TableCell>{selectedMemberDetail.createDate}</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  {isEditing ? (
+                    // 수정 모드에서 적용과 되돌리기 버튼 표시
+                    <div>
+                      <Button variant="contained" onClick={handleUpdateMember}>적용</Button>
+                      <Button variant="outlined" onClick={handleCancelClick}>되돌리기</Button>
+                    </div>
+                  ) : (
+                    // 읽기 모드에서 수정 버튼 표시
+                    <Button variant="outlined" onClick={handleEditClick}>수정</Button>
+                  )}
                 </Paper>
               )}
               </Paper>
