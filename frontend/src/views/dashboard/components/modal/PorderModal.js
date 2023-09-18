@@ -277,7 +277,7 @@ const PorderModal = () => {
                     }}
                   >
                     <TableCell>{accountList.accountName}</TableCell>
-                    <TableCell>{accountList.accountCode}</TableCell>
+                    <TableCell>{accountList.accountNo}</TableCell>
                     <TableCell >{accountList.representative}</TableCell>
                     <TableCell >{accountList.contactNumber}</TableCell>
                     <TableCell >{accountList.businessNumber}</TableCell>
@@ -309,7 +309,7 @@ const PorderModal = () => {
                 height: '50%',
                 overflowY: 'auto', // 필요한 경우 스크롤을 허용
               },
-            }} >
+            }}  onClose={() => setItemModal(false)}>
             <DialogTitle>신규 발주품목 추가</DialogTitle>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
               <p style={{ marginRight: '8px' }}>품목명:</p>
@@ -380,6 +380,7 @@ const PorderModal = () => {
                   value={selectedAccountContactNumber}
                   onClick={() => setAccountModal(true)}
                   onChange={(e) => setSelectedAccountContactNumber(e.target.value)}
+                  type='number'
                 />
                 <p style={{ marginRight: '8px' }}>담당자:</p>
                 <TextField
