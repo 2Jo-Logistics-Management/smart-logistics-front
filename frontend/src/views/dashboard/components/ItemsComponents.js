@@ -15,8 +15,10 @@ import {
   Checkbox,
   Pagination,
   styled,
+  InputAdornment,
 } from "@mui/material";
 import { IconHammer } from "@tabler/icons";
+import { IconSearch } from "@tabler/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
@@ -38,6 +40,8 @@ import {
   REMOVE_SELECTED_ALL_ITEM,
 } from "src/redux/slices/selectedItemsReducer";
 import axios from "axios";
+// import InputAdornment from "@material-ui/core/InputAdornment";
+// import SearchIcon from "@material-ui/icons/Search";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -65,6 +69,7 @@ const Item = () => {
   const [searchItemName, setSearchItemName] = useState("");
   const [searchItemPrice, setSearchItemPrice] = useState("");
   const [changedItemCode, setChangedItemCode] = useState(-1);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const dispatch = useDispatch();
 
@@ -125,18 +130,19 @@ const Item = () => {
     if (selectedItems.length === 1) {
       setModifyModalOpen(true);
     } else if (selectedItems.length >= 2) {
-      swal.fire({
-        title: "다수의 데이터 수정 불가",
-        text: "데이터 하나만 지정 해주세요!",
-        icon: "error",
-      })
-      .then(() => {
-        dispatch(REMOVE_SELECTED_ALL_ITEM());
-      });
+      swal
+        .fire({
+          title: "수정 불가",
+          text: "하나의 데이터만 지정해주세요!",
+          icon: "error",
+        })
+        .then(() => {
+          dispatch(REMOVE_SELECTED_ALL_ITEM());
+        });
     } else {
       swal.fire({
-        title: "데이터 선택",
-        text: "수정할 데이터 선택해주세요!",
+        title: "수정 불가",
+        text: "수정할 데이터를 선택해주세요!",
         icon: "error",
       });
     }
@@ -146,7 +152,7 @@ const Item = () => {
     if (selectedItems.length >= 1) {
       swal
         .fire({
-          title: `정말로 ${selectedItems.length}개의 물품을 삭제하시겠습니까?`,
+          title: `${selectedItems.length}개의 물품을 삭제하시겠습니까?`,
           text: "삭제된 데이터는 복구할 수 없습니다.\n",
           icon: "warning",
           showCancelButton: true,
@@ -232,6 +238,17 @@ const Item = () => {
     dispatch(fetchItemsFromApi());
   };
 
+  const handleItemPriceChange = (e) => {
+    const re = /^[0-9\b]+$/; // 숫자와 백스페이스만 허용하는 정규 표현식
+
+    if (e.target.value === "" || re.test(e.target.value)) {
+      setSearchItemPrice(e.target.value);
+      setErrorMessage(""); // 에러 메시지를 초기화합니다.
+    } else {
+      setErrorMessage("숫자만 입력해주세요."); // 에러 메시지를 설정합니다.
+    }
+  };
+
   return (
     <>
       <DashboardCard>
@@ -257,7 +274,7 @@ const Item = () => {
             padding: "10px",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+          <Box sx={{ height: "38px", display: "flex", alignItems: "center", flexWrap: "wrap" }}>
             <Typography variant="h6" sx={{ mr: 1 }}>
               품목 코드
             </Typography>
@@ -268,6 +285,18 @@ const Item = () => {
               sx={{ mr: 2 }}
               value={searchItemCode}
               onChange={(e) => setSearchItemCode(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <IconSearch />
+                  </InputAdornment>
+                ),
+              }}
+              style={{
+                borderRadius: 100,
+                borderColor: "#808080",
+                boxShadow: "0 2px 5px #cccccc",
+              }}
             />
             <Typography variant="h6" sx={{ mr: 1 }}>
               품목명
@@ -279,6 +308,18 @@ const Item = () => {
               sx={{ mr: 2 }}
               value={searchItemName}
               onChange={(e) => setSearchItemName(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <IconSearch />
+                  </InputAdornment>
+                ),
+              }}
+              style={{
+                borderRadius: 100,
+                borderColor: "#808080",
+                boxShadow: "0 2px 5px #cccccc",
+              }}
             />
             <Typography variant="h6" sx={{ mr: 1 }}>
               품목가격
@@ -289,7 +330,20 @@ const Item = () => {
               size="small"
               sx={{ mr: 2 }}
               value={searchItemPrice}
-              onChange={(e) => setSearchItemPrice(e.target.value)}
+              onChange={handleItemPriceChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <IconSearch />
+                  </InputAdornment>
+                ),
+              }}
+              style={{
+                borderRadius: 100,
+                borderColor: "#808080",
+                boxShadow: "0 2px 5px #cccccc",
+              }}
+              error={!!errorMessage} // 에러 메시지가 있으면 error 속성을 true로 설정합니다.
             />
           </Box>
           <Box>
@@ -385,7 +439,7 @@ const Item = () => {
                     key={currentItem.itemCode}
                     sx={{
                       backgroundColor:
-                      currentItem.itemCode === changedItemCode
+                        currentItem.itemCode === changedItemCode
                           ? "#e7edd1"
                           : index % 2 !== 0
                           ? "#f3f3f3"

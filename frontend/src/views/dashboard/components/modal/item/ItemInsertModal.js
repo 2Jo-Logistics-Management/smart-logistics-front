@@ -17,13 +17,15 @@ const ItemInsertModal = (props) => {
     itemPrice: "",
   });
   const { open, onClose, isSuccessCallback } = props;
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handlerSetInputData = (state, data) => {
-    setItemInsertDto((prevItem) => ({
+    setItemInsertDto(prevItem => ({
       ...prevItem,
-      [state]: data,
+      [state]: data
     }));
   };
+  
 
   const closeModal = () => {
     onClose(true);
@@ -87,10 +89,22 @@ const ItemInsertModal = (props) => {
             label="가격"
             variant="outlined"
             type="text"
+            onInput={(e) => {
+              const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+              if (!re.test(e.target.value)) {
+                // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                setErrorMessage("숫자만 입력해주세요.");
+                e.target.value = "";
+              } else {
+                setErrorMessage("");
+              }
+            }}
             onChange={(e) => handlerSetInputData("itemPrice", e.target.value)}
             fullWidth
             margin="normal"
             required
+            error={!!errorMessage}
+            helperText={errorMessage}
           />
           <Box
             sx={{

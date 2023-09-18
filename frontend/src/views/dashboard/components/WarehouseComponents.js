@@ -17,6 +17,7 @@ import {
   TableContainer,
   Paper,
   styled,
+  InputAdornment,
 } from "@mui/material";
 import DashboardCard from "../../../components/shared/DashboardCard";
 import swal from "sweetalert2";
@@ -32,6 +33,7 @@ import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import { tableCellClasses } from "@mui/material/TableCell";
 import { IconBuildingWarehouse } from "@tabler/icons";
+import { IconSearch } from "@tabler/icons";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -115,47 +117,62 @@ const Warehouse = () => {
   const [open, setOpen] = useState(false);
 
   const [sectionName, setSectionName] = useState("");
-  const warehouseSectionInsert = () => {
-    // sectionList에서 동일한 warehouseName이 있는지 확인
-    const isDuplicate = sectionList.some(
-      (section) => section.warehouseName === sectionName
-    );
+  const warehouseSectionInsert = async () => {
+    try {
+      // sectionList에서 동일한 warehouseName이 있는지 확인
+      const isDuplicate = sectionList.some(
+        (section) => section.warehouseName === sectionName
+      );
 
-    // 중복된 이름이 있다면 경고 메시지를 표시하고 함수를 종료
-    if (isDuplicate) {
-      swal.fire({
-        title: "창고구역 추가 실패.",
-        text: "이미 동일한 이름의 창고구역이 있습니다.",
-        icon: "error",
-        showConfirmButton: true,
-      });
+      // 중복된 이름이 있다면 경고 메시지를 표시하고 함수를 종료
+      if (isDuplicate) {
+        setOpen(false);
+        setSectionAddOpen(false);
+        await swal.fire({
+          title: "창고구역 추가 실패.",
+          text: "이미 동일한 이름의 창고구역이 있습니다.",
+          icon: "error",
+          showConfirmButton: true,
+        });
+
+        setSectionName("");
+        return;
+      }
+
+      const warehouseInsertDto = {
+        warehouseName: sectionName,
+      };
 
       setSectionName("");
       setSectionAddOpen(false);
       setOpen(false);
-      return;
-    }
 
-    const warehouseInsertDto = {
-      warehouseName: sectionName,
-    };
-
-    setSectionName("");
-    setSectionAddOpen(false);
-    setOpen(false);
-
-    axios
-      .post("http://localhost:8888/api/warehouse/insert", warehouseInsertDto)
-      .then(() => {
+      const response = await axios.post(
+        "http://localhost:8888/api/warehouse/insert",
+        warehouseInsertDto
+      );
+      if (response.status === 201) {
+        swal
+          .fire({
+            title: "창고구역 추가완료.",
+            text: "창고구역이 추가되었습니다.",
+            icon: "success",
+          })
+          .then(() => {
+            dispatch(warehouseSectionList());
+            setOpen(true);
+          });
+      }
+    } catch (error) {
+      {
         swal.fire({
-          title: "창고구역 추가완료.",
-          text: "창고구역이 추가되었습니다.",
-          icon: "success",
+          title: "추가 실패.",
+          text: "창고구역 추가에 실패했습니다.",
+          icon: "error",
           showConfirmButton: false,
         });
-      });
-
-    dispatch(warehouseSectionList());
+      }
+    }
   };
 
   const sectionListData = useSelector(
@@ -165,54 +182,78 @@ const Warehouse = () => {
 
   const [selectedWarehouseSection, setSelectedWarehouseSection] = useState("");
 
-  const warehouseDelete = () => {
+  const warehouseDelete = async () => {
     // 해당 창고명에 일치하는 첫 번째 창고 객체를 찾습니다.
     const selectedWarehouse = sectionList.find(
       (warehouse) => warehouse.warehouseName === selectedWarehouseSection
     );
 
-    console.log("selectedWarehouse " + selectedWarehouse.warehouseName);
-
-    //TODO: 삭제 로직 구현해야함
-
+    // 해당 창고명에 창고재고가 담겨있는지 확인합니다.
     const isExistWarehouseStock = realProducts.some(
       (i) => i.warehouseName === selectedWarehouse.warehouseName
     );
-    // realProducts.map(i => console.log(i.warehouseName));
-
-    console.log(isExistWarehouseStock);
 
     if (!selectedWarehouse) {
-      console.error("해당 창고 구역을 찾을 수 없습니다.");
+      setSelectedWarehouseSection("");
+      setOpen(false);
+
+      await swal
+        .fire({
+          title: "삭제 실패",
+          text: "해당 창고구역은 존재하지 않습니다.",
+          icon: "error",
+        })
+        .then(() => {
+          setOpen(true);
+        });
+
       return;
     }
 
     if (isExistWarehouseStock) {
-      alert("해당 창고 구역은 삭제할 수 없습니다.");
+      setSelectedWarehouseSection("");
+      setOpen(false);
+
+      await swal
+        .fire({
+          title: "삭제 실패",
+          text: "재고가 있는 창고는 삭제할 수 없습니다.",
+          icon: "error",
+        })
+        .then(() => {
+          setOpen(true);
+        });
+
+      return;
     }
 
     const warehouseNo = selectedWarehouse.warehouseNo;
 
-    // axios
-    //   .delete(`http://localhost:8888/api/warehouse/delete/${warehouseNo}`)
-    //   .then(() => {
-    //     swal.fire({
-    //       title: "창고구역 삭제완료.",
-    //       text: "창고구역이 삭제되었습니다.",
-    //       icon: "success",
-    //       showConfirmButton: false,
-    //     });
-    //     setSelectedWarehouseSection("");
-    //     dispatch(warehouseSectionList()); // 추가
-    //   })
-    //   .catch((error) => {
-    //     console.error("창고 구역 삭제 오류:", error);
-    //     swal.fire({
-    //       title: "오류 발생",
-    //       text: "창고구역 삭제 중 오류가 발생했습니다.",
-    //       icon: "error",
-    //     });
-    //   });
+    setSelectedWarehouseSection("");
+    setOpen(false);
+
+    const response = await axios.delete(
+      `http://localhost:8888/api/warehouse/delete/${warehouseNo}`
+    );
+
+    if (response.status === 200) {
+      await swal
+        .fire({
+          title: "창고구역 삭제완료.",
+          text: "창고구역이 삭제되었습니다.",
+          icon: "success",
+        })
+        .then(() => {
+          dispatch(warehouseSectionList()); // 추가
+          setOpen(true);
+        });
+    } else {
+      await swal.fire({
+        title: "오류 발생",
+        text: "창고구역 삭제 중 오류가 발생했습니다.",
+        icon: "error",
+      });
+    }
   };
 
   return (
@@ -224,7 +265,9 @@ const Warehouse = () => {
             sx={{ display: "flex", marginBottom: "16px" }}
             justifyContent={"flex-start"}
           >
-            <p>구역명: {selectedWarehouseSection}</p>
+            <Typography variant="subtitle2" fontWeight={600}>
+              선택된 구역명: {selectedWarehouseSection}
+            </Typography>
           </Box>
           <Box
             sx={{ display: "flex", marginBottom: "16px" }}
@@ -234,13 +277,14 @@ const Warehouse = () => {
               onClick={() => {
                 setSectionAddOpen(true);
               }}
+              startIcon={<AddCircleOutlineOutlinedIcon />}
               variant="contained"
             >
-              구역 추가
+              추가
             </Button>
             &nbsp;&nbsp;
             <Button
-              variant="outlined"
+              variant="contained"
               size="big"
               startIcon={<Delete />}
               color="error"
@@ -330,15 +374,30 @@ const Warehouse = () => {
             onChange={(e) => setSectionName(e.target.value)}
             style={{ marginBottom: "16px", width: "100%" }}
           />
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => warehouseSectionInsert()}
-            style={{ width: "100%" }}
+          <Box
+            display="flex"
+            flexDirection="row"
+            justifyContent="space-between"
+            width="100%"
           >
-            추가
-          </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => warehouseSectionInsert()}
+              style={{ width: "45%" }}
+            >
+              추가
+            </Button>
+
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={() => setSectionAddOpen(false)}
+              style={{ width: "45%" }}
+            >
+              취소
+            </Button>
+          </Box>
         </Box>
       </Dialog>
 
@@ -381,6 +440,18 @@ const Warehouse = () => {
                 onChange={(e) => {
                   setWarehouseName(e.target.value);
                 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconSearch />
+                    </InputAdornment>
+                  ),
+                }}
+                style={{
+                  borderRadius: 100,
+                  borderColor: "#808080",
+                  boxShadow: "0 2px 5px #cccccc",
+                }}
               />
               <Typography variant="h6" sx={{ mr: 1 }}>
                 품목 이름
@@ -394,6 +465,18 @@ const Warehouse = () => {
                 onChange={(e) => {
                   setItemName(e.target.value);
                 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconSearch />
+                    </InputAdornment>
+                  ),
+                }}
+                style={{
+                  borderRadius: 100,
+                  borderColor: "#808080",
+                  boxShadow: "0 2px 5px #cccccc",
+                }}
               />
               <Typography variant="h6" sx={{ mr: 1 }}>
                 담당자 이름
@@ -406,6 +489,18 @@ const Warehouse = () => {
                 value={manager}
                 onChange={(e) => {
                   setManager(e.target.value);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconSearch />
+                    </InputAdornment>
+                  ),
+                }}
+                style={{
+                  borderRadius: 100,
+                  borderColor: "#808080",
+                  boxShadow: "0 2px 5px #cccccc",
                 }}
               />
             </Box>
@@ -428,6 +523,7 @@ const Warehouse = () => {
                 color="primary"
                 size="large"
                 startIcon={<AddCircleOutlineOutlinedIcon />}
+                sx={{ mr: 2 }}
               >
                 추가
               </Button>
