@@ -20,14 +20,13 @@ import DashboardCard from '../../../components/shared/DashboardCard';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from 'axios';
 import { Pagination } from '@mui/material';
-import { LocalizationProvider, DesktopDateTimePicker, DatePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import swal from 'sweetalert2'
 import { toggleCheckbox } from 'src/redux/slices/pOrderInfoCheckboxReducer';
 import { REMOVE_ALL_SELECTED_PRODUCTS } from 'src/redux/slices/selectedProductsReducer';
-import { seletedPOrderList } from '../../../redux/thunks/SelectedPOrderList';
-import reload from 'src/redux/slices/pOrderListReducer';
 import { tableCellClasses } from "@mui/material/TableCell";
-
+import { reload } from 'src/redux/slices/pOrderListReducer';
+import { seletedPOrderList } from '../../../redux/thunks/SelectedPOrderList';
 const PorderComponets2 = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [visibleProducts, setVisibleProducts] = useState([]);
@@ -41,6 +40,7 @@ const PorderComponets2 = () => {
   const [isDataUpdated, setDataUpdated] = useState(false);
   const [pOrderCount, setPOrderCount] = useState("");
   const [pOrderItemState, setPOrderItemState] = useState("");
+  const reloadFlag = useSelector((state) => state.pOrderList.reload);
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -61,6 +61,13 @@ const PorderComponets2 = () => {
     }
 
   }, [visibleProducts, dispatch])
+
+  useEffect(() => {
+    if(reloadFlag === true){
+      dispatch(reload(false))
+      dispatch(seletedPOrderList(pOrderCode))
+    }
+  }, [reloadFlag])
 
 
   const selectedProducts = useSelector((state) => state.pOrderInfoCheckbox.selectedCheckBox);
@@ -148,10 +155,6 @@ const PorderComponets2 = () => {
           icon: 'success',
           showConfirmButton: false,
         });
-        // 생성한 newProduct을 콘솔에 출력하여 확인
-        console.log('새로운 제품:', newProduct);
-        // dispatch(reload(false)) // 이 부분을 주석 처리
-        console.log('업데이트된 visibleProducts:', updatedVisibleProducts);
         setItemCode("");
         setSelectedDateTime("");
         setPOrderItemPrice("");
@@ -229,7 +232,6 @@ const PorderComponets2 = () => {
     setEditPOrderItemPrice(item.itemPrice);
     setIsModalOpen(false);
   }
-
 
   const handleEdit = (productId) => {
     setEditMode((prevState) => ({ ...prevState, [productId]: !prevState[productId] }));
@@ -377,7 +379,7 @@ const PorderComponets2 = () => {
               </StyledTableRow>
             ) : (
               visibleProducts.map((product, index) => (
-                <StyledTableRow key={index}
+                <TableRow key={index}
                   sx={{
                     backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
                     '&:hover': {
@@ -385,7 +387,7 @@ const PorderComponets2 = () => {
                     }
                   }}ㄴ
                 >
-                  <StyledTableCell sx={{ padding: 2 }}>
+                  <TableCell sx={{ padding: 2 }}>
                     <Checkbox
                       checked={selectedProducts.includes(product.porderItemNo)}
                       onChange={() => {
@@ -393,11 +395,11 @@ const PorderComponets2 = () => {
                         setPOrderItemState(product.porderState)
                       }}
                     />
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 2 }}>
+                  </TableCell>
+                  <TableCell sx={{ padding: 2 }}>
                     <Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{product.porderState}</Typography>
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 2, textAlign: 'right' }}>
+                  </TableCell>
+                  <TableCell sx={{ padding: 2, textAlign: 'right' }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemCode}
@@ -413,8 +415,8 @@ const PorderComponets2 = () => {
                         {product.itemCode}
                       </Typography>
                     )}
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 2, textAlign: 'right' }}>
+                  </TableCell>
+                  <TableCell sx={{ padding: 2, textAlign: 'right' }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemName}
@@ -429,16 +431,15 @@ const PorderComponets2 = () => {
                         {product.itemName}
                       </Typography>
                     )}
-                  </StyledTableCell>
-                  <StyledTableCell style={{ textAlign: 'right', padding: 2 }}>
+                  </TableCell>
+                  <TableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        type="number"
+                         type="number"
                         value={editPOrderItemPrice}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderPrice', e.target.value)
                           setEditPOrderItemPrice(e.target.value)
-
                         }}
                       />
                     ) : (
@@ -446,15 +447,16 @@ const PorderComponets2 = () => {
                         {product.porderPrice}
                       </Typography>
                     )}
-                  </StyledTableCell>
-                  <StyledTableCell style={{ textAlign: 'right', padding: 2 }}>
+                  </TableCell>
+                  <TableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        type="number"
-                        value={product.porderCount}
+                         type="number"
+                        value={editPOrderCount}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderCount', e.target.value)
                           setEditPOrderCount(e.target.value)
+    
                         }}
                       />
                     ) : (
@@ -462,8 +464,8 @@ const PorderComponets2 = () => {
                         {product.porderCount}
                       </Typography>
                     )}
-                  </StyledTableCell>
-                  <StyledTableCell style={{ textAlign: 'right', padding: 2 }}>
+                  </TableCell>
+                  <TableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <Typography variant="subtitle2" fontWeight={600}>
                         {editPOrderItemPrice * editPOrderCount}</Typography>
@@ -472,10 +474,9 @@ const PorderComponets2 = () => {
                         {(+product.porderCount) * (+product.porderPrice)}
                       </Typography>
                     )}
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 2 }}>
+                  </TableCell>
+                  <TableCell sx={{ padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
-
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
                         <DatePicker
                           label={`금일 (${formattedToday})`}
@@ -494,8 +495,8 @@ const PorderComponets2 = () => {
                         <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.receiveDeadline}</Typography>
                       )
                     }
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 2 }}>
+                  </TableCell>
+                  <TableCell sx={{ padding: 2 }}>
                     {product.porderState !== "준비" ?
                       (
                         <Button
@@ -523,19 +524,19 @@ const PorderComponets2 = () => {
                             setPOrderItemNo(product.porderItemNo)
                           }}
                         >
-                          {editMode[product.porderItemNo] ? 'Save' : 'Edit'}
+                          {editMode[product.porderItemNo] ? 'Save' : '수정'}
                         </Button>
                       )
                     }
-                  </StyledTableCell>
+                  </TableCell>
 
-                  <StyledTableCell sx={{ display: "none", padding: 2 }} >
+                  <TableCell sx={{ display: "none", padding: 2 }} >
                     <Typography
                       value={product.porderCode}
                       onChange={(e) => setPOrderCode(e.target.value)}
                     />
-                  </StyledTableCell>
-                </StyledTableRow>
+                  </TableCell>
+                </TableRow>
               ))
             )}
           </TableBody>
