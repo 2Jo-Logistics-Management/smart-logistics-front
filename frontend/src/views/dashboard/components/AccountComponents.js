@@ -13,13 +13,43 @@ import {
     Modal,
     Paper,
     Checkbox,
+    Pagination,
+    TableContainer,
 } from '@mui/material';
+import { tableCellClasses } from "@mui/material/TableCell";
 import swal from "sweetalert2";
 import DashboardCard from '../../../components/shared/DashboardCard';
 import { IconCopy } from '@tabler/icons';
+import styled from 'styled-components';
+import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 axios.defaults.withCredentials = true;
 
+const StyledTableCell = styled(TableCell)(() => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: "#505e82",
+    color: 'white',
+  },
+  [`&.${tableCellClasses.body}`]: {
+    fontSize: 40,
+    minWidth: 100,
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(() => ({
+  // hide last border
+  "&:last-child td, &:last-child th": {
+    border: 0,
+  },
+}));
+
 const Account = () => {
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    const [changedItemCode, setChangedItemCode] = useState(-1);
 
     const [currentAccount, setCurrentAccount] = useState([]);
 
@@ -31,9 +61,6 @@ const Account = () => {
 
     // 체크박스 관련 state
     const [selectedAccount, setSelectedAccount] = useState([]);
-
-    // 전체 선택 체크박스 관련 state
-    const [selectAll, setSelectAll] = useState(false);
     
     // 수정 관련 state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -43,7 +70,17 @@ const Account = () => {
     const [accountNameError, setAccountNameError] = useState(false);        // 거래처명
     const [representativeError, setRepresentativeError] = useState(false);  // 대표자
     const [contactNumberError, setContactNumberError] = useState(false);    // 전화번호
-    const [businessNumberError, setBusinessNumberError] = useState(false);  // 사업자번호
+    const [businessNumberError, setBusinessNumberError] = useState(false);  // 사업자번호 
+
+    // 데이터 슬라이싱
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = currentAccount.slice(indexOfFirstItem, indexOfLastItem);
+
+    // 페이지 변경 핸들러 추가
+    const handlePageChange = (event, newPage) => {
+      setCurrentPage(newPage);
+    };
 
 
     const handleInputValidation = (value, maxLength) => {
@@ -54,7 +91,7 @@ const Account = () => {
       }
     };
   
-    // 공통 전화번호 유효성 검사 함수
+    // 전화번호 유효성 검사 함수
     const handlePhoneNumberValidation = (input, setFunction) => {
         const formattedInput = input.replace(/[^0-9-]/g, ''); // 숫자와 "-" 이외의 문자 제거
         if (formattedInput.length === 11) {
@@ -65,6 +102,19 @@ const Account = () => {
             setFunction(formattedInput);
             return true; // 형식이 맞지 않을 경우 true 반환
         }
+    };
+
+    // 공통 사업자번호 유효성 검사 함수
+    const handleCompanyNumberValidation = (input, setFunction) => {
+      const formattedInput = input.replace(/[^0-9-]/g, ''); // 숫자와 "-" 이외의 문자 제거
+      if (formattedInput.length === 10) {
+          const formattedNumber = `${formattedInput.slice(0, 3)}-${formattedInput.slice(3, 5)}-${formattedInput.slice(5, 10)}`;
+          setFunction(formattedNumber);
+          return false; // 형식이 맞을 경우 false 반환
+      } else {
+          setFunction(formattedInput);
+          return true; // 형식이 맞지 않을 경우 true 반환
+      }
     };
 
     const [newAccount, setNewAccount] = useState({
@@ -318,17 +368,7 @@ const Account = () => {
         });
         setIsModalOpen(true);
     };
-    
 
-    // 체크박스 전체 선택 또는 해제
-    const handleSelectAll = () => {
-        if (selectAll) {
-          setSelectedAccount([]);
-        } else {
-          setSelectedAccount([...currentAccount]);
-        }
-        setSelectAll(!selectAll);
-    };
 
     // 단일 선택 체크박스 선택 또는 해제
     const handleSingleSelect = (account) => {
@@ -443,7 +483,7 @@ const Account = () => {
                 margin="normal"
                 required
                 error={accountNameError}
-                helperText={accountNameError ? "20글자를 넘길 수 없습니다." : ""}
+                helperText={accountNameError ? "거래처명은 20글자를 넘길 수 없습니다." : ""}
             />
 
             <TextField
@@ -462,13 +502,14 @@ const Account = () => {
                 margin="normal"
                 required
                 error={representativeError}
-                helperText={representativeError ? "10글자를 넘길 수 없습니다." : ""}
+                helperText={representativeError ? "대표자(명)은 10글자를 넘길 수 없습니다." : ""}
             />
 
             <TextField
                 label="전화번호"
                 variant="outlined"
                 type="text"
+                value={newAccount.contactNumber}
                 onChange={(e) => {
                     const value = e.target.value;
                     const isError = handlePhoneNumberValidation(value, (formattedNumber) => {
@@ -490,19 +531,23 @@ const Account = () => {
                 label="사업자번호"
                 variant="outlined"
                 type="text"
+                value={newAccount.businessNumber}
                 onChange={(e) => {
                   const value = e.target.value;
-                  setNewAccount((prevAccount) => ({
-                      ...prevAccount,
-                      businessNumber: value
-                  }));
-                  setBusinessNumberError(handleInputValidation(value, 20));
+                  const isError = handleCompanyNumberValidation(value, (formattedNumber) => {
+                      setNewAccount((prevAccount) => ({
+                          ...prevAccount,
+                          businessNumber: formattedNumber
+                      }));
+                      setBusinessNumberError(false);
+                  });
+                  setBusinessNumberError(isError);
               }}
                 fullWidth
                 margin="normal"
                 required
                 error={businessNumberError}
-                helperText={businessNumberError ? "15글자를 넘길 수 없습니다." : ""}
+                helperText={businessNumberError ? "사업자번호를 다시 확인해주세요." : ""}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
               <Button variant="contained" color="primary" onClick={handleSaveNewAccount}>
@@ -517,99 +562,108 @@ const Account = () => {
     </Modal>
 
         {/* 화면단 코드 start */}
+        <>
         <DashboardCard>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 5}}>
-              
-              <Typography variant="h4" component="div" style={{ display: 'flex', alignItems: 'center' }}>
-                  <IconCopy style={{ marginRight: '8px' }} />
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2, padding: "10px",}}>
+              <IconCopy />
+              <Typography variant="h4" component="div" sx={{ ml: 1 }}>
                   거래처관리
               </Typography>
-                <Box>
-                    <Button variant="contained" color="primary" onClick={handleSearch} sx={{ mr: 2 }}>
-                        조회
-                    </Button>
-                    <Button variant="contained" color="primary" onClick={openAddNewAccountForm} sx={{ mr: 2 }}>
-                        신규등록
-                    </Button>
-                    <Button variant="contained" color="error" onClick={handleDeleteAccount}>
-                        삭제
-                    </Button>
-                </Box>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                    거래처코드
-                </Typography>
-                <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
-                onKeyDown={handleEnterKeyPress} />
-                <Typography variant="subtitle2" sx={{ mr: 1 }}>
-                    거래처명
-                </Typography>
-                <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)} 
-                onKeyDown={handleEnterKeyPress} />
-            </Box>
-        </DashboardCard>
-
-        <DashboardCard>
-            <Box sx={{ overflow: 'auto', maxHeight: '650px'}}>
-                <Table
-                aria-label="simple table"
+              </Box>
+              <Box
                 sx={{
-                    whiteSpace: 'nowrap',
-                    '& th' : {
-                      padding: '0px 0px 16px 0px',
-                    },
-                    '& td': {
-                      padding: '2px 0px', // 전체 td의 padding 값을 변경
-                    },
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mb: 2,
+                  padding: "10px",
+                }}
+              >    
+            
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: "wrap"  }}>
+                  <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                      거래처코드
+                  </Typography>
+                  <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
+                  onKeyDown={handleEnterKeyPress} />
+                  <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                      거래처명
+                  </Typography>
+                  <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)} 
+                  onKeyDown={handleEnterKeyPress} />
+              </Box>
+              <Box>
+                  <Button variant="contained" color="success" size='large' startIcon={<PageviewOutlinedIcon />} onClick={handleSearch} sx={{ mr: 2 }}>
+                      검색
+                  </Button>
+                  <Button variant="contained" color="primary" size='large' startIcon={<AddCircleOutlineOutlinedIcon />} onClick={openAddNewAccountForm} sx={{ mr: 2 }}>
+                      추가
+                  </Button>
+                  <Button variant="contained" color="error" size='large' startIcon={<DeleteIcon />} onClick={handleDeleteAccount}>
+                      삭제
+                  </Button>
+              </Box>
+            </Box>
+            <Box sx={{ overflow: 'auto', maxHeight: '650px'}}>
+              <TableContainer component={Paper}>
+                <Table
+                aria-label="customized table"
+                sx={{
+                    minWidth: 700,
                 }}
                 >
-                    <TableHead
-                        sx={{
-                            position: 'sticky',
-                            top: 0,
-                            zIndex: 1,
-                            backgroundColor: '#fff',
-                        }}
-                    >
-                        <TableRow>
-                            <TableCell>
-                                <Checkbox checked={selectAll} onChange={handleSelectAll} />
-                            </TableCell>
-                            <TableCell>
+                    <TableHead>
+                        <StyledTableRow>
+                            <StyledTableCell style={{ width: "6%" }}>
+                                <Typography variant="h6" fontWeight={600}>
+                                    선택
+                                </Typography>
+                            </StyledTableCell>
+                            <StyledTableCell align='right' style={{ width: "14%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     거래처코드
                                 </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </StyledTableCell>
+                            <StyledTableCell align='left' style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     거래처명
                                 </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </StyledTableCell>
+                            <StyledTableCell align='left' style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     대표자
                                 </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </StyledTableCell>
+                            <StyledTableCell align='right' style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     전화번호
                                 </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </StyledTableCell>
+                            <StyledTableCell align='right' style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     사업자번호
                                 </Typography>
-                            </TableCell>
-                        </TableRow>
+                            </StyledTableCell>
+                        </StyledTableRow>
                     </TableHead>
 
-                    <TableBody>
-                        {currentAccount.map((realAccount) => (
-                            <TableRow key={realAccount.accountNo}
+                    <TableBody
+                      sx={{
+                        mt: 0.5,
+                        mb: 0.5,
+                      }}
+                    >
+                        {currentItems.map((realAccount, index) => (
+                            <StyledTableRow key={realAccount.accountNo}
                             sx={{
+                              backgroundColor:
+                              currentAccount.accountNo === changedItemCode
+                                  ? "#e7edd1"
+                                  : index % 2 !== 0
+                                  ? "#f3f3f3"
+                                  : "white",
                                 '&:hover': {
-                                    backgroundColor: '#f5f5f5',
+                                    backgroundColor: '#c7d4e8',
                                     cursor: 'pointer'
                                 }
                             }}
@@ -617,7 +671,7 @@ const Account = () => {
                               setEditingAccount({ ...realAccount }); // 선택한 거래처 데이터를 설정합니다.
                               setIsEditModalOpen(true); // 수정 모달을 엽니다.
                           }}>
-                                <TableCell>
+                                <StyledTableCell>
                                   <Checkbox
                                       checked={selectedAccount.includes(realAccount)}
                                       onClick={(event) => {
@@ -625,13 +679,13 @@ const Account = () => {
                                           handleSingleSelect(realAccount);
                                       }}
                                   />
-                                </TableCell>
-                                <TableCell>
+                                </StyledTableCell>
+                                <StyledTableCell align='right'>
                                     <Typography variant="subtitle2" fontWeight={400}>
                                         {realAccount.accountNo}
                                     </Typography>
-                                </TableCell>
-                                <TableCell>
+                                </StyledTableCell>
+                                <StyledTableCell align='left'>
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <Box>
                                             <Typography variant="subtitle2" fontWeight={400}>
@@ -639,29 +693,58 @@ const Account = () => {
                                             </Typography>
                                         </Box>
                                     </Box>
-                                </TableCell>
-                                <TableCell>
+                                </StyledTableCell>
+                                <StyledTableCell align='left'> 
                                     <Typography variant="subtitle2" fontWeight={400}>
                                         {realAccount.representative}
                                     </Typography>
-                                </TableCell>
+                                </StyledTableCell>
                 
-                                <TableCell>
+                                <StyledTableCell align='right'>
                                     <Typography variant="subtitle2" fontWeight={400}>
                                         {realAccount.contactNumber}
                                     </Typography>
-                                </TableCell>
-                                <TableCell>
+                                </StyledTableCell>
+                                <StyledTableCell align='right'> 
                                     <Typography variant="subtitle2" fontWeight={400}>
                                         {realAccount.businessNumber}
                                     </Typography>
-                                </TableCell>
-                            </TableRow>
+                                </StyledTableCell>
+                            </StyledTableRow>
                         ))}
                     </TableBody>
                 </Table>
+              </TableContainer>
             </Box>
+            {/* 페이지 네이션 */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                my: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  my: 2,
+                }}
+              >
+                  <Pagination
+                  count={Math.ceil(currentAccount.length / itemsPerPage)}
+                  page={currentPage}
+                  variant="outlined"
+                  color="primary"
+                  onChange={handlePageChange}
+                  />
+              </Box>
+            </Box>
+            {/* 페이지 네이션 */}
         </DashboardCard>
+        </>
         </>
     );
 };
