@@ -399,10 +399,10 @@ const PorderModal = () => {
                   <StyledTableCell style={{ minWidth: '80px' }}>품명</StyledTableCell>
                   <StyledTableCell style={{ minWidth: '120px' }}>규격</StyledTableCell>
                   <StyledTableCell style={{ minWidth: '100px' }}>단가</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '100px' }}>count</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '100px' }}>수량</StyledTableCell>
                   <StyledTableCell style={{ minWidth: '100px' }}>금액</StyledTableCell>
                   <StyledTableCell style={{ minWidth: '200px' }}>납기일</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '150px' }}>Actions</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: '150px' }}>확인/삭제</StyledTableCell>
                 </StyledTableRow>
               </TableHead>
               <TableBody>
@@ -444,11 +444,9 @@ const PorderModal = () => {
                       )}
                     </TableCell>
                     <TableCell sx={{ padding: 1 }}>{editedData.itemCode === item.itemCode ? (
-                      <input
-                        type="itemCode"
-                        value={editedData.pOrderPrice * editedData.pOrderCount} // 두 값을 곱한 결과를 표시
-                        readOnly
-                      />
+                      <span>
+                      {editedData.pOrderPrice * editedData.pOrderCount}
+                    </span>
                     ) : (
                       item.pOrderPrice * item.pOrderCount // 두 값을 곱한 결과를 표시
                     )}</TableCell>
@@ -467,7 +465,6 @@ const PorderModal = () => {
                         />
 
                       </LocalizationProvider>
-
 
                     </TableCell>
                     <TableCell sx={{ padding: 1 }}>
@@ -489,23 +486,25 @@ const PorderModal = () => {
                         <>
                           <Button
                             variant="outlined"
+                            color='primary'
                             onClick={() => setEditedData({ ...item })} // 행을 수정하기 위해 editedData에 복사
                           >
-                            Edit
+                            수정
                           </Button>
                           &nbsp;&nbsp;
                           <Button
-                            variant='outlined'
+                             variant="contained"
+                             color="error"
                             onClick={() => handleDelete(item.itemCode)}
                             startIcon={<Delete />}
                           >
+                            삭제
                           </Button>
                         </>
                       )}
 
                     </TableCell>
                   </TableRow>
-
                 ))}
               </TableBody>
             </Table>
