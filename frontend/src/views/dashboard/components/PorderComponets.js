@@ -45,20 +45,21 @@ import pOrderItemsDeleteAxios from 'src/axios/pOrderItemsDeleteAxios';
 import { useLocation } from 'react-router';
 import { resetRecentPOrderNumber } from '../../../redux/slices/searchRecentPOrderNumber';
 import { format } from 'date-fns';
-import { reload } from 'src/redux/slices/pOrderListReducer';
+import { reload } from '../../../redux/slices/pOrderListReducer';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import {REMOVE_ALL_SELECTED_PORDER_LIST} from '../../../redux/slices/SelectedPOrderListReducer'
 
 const PorderComponets = () => {
   const dispatch = useDispatch();
   const [selectAll, setSelectAll] = useState(false);
   const porderModalState = useSelector((state) => state.porderModal.openModal);
   const location = useLocation();
-
   useEffect(() => {
     if (!porderModalState) {
       dispatch(fetchProducts());
     }
     dispatch(resetRecentPOrderNumber());
-  }, [porderModalState, dispatch,fetchProducts]);
+  }, [porderModalState, dispatch, fetchProducts]);
 
   useEffect(() => {
     dispatch(resetRecentPOrderNumber());
@@ -83,8 +84,8 @@ const PorderComponets = () => {
     }
   }, [recentPOrderNumber]);
 
-  
-  
+
+
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
       backgroundColor: "#505e82",
@@ -95,7 +96,7 @@ const PorderComponets = () => {
       minWidth: 100,
     },
   }));
-  
+
   const StyledTableRow = styled(TableRow)(() => ({
     // hide last border
     "&:last-child td, &:last-child th": {
@@ -126,7 +127,7 @@ const PorderComponets = () => {
     }
   };
 
-  const handleDelete = async() => {
+  const handleDelete = () => {
     swal
       .fire({
         title: '정말로 삭제하시겠습니까?',
@@ -138,29 +139,31 @@ const PorderComponets = () => {
         confirmButtonText: '삭제',
         cancelButtonText: '취소',
       })
-      .then(async () => {
-        try {
+      .then(async (result) => {
+        
+        if (result.isConfirmed) { // 사용자가 확인 버튼을 눌렀을 때
           if (selectedProducts.length >= 0 && underSelectedPOrder.length === 0) {
-            
             await pOrderDeleteAxios(selectedProducts);
             dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
-            dispatch(fetchProducts())
+            dispatch(fetchProducts());
+            dispatch(REMOVE_ALL_SELECTED_PORDER_LIST([]));
+            dispatch(reload(true));
           } else if (selectedProducts.length === 0 && underSelectedPOrder.length >= 0) {
-             pOrderItemsDeleteAxios(selectedPOrderNumber, underSelectedPOrder)
-              dispatch(removePOrderInfo());
-              dispatch(reload(true))
+            pOrderItemsDeleteAxios(selectedPOrderNumber, underSelectedPOrder);
+            dispatch(removePOrderInfo());
+            dispatch(reload(true));
           }
-        } catch (error) {
+        } else {
           swal.fire({
             title: "삭제 실패",
-            text: `Error: ${error.message}`,
+            text: "값을 수정해주세요",
             icon: "error",
           });
         }
+      })
 
-
-      });
   };
+
 
   // const hadldEidt = () =>{
   //   swal.fire
@@ -304,7 +307,7 @@ const PorderComponets = () => {
   return (
     <Box style={{ width: '100%' }}>
       <DashboardCard variant="poster" sx={{ Width: '100%' }}>
-      <Box
+        <Box
           sx={{
             display: "flex",
             alignItems: "center",
@@ -312,8 +315,8 @@ const PorderComponets = () => {
             padding: "10px",
           }}
         >
-          <IconHammer />
-          <Typography variant="h4" component="div" sx={{ ml: 1}} >
+          <AssignmentIcon />
+          <Typography variant="h4" component="div" sx={{ ml: 1 }} >
             발주 관리
           </Typography>
         </Box>
@@ -367,7 +370,7 @@ const PorderComponets = () => {
               &nbsp;
               <Typography sx={{ fontSize: '1rem', marginRight: '1rem' }}>~</Typography>
               <DatePicker
-                label={`시작일`}
+                label={`마지막일`}
                 value={endDate}
                 onChange={(newDate) => setEndDate(newDate)}
                 views={['year', 'month', 'day']}
@@ -414,172 +417,173 @@ const PorderComponets = () => {
         </Box>
 
         <br />
-        <Box sx={{ overflow: "auto", maxHeight: "650px" }}>
+        <Box sx={{ overflow: "auto", height:"40%" }}>
           <TableContainer component={Paper}>
-          <Table
+            <Table
               aria-label="customized table"
               sx={{
                 minWidth: 700,
               }}
             >
-            
-            <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
-              <StyledTableRow sx={{
-                height: '10px'
-                , '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                }
-              }} >
-                <StyledTableCell>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    선택
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    발주번호
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    거래처번호
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    생성일
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    상태
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell align="right">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    담당자
-                  </Typography>
-                </StyledTableCell>
-                <StyledTableCell align="right">
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    수정
-                  </Typography>
-                </StyledTableCell>
-              </StyledTableRow>
-            </TableHead>
-            <TableBody>
-              {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct,index) => (
-                <StyledTableRow key={realProduct.porderCode} sx={{
-                  backgroundColor: realProduct.porderCode === porderCodeState 
-                    ? 'lightyellow' 
-                    : (index % 2 !== 0 ? "#f3f3f3" : "white"),
-                  '&:hover': {
+
+              <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
+                <StyledTableRow sx={{
+                  height: '10px'
+                  , '&:hover': {
                     backgroundColor: 'rgba(0, 0, 0, 0.04)'
                   }
-                }}
-                  onClick={() => { setTableRowClickValue(realProduct.porderCode) }}
-                >
-                  <StyledTableCell sx={{ padding: 0 }}>
-                    <Checkbox
-                      checked={selectedProducts.includes(realProduct.porderCode)}
-                      onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
-
-                    />
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 0 }}>
-                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box>
-                        {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
-                          <TextField
-                            value={editingProduct.accountNo}
-                            onClick={() => setAccountModal(true)}
-                            onChange={(e) => handleFieldChange('accountNo', e.target.value)}
-                          />
-                        ) : (
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {realProduct.accountNo}
-                          </Typography>
-                        )}
-                        <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                          물류관리자
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </StyledTableCell>
-                  <StyledTableCell sx={{ padding: 0 }}>
-                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
-                     {formattedDate(realProduct.createDate)}
+                }} >
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      선택
                     </Typography>
                   </StyledTableCell>
                   <StyledTableCell>
-                    <Chip
-                      size="small"
-                      label={realProduct.state}
-                      sx={{
-                        px: '4px',
-                        color: 'white', // 텍스트 색상
-                        backgroundColor: (theme) => {
-                          switch (realProduct.state) {
-                            case '준비':
-                              return theme.palette.primary.main;
-                            case '진행 중':
-                              return theme.palette.info.main;
-                            case '완료':
-                              return theme.palette.error.main;
-                            default:
-                              return 'defaultColor'; // 기본 색상
-                          }
-                        },
-                      }}
-                    />
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      발주번호
+                    </Typography>
                   </StyledTableCell>
-                  <StyledTableCell align="right" sx={{ padding: 0 }}>
-                    {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
-                      <TextField
-                        value={editingProduct.manager}
-                        onChange={(e) => handleFieldChange('manager', e.target.value)}
-                      />
-                    ) : (
-                      <Typography variant="h6">{realProduct.manager}</Typography>
-                    )}
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      거래처번호
+                    </Typography>
                   </StyledTableCell>
-
-                  <StyledTableCell align="right" sx={{ padding: 0 }}>
-                    {realProduct.state === "준비" ? (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={editingProduct && editingProduct.porderCode === realProduct.porderCode ? <Save /> : <Edit />}
-                        color="primary"
-                        onClick={() => {
-                          if (editingProduct && editingProduct.porderCode === realProduct.porderCode) {
-                            handleEditEnd();
-                          } else {
-                            handleEditStart(realProduct);
-                          }
-                        }}
-                      >
-                        {editingProduct && editingProduct.porderCode === realProduct.porderCode ? '저장' : '수정'}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Edit />}
-                        color="error"
-                        disabled
-                      >
-                        수정
-                      </Button>
-                    )}
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      생성일
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      상태
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      담당자
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      수정
+                    </Typography>
                   </StyledTableCell>
                 </StyledTableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct, index) => (
+                  <StyledTableRow key={realProduct.porderCode} sx={{
+                    backgroundColor: realProduct.porderCode === porderCodeState
+                      ? 'lightyellow'
+                      : (index % 2 !== 0 ? "#f3f3f3" : "white"),
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                    }
+                  }}
+                    onClick={() => { setTableRowClickValue(realProduct.porderCode) }}
+                  >
+                    <StyledTableCell sx={{ padding: 0 }}>
+                      <Checkbox
+                        checked={selectedProducts.includes(realProduct.porderCode)}
+                        onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
+
+                      />
+                    </StyledTableCell>
+                    <StyledTableCell sx={{ padding: 0 }}>
+                      <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
+                    </StyledTableCell>
+                    <StyledTableCell sx={{ padding: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box>
+                          {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
+                            <TextField
+                              value={editingProduct.accountNo}
+                              onClick={() => setAccountModal(true)}
+                              onChange={(e) => handleFieldChange('accountNo', e.target.value)}
+                            />
+                          ) : (
+                            <Typography variant="subtitle2" fontWeight={600}>
+                              {realProduct.accountNo}
+                            </Typography>
+                          )}
+                          <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
+                            물류관리자
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </StyledTableCell>
+                    <StyledTableCell sx={{ padding: 0 }}>
+                      <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
+                        {formattedDate(realProduct.createDate)}
+                      </Typography>
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      <Chip
+                        size="small"
+                        label={realProduct.state}
+                        sx={{
+                          px: '4px',
+                          color: 'white', // 텍스트 색상
+                          backgroundColor: (theme) => {
+                            switch (realProduct.state) {
+                              case '준비':
+                                return theme.palette.primary.main;
+                              case '진행 중':
+                                return theme.palette.info.main;
+                              case '완료':
+                                return theme.palette.error.main;
+                              default:
+                                return 'defaultColor'; // 기본 색상
+                            }
+                          },
+                        }}
+                      />
+                    </StyledTableCell>
+                    <StyledTableCell align="right" sx={{ padding: 0 }}>
+                      {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
+                        <TextField
+                          value={editingProduct.manager}
+                          key={editingProduct.porderCode}
+                          onChange={(e) => {e.preventDefault(); handleFieldChange('manager', e.target.value);}}
+                        />
+                      ) : (
+                        <Typography variant="h6">{realProduct.manager}</Typography>
+                      )}
+                    </StyledTableCell>
+
+                    <StyledTableCell align="right" sx={{ padding: 0 }}>
+                      {realProduct.state === "준비" ? (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={editingProduct && editingProduct.porderCode === realProduct.porderCode ? <Save /> : <Edit />}
+                          color="primary"
+                          onClick={() => {
+                            if (editingProduct && editingProduct.porderCode === realProduct.porderCode) {
+                              handleEditEnd();
+                            } else {
+                              handleEditStart(realProduct);
+                            }
+                          }}
+                        >
+                          {editingProduct && editingProduct.porderCode === realProduct.porderCode ? '저장' : '수정'}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<Edit />}
+                          color="error"
+                          disabled
+                        >
+                          수정
+                        </Button>
+                      )}
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ))}
+              </TableBody>
+            </Table>
           </TableContainer>
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
@@ -609,11 +613,11 @@ const PorderComponets = () => {
         <Table title="거래처선택" style={{ textAlign: 'center' }}>
           <TableHead>
             <StyledTableRow>
-              <TableCell>거래처명</TableCell>
-              <TableCell>거래처코드</TableCell>
-              <TableCell>대표자</TableCell>
-              <TableCell>거래처번호</TableCell>
-              <TableCell>사업자번호</TableCell>
+              <StyledTableCell>거래처명</StyledTableCell>
+              <StyledTableCell>거래처코드</StyledTableCell>
+              <StyledTableCell>대표자</StyledTableCell>
+              <StyledTableCell>거래처번호</StyledTableCell>
+              <StyledTableCell>사업자번호</StyledTableCell>
             </StyledTableRow>
           </TableHead>
           <TableBody>
@@ -629,7 +633,7 @@ const PorderComponets = () => {
                 }}
               >
                 <TableCell>{accountList.accountName}</TableCell>
-                <TableCell>{accountList.axcountNo}</TableCell>
+                <TableCell>{accountList.accountNo}</TableCell>
                 <TableCell >{accountList.representative}</TableCell>
                 <TableCell >{accountList.contactNumber}</TableCell>
                 <TableCell >{accountList.businessNumber}</TableCell>
