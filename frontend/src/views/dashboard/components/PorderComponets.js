@@ -47,7 +47,7 @@ import { resetRecentPOrderNumber } from '../../../redux/slices/searchRecentPOrde
 import { format } from 'date-fns';
 import { reload } from '../../../redux/slices/pOrderListReducer';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import {REMOVE_ALL_SELECTED_PORDER_LIST} from '../../../redux/slices/SelectedPOrderListReducer'
+import { REMOVE_ALL_SELECTED_PORDER_LIST } from '../../../redux/slices/SelectedPOrderListReducer'
 
 const PorderComponets = () => {
   const dispatch = useDispatch();
@@ -140,7 +140,7 @@ const PorderComponets = () => {
         cancelButtonText: '취소',
       })
       .then(async (result) => {
-        
+
         if (result.isConfirmed) { // 사용자가 확인 버튼을 눌렀을 때
           if (selectedProducts.length >= 0 && underSelectedPOrder.length === 0) {
             await pOrderDeleteAxios(selectedProducts);
@@ -417,12 +417,13 @@ const PorderComponets = () => {
         </Box>
 
         <br />
-        <Box sx={{ overflow: "auto", height:"40%" }}>
+        <Box sx={{ overflow: "auto", Maxheight: "30%", height: "calc(35vh)" }}>
           <TableContainer component={Paper}>
             <Table
               aria-label="customized table"
               sx={{
                 minWidth: 700,
+
               }}
             >
 
@@ -543,8 +544,7 @@ const PorderComponets = () => {
                       {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
                         <TextField
                           value={editingProduct.manager}
-                          key={editingProduct.porderCode}
-                          onChange={(e) => {e.preventDefault(); handleFieldChange('manager', e.target.value);}}
+                          onChange={(e) => { handleFieldChange('manager', e.target.value); }}
                         />
                       ) : (
                         <Typography variant="h6">{realProduct.manager}</Typography>
@@ -585,20 +585,21 @@ const PorderComponets = () => {
               </TableBody>
             </Table>
           </TableContainer>
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
-          {realProducts.length ? (
-            <Pagination
-              count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
-              page={currentPage + 1}
-              variant="outlined"
-              color="primary"
-              onChange={handlePageChange}
-            />
-          ) : (
-            <div>해당 데이터가 없습니다</div>
-          )}
-        </Box>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', my: 2 }}>
+            {realProducts.length ? (
+              <Pagination
+                count={Math.ceil(realProducts.length / ITEMS_PER_PAGE)}
+                page={currentPage + 1}
+                variant="outlined"
+                color="primary"
+                onChange={handlePageChange}
+              />
+            ) : (
+              <div>해당 데이터가 없습니다</div>
+            )}
+          </Box>
+      
       </DashboardCard>
       <PorderModal></PorderModal>
       <Dialog open={accountModal}>
