@@ -73,6 +73,11 @@
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
 
+    // 글자수 초과 에러
+    const [memberIdError, setMemberIdError] = useState(false);  // 사원 아이디
+    const [memberPasswordError, setMemberPasswordError] = useState(false);    // 전화번호
+    const [memberNameError, setMemberNameError] = useState(false);    // 사원 이름
+
     // 수정 중복선택 경고 alert창
     const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
 
@@ -96,11 +101,18 @@
       createDate: '',
     });
 
+    const handleInputValidation = (value, maxLength) => {
+      if (value.length > maxLength) {
+          return true; // 길이 초과 시 true 반환
+      } else {
+          return false; // 길이 초과하지 않을 시 false 반환
+      }
+    };
+
     // INSERT 취소버튼시 함수
     const handleCloseModal = () => {
       setIsModalOpen(false);
       setSelectedMembers([]); // 선택된 멤버들을 모두 해제
-      window.location.reload();
     };
     // MODIFY 취소버튼시 함수
     const handleCloseEditModal = () => {
@@ -151,53 +163,109 @@
     const handleSaveNewMember = async () => {
       let timerInterval = null; // 변수를 초기화
     
-      try {
-        if (!newMember.memberName || !newMember.memberId || !newMember.password || !newMember.memberRole) {
-          console.log("모든 필수 항목을 입력하세요.");
-          return;
-        }
-    
-        const response = await axios.get(`http://localhost:8888/api/member/checkId/${newMember.memberId}`);
-        const isDuplicate = response.data.data;
-        
-        if (isDuplicate) {
-          setAlertMessage('이미 존재하는 아이디입니다.');
-        } else {
-          axios
-            .post('http://localhost:8888/api/member/insert', newMember)
-            .then(response => {
-              swal
-                .fire({
-                  title: "회원 추가 완료",
-                  text: "회원이 추가되었습니다.",
-                  icon: "success",
-                  timer: 1000,
-                  timerProgressBar: true,
-      
-                  didOpen: () => {
-                    swal.showLoading();
-                    const b = swal.getHtmlContainer().querySelector("b");
-                    timerInterval = setInterval(() => {
-                      b.textContent = swal.getTimerLeft();
-                    }, 1000);
-                  },
-                  willClose: () => {
-                    clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
-                  },
-                });
-              
-              axios.get('http://localhost:8888/api/member/list').then(updateMemberList);
-              setIsModalOpen(false)
-            });
-          
-        }
-
-        } catch (error) {
+      if (!newMember.memberName || !newMember.memberId || !newMember.password || !newMember.memberRole) {
+        setIsModalOpen(false);
         swal.fire({
-          title: "삽입 실패",
-          text: `${error}`,
+          title: "입력 오류",
+          text: "모든 항목을 입력하세요.",
           icon: "error",
         });
+    
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      }
+      
+      if (newMember.memberId.length > 15) {
+        setMemberNameError(true); // Set the error state for memberName
+        setIsModalOpen(false);
+        swal.fire({
+          title: "입력 오류",
+          text: "아이디는 10글자 이하여야 합니다.",
+          icon: "error",
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      } else {
+        setMemberNameError(false); // Clear the error state for memberName
+      }
+
+      if (newMember.memberName.length > 15) {
+        setMemberNameError(true); // Set the error state for memberName
+        setIsModalOpen(false);
+        swal.fire({
+          title: "입력 오류",
+          text: "멤버 이름은 15글자 이하여야 합니다.",
+          icon: "error",
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      } else {
+        setMemberNameError(false); // Clear the error state for memberName
+      }
+
+      if (newMember.password.length > 15) {
+        setMemberNameError(true); // Set the error state for memberName
+        setIsModalOpen(false);
+        swal.fire({
+          title: "입력 오류",
+          text: "비밀번호는 15글자 이하여야 합니다.",
+          icon: "error",
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      } else {
+        setMemberNameError(false); // Clear the error state for memberName
+      }
+
+
+      
+    
+      const response = await axios.get(`http://localhost:8888/api/member/checkId/${newMember.memberId}`);
+      const isDuplicate = response.data.data;
+    
+      if (isDuplicate) {
+        setAlertMessage('이미 존재하는 아이디입니다.');
+      } else {
+        axios
+          .post('http://localhost:8888/api/member/insert', newMember)
+          .then(response => {
+            swal
+              .fire({
+                title: "회원 추가 완료",
+                text: "회원이 추가되었습니다.",
+                icon: "success",
+                timer: 1000,
+                timerProgressBar: true,
+    
+                didOpen: () => {
+                  swal.showLoading();
+                  const b = swal.getHtmlContainer().querySelector("b");
+                  timerInterval = setInterval(() => {
+                    b.textContent = swal.getTimerLeft();
+                  }, 1000);
+                },
+                willClose: () => {
+                  clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
+                },
+              });
+    
+            axios.get('http://localhost:8888/api/member/list').then(updateMemberList);
+            setIsModalOpen(false);
+          })
+          .catch((error) => {
+            console.error(error)
+          });
       }
     };
 
@@ -432,6 +500,8 @@
               fullWidth
               margin="normal"
               required
+              error={memberNameError}
+              helperText={memberNameError ? "회원 이름은 15글자를 넘길 수 없습니다." : ""}
             />
             <TextField
               label="아이디"
@@ -500,38 +570,70 @@
                   <Typography variant="h6" style={{ fontSize: '18px', marginBottom: '20px' }}>신규 회원 추가</Typography>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                   <TextField
-                      label="아이디"
-                      variant="outlined"
-                      type="text"
-                      onChange={(e) => handlerSetInputData('memberId', e.target.value)}
-                      fullWidth
-                      margin="normal"
-                      required
-                      error={alertMessage.includes('이미 존재하는 아이디')}
-                      helperText={alertMessage}
+                    label="아이디"
+                    variant="outlined"
+                    type="text"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handlerSetInputData('memberId', value);
+
+                      if (value.length > 10) {
+                        setMemberIdError(true);
+                      } else {
+                        setMemberIdError(false);
+                      }
+                    }}
+                    fullWidth
+                    margin="normal"
+                    required
+                    error={memberIdError || alertMessage.includes('이미 존재하는 아이디')}
+                    helperText={
+                      memberIdError
+                        ? '아이디는 10글자 이하로 입력하세요.'
+                        : alertMessage.includes('이미 존재하는 아이디')
+                        ? '이미 존재하는 아이디입니다.'
+                        : alertMessage  // 추가: 중복체크 결과 메시지 표시
+                    }
                   />
                       <Button variant="outlined" color="primary" onClick={handleCheckDuplicateId} style={{ marginLeft: '10px', flex: 1 }} >
                           중복 체크
                       </Button>
                   </div>
                   <TextField
-                      label="비밀번호"
-                      variant="outlined"
-                      type= "password"
-                      onChange={(e) => handlerSetInputData('password', e.target.value)}
-                      fullWidth
-                      margin="normal"
-                      required
-                      
+                    label="비밀번호"
+                    variant="outlined"
+                    type="password"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewMember((prevMember) => ({
+                          ...prevMember,
+                          password: value
+                      }));
+                      setMemberPasswordError(handleInputValidation(value, 15));
+                    }}
+                    fullWidth
+                    margin="normal"
+                    required
+                    error={memberPasswordError}
+                    helperText={memberPasswordError ? "비밀번호는 15글자를 넘길 수 없습니다." : ""}
                   />
                   <TextField
-                      label="이름"
-                      variant="outlined"
-                      type='text'
-                      onChange={(e) => handlerSetInputData('memberName', e.target.value)}
-                      fullWidth
-                      margin="normal"
-                      required
+                    label="이름"
+                    variant="outlined"
+                    type="text"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewMember((prevMember) => ({
+                          ...prevMember,
+                          memberName: value
+                      }));
+                      setMemberNameError(handleInputValidation(value, 15));
+                    }}
+                    fullWidth
+                    margin="normal"
+                    required
+                    error={memberNameError}
+                    helperText={memberNameError ? "이름은 15글자를 넘길 수 없습니다." : ""}
                   />
                   <TextField
                       label="역할"
