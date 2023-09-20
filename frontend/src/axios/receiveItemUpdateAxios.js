@@ -1,7 +1,14 @@
 import axios from "axios";
 import swal from "sweetalert2";
 axios.defaults.withCredentials = true;
-const receiveItemUpdateAxios = (receiveCode, receiveItemNo, receiveCounts, selectWarehouse) => {
+const receiveItemUpdateAxios = (
+  receiveCode,
+  receiveItemNo,
+  receiveCounts,
+  selectWarehouse,
+  porderCode,
+  porderItemNo
+) => {
   const modifyCount = receiveCounts.toString().replace(/,/g, "") || "";
   const modifyWarehouseNo = selectWarehouse.toString().replace(/,/g, "") || "";
   const receiveItems = {
@@ -9,6 +16,8 @@ const receiveItemUpdateAxios = (receiveCode, receiveItemNo, receiveCounts, selec
     receiveItemNo: receiveItemNo,
     receiveCount: modifyCount,
     warehouseNo: modifyWarehouseNo,
+    pOrderCode: porderCode,
+    pOrderItemNo: porderItemNo,
   };
   axios
     .patch("http://localhost:8888/api/receive-item/modify", receiveItems)

@@ -16,6 +16,7 @@ import {
   Pagination,
   Checkbox,
   styled,
+  Chip,
 } from "@mui/material";
 import { close_Modal } from "../../../../redux/slices/receiveModalDuck";
 import pOrderWaitIngAxios from "src/axios/pOrderWaitIngAxios";
@@ -93,7 +94,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
     : [];
   useEffect(() => {
     if (selectedStartDate === null) {
-      setSelectedStartDate(new Date());
+      setSelectedStartDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     }
     if (selectedEndDate === null) {
       setSelectedEndDate(new Date());
@@ -318,6 +319,8 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                   renderInput={(props) => <TextField {...props} />}
                   format="yyyy.MM.dd"
                   slotProps={{ textField: { size: "small" } }}
+                  minDate={new Date("2000-01-01")}
+                  maxDate={new Date("2100-12-31")}
                 />
                 <DatePicker
                   label="조회 종료일"
@@ -326,6 +329,8 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                   renderInput={(props) => <TextField {...props} />}
                   format="yyyy.MM.dd"
                   slotProps={{ textField: { size: "small" } }}
+                  minDate={new Date("2000-01-01")}
+                  maxDate={new Date("2100-12-31")}
                 />
               </LocalizationProvider>
               <Button
@@ -336,7 +341,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                 onClick={handleClick}
                 sx={{ ml: 2 }}
               >
-                조회
+                검색
               </Button>
             </Box>
 
@@ -378,10 +383,9 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                       key={index}
                       sx={{
                         "&:hover": {
-                          backgroundColor: "#f5f5f5",
+                          backgroundColor: "#c7d4e8",
                         },
-                        backgroundColor:
-                          selectedRow === porderCode ? "rgba(0, 0, 0, 0.04)" : "transparent",
+                        backgroundColor: selectedRow === porderCode ? "#c7d4e8" : "transparent",
                       }}
                       onClick={() => handleProductClick(porderCode)}
                     >
@@ -402,7 +406,26 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                       </StyledTableCell>
                       <StyledTableCell>
                         <Typography variant="subtitle2" fontWeight={400} align="left">
-                          {state}
+                          <Chip
+                            size="small"
+                            label={state}
+                            sx={{
+                              px: "4px",
+                              color: "white", // 텍스트 색상
+                              backgroundColor: (theme) => {
+                                switch (state) {
+                                  case "준비":
+                                    return theme.palette.primary.main;
+                                  case "진행 중":
+                                    return theme.palette.info.main;
+                                  case "완료":
+                                    return theme.palette.error.main;
+                                  default:
+                                    return "defaultColor"; // 기본 색상
+                                }
+                              },
+                            }}
+                          />
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
@@ -469,7 +492,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                         수량
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell style={{ width: "15%" }}>
+                    <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         단가
                       </Typography>
@@ -479,7 +502,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                         총금액
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell style={{ width: "15%" }}>
+                    <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         진행상태
                       </Typography>
@@ -497,7 +520,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                       key={index}
                       sx={{
                         "&:hover": {
-                          backgroundColor: "#f5f5f5",
+                          backgroundColor: "#c7d4e8",
                         },
                       }}
                     >
@@ -541,9 +564,26 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell align="left">
-                        <Typography variant="subtitle2" fontWeight={400}>
-                          {product.porderState}
-                        </Typography>
+                        <Chip
+                          size="small"
+                          label={product.porderState}
+                          sx={{
+                            px: "4px",
+                            color: "white", // 텍스트 색상
+                            backgroundColor: (theme) => {
+                              switch (product.porderState) {
+                                case "준비":
+                                  return theme.palette.primary.main;
+                                case "진행 중":
+                                  return theme.palette.info.main;
+                                case "완료":
+                                  return theme.palette.error.main;
+                                default:
+                                  return "defaultColor"; // 기본 색상
+                              }
+                            },
+                          }}
+                        />
                       </StyledTableCell>
                       <StyledTableCell align="left">
                         <Typography variant="subtitle2" fontWeight={400}>
