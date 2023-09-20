@@ -18,11 +18,13 @@
     Paper,
     Pagination,
     TableContainer,
+    InputAdornment,
   } from '@mui/material';
   import { tableCellClasses } from "@mui/material/TableCell";
+  import { useSelector } from 'react-redux';
   import swal from "sweetalert2";
   import DashboardCard from '../../../components/shared/DashboardCard';
-  import { IconCopy } from '@tabler/icons';
+  import { IconCopy, IconSearch } from '@tabler/icons';
   import styled from 'styled-components';
   import DeleteIcon from "@mui/icons-material/Delete";
   import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
@@ -52,7 +54,7 @@
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    const [changedItemCode, setChangedItemCode] = useState(-1);
+    const [changedItemCode] = useState(-1);
 
     const [currentMember, setCurrentMember] = useState([]);
 
@@ -67,9 +69,6 @@
     // 체크박스 관련 state
     const [selectedMembers, setSelectedMembers] = useState([]);
 
-    // 전체 선택 체크박스 관련 state
-    const [selectAll, setSelectAll] = useState(false);
-    
     // 수정 관련 state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
@@ -81,6 +80,8 @@
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = currentMember.slice(indexOfFirstItem, indexOfLastItem);
+
+    const memberData = useSelector((state) => state.memberData.memberData);
 
     // 페이지 변경 핸들러 추가
     const handlePageChange = (event, newPage) => {
@@ -347,7 +348,7 @@
     };
 
     
-    // 이름, 아이디 검색기능
+    // SEARCH axios
     const handleSearch = () => {
 
       let timerInterval = null;
@@ -361,6 +362,7 @@
       }
 
       const queryString = queryParams.join('&');
+      setCurrentPage(1);
 
       axios.get(`http://localhost:8888/api/member/list?${queryString}`)
           .then(response => {
@@ -392,16 +394,6 @@
     const handleAlertClose = () => {
       setIsAlertOpen(false);
       window.location.href = '/auth/login';
-    };
-
-    // 체크박스 전체 선택 또는 해제
-    const handleSelectAll = () => {
-      if (selectAll) {
-        setSelectedMembers([]);
-      } else {
-        setSelectedMembers([...currentMember]);
-      }
-      setSelectAll(!selectAll);
     };
 
     // 단일 선택 체크박스 선택 또는 해제
@@ -450,6 +442,7 @@
               fullWidth
               margin="normal"
               required
+              
             />
             <TextField
               label="비밀번호"
@@ -463,17 +456,18 @@
             />
 
             <TextField
-                label="역할"
-                variant="outlined"
-                select // Select 컴포넌트로 변경
-                fullWidth
-                margin="normal"
-                value={editingMember?.memberRole || ''}
-                onChange={(e) => setEditingMember({ ...editingMember, memberRole: e.target.value })}
-                required
-              >
-                <MenuItem value="ADMIN">관리자</MenuItem>
-                <MenuItem value="MEMBER">회원</MenuItem>
+              label="역할"
+              variant="outlined"
+              select // Select 컴포넌트로 변경
+              fullWidth
+              margin="normal"
+              value={editingMember?.memberRole || ''}
+              onChange={(e) => setEditingMember({ ...editingMember, memberRole: e.target.value })}
+              required
+              disabled={memberData.data.memberId === editingMember?.memberId} // 수정된 부분
+            >
+              <MenuItem value="ADMIN">관리자</MenuItem>
+              <MenuItem value="MEMBER">회원</MenuItem>
             </TextField>
               
             
@@ -639,15 +633,52 @@
                   >
                       
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                    <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                    <Typography variant="h6" sx={{ mr: 1 }}>
                       사원 코드
                     </Typography>
-                    <TextField label="사원 코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
+                    <TextField label="사원 코드" 
+                    variant="outlined" 
+                    type='number' 
+                    size="small" 
+                    sx={{ mr: 2 }} 
+                    value={searchCode} 
+                    onChange={(e) => setSearchCode(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconSearch />
+                        </InputAdornment>
+                      ),
+                    }}
+                    style={{
+                      borderRadius: 100,
+                      borderColor: "#808080",
+                      boxShadow: "0 2px 5px #cccccc",
+                    }}
                     onKeyDown={handleEnterKeyPress} />
-                    <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                    <Typography variant="h6" sx={{ mr: 1 }}>
                       아이디
                     </Typography>
-                    <TextField label="아이디" variant="outlined" type='text' size="small" sx={{ mr: 2 }} value={searchId} onChange={(e) => setSearchId(e.target.value)} 
+                    <TextField 
+                    abel="아이디" 
+                    variant="outlined" 
+                    type='text' 
+                    size="small" 
+                    sx={{ mr: 2 }} 
+                    value={searchId} 
+                    onChange={(e) => setSearchId(e.target.value)} 
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconSearch />
+                        </InputAdornment>
+                      ),
+                    }}
+                    style={{
+                      borderRadius: 100,
+                      borderColor: "#808080",
+                      boxShadow: "0 2px 5px #cccccc",
+                    }}
                     onKeyDown={handleEnterKeyPress} />
                 </Box>
                 <Box>
@@ -680,25 +711,24 @@
                           <StyledTableRow>
                               <StyledTableCell style={{ width: "6%" }}>
                                   <Typography variant="h6" fontWeight={600}>
-                                      선택
                                   </Typography>
                               </StyledTableCell>
-                              <StyledTableCell align='right' style={{ width: "8%" }}>
+                              <StyledTableCell style={{ width: "8%" }}>
                                   <Typography variant="h6" fontWeight={600}>
                                       사원코드
                                   </Typography>
                               </StyledTableCell>
-                              <StyledTableCell align='left' style={{ width: "20%" }}>
+                              <StyledTableCell style={{ width: "20%" }}>
                                   <Typography variant="h6" fontWeight={600}>
                                       이름
                                   </Typography>
                               </StyledTableCell>
-                              <StyledTableCell align='left' style={{ width: "20%" }}>
+                              <StyledTableCell  style={{ width: "20%" }}>
                                   <Typography variant="h6" fontWeight={600}>
                                       아이디
                                   </Typography>
                               </StyledTableCell>
-                              <StyledTableCell align='left' style={{ width: "20%" }}>
+                              <StyledTableCell  style={{ width: "20%" }}>
                                   <Typography variant="h6" fontWeight={600}>
                                       역할
                                   </Typography>
@@ -723,7 +753,7 @@
                                     ? "#f3f3f3"
                                     : "white",
                                   '&:hover': {
-                                      backgroundColor: '#f5f5f5',
+                                      backgroundColor: '#c7d4e8',
                                       cursor: 'pointer'
                                   }
                               }}

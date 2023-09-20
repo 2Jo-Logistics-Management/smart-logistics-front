@@ -15,11 +15,12 @@ import {
     Checkbox,
     Pagination,
     TableContainer,
+    InputAdornment,
 } from '@mui/material';
 import { tableCellClasses } from "@mui/material/TableCell";
 import swal from "sweetalert2";
 import DashboardCard from '../../../components/shared/DashboardCard';
-import { IconCopy } from '@tabler/icons';
+import { IconCopy, IconSearch } from '@tabler/icons';
 import styled from 'styled-components';
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -49,7 +50,7 @@ const Account = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    const [changedItemCode, setChangedItemCode] = useState(-1);
+    const [changedItemCode] = useState(-1);
 
     const [currentAccount, setCurrentAccount] = useState([]);
 
@@ -332,7 +333,8 @@ const Account = () => {
           queryParams.push(`accountName=${searchName}`);
       }
   
-      const queryString = queryParams.join('&');
+      const queryString = queryParams.join('&');  
+      setCurrentPage(1);
   
       axios.get(`http://localhost:8888/api/account/list?${queryString}`)
           .then(response => {
@@ -581,15 +583,52 @@ const Account = () => {
               >    
             
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: "wrap"  }}>
-                  <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                  <Typography variant="h6" sx={{ mr: 1 }}>
                       거래처코드
                   </Typography>
-                  <TextField label="거래처코드" variant="outlined" type='number' size="small" sx={{ mr: 2 }} value={searchCode} onChange={(e) => setSearchCode(e.target.value)}
+                  <TextField 
+                  label="거래처코드" 
+                  variant="outlined" 
+                  type='number' 
+                  size="small" 
+                  sx={{ mr: 2 }} 
+                  value={searchCode} 
+                  onChange={(e) => setSearchCode(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <IconSearch />
+                      </InputAdornment>
+                    ),
+                  }}
+                  style={{
+                    borderRadius: 100,
+                    borderColor: "#808080",
+                    boxShadow: "0 2px 5px #cccccc",
+                  }}
                   onKeyDown={handleEnterKeyPress} />
-                  <Typography variant="subtitle2" sx={{ mr: 1 }}>
+                  <Typography variant="h6" sx={{ mr: 1 }}>
                       거래처명
                   </Typography>
-                  <TextField label="거래처명" variant="outlined" size="small" sx={{ mr: 2 }} value={searchName} onChange={(e) => setSearchName(e.target.value)} 
+                  <TextField 
+                  label="거래처명" 
+                  variant="outlined" 
+                  size="small" 
+                  sx={{ mr: 2 }} 
+                  value={searchName} 
+                  onChange={(e) => setSearchName(e.target.value)} 
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <IconSearch />
+                      </InputAdornment>
+                    ),
+                  }}
+                  style={{
+                    borderRadius: 100,
+                    borderColor: "#808080",
+                    boxShadow: "0 2px 5px #cccccc",
+                  }}
                   onKeyDown={handleEnterKeyPress} />
               </Box>
               <Box>
@@ -616,30 +655,29 @@ const Account = () => {
                         <StyledTableRow>
                             <StyledTableCell style={{ width: "6%" }}>
                                 <Typography variant="h6" fontWeight={600}>
-                                    선택
                                 </Typography>
                             </StyledTableCell>
-                            <StyledTableCell align='right' style={{ width: "14%" }}>
+                            <StyledTableCell style={{ width: "14%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     거래처코드
                                 </Typography>
                             </StyledTableCell>
-                            <StyledTableCell align='left' style={{ width: "20%" }}>
+                            <StyledTableCell style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     거래처명
                                 </Typography>
                             </StyledTableCell>
-                            <StyledTableCell align='left' style={{ width: "20%" }}>
+                            <StyledTableCell style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     대표자
                                 </Typography>
                             </StyledTableCell>
-                            <StyledTableCell align='right' style={{ width: "20%" }}>
+                            <StyledTableCell style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     전화번호
                                 </Typography>
                             </StyledTableCell>
-                            <StyledTableCell align='right' style={{ width: "20%" }}>
+                            <StyledTableCell style={{ width: "20%" }}>
                                 <Typography variant="h6" fontWeight={600}>
                                     사업자번호
                                 </Typography>
