@@ -41,8 +41,10 @@ const PorderComponets2 = () => {
   const [pOrderCount, setPOrderCount] = useState("");
   const [pOrderItemState, setPOrderItemState] = useState("");
   const reloadFlag = useSelector((state) => state.pOrderList.reload);
-
+  axios.defaults.withCredentials = true;
   const dispatch = useDispatch();
+
+
   useEffect(() => {
     if (products.data) {
       const newVisibleProducts = products.data.slice(0, visibleCount);
@@ -50,24 +52,26 @@ const PorderComponets2 = () => {
         setVisibleProducts(newVisibleProducts);
         setDataUpdated(true);
       }
+    } else {
+      setVisibleProducts([]);
     }
   }, [products.data, visibleCount, visibleProducts, dispatch, visibleProducts, isDataUpdated]);
 
   useEffect(() => {
-
     if (visibleProducts && visibleProducts.length > 0) {
       const realPOrderCode = visibleProducts[0].porderCode;
       setPOrderCode(realPOrderCode);
     }
-
   }, [visibleProducts, dispatch])
 
   useEffect(() => {
-    if(reloadFlag === true){
+    if (reloadFlag === true) {
       dispatch(reload(false))
       dispatch(seletedPOrderList(pOrderCode))
     }
   }, [reloadFlag])
+
+
 
 
   const selectedProducts = useSelector((state) => state.pOrderInfoCheckbox.selectedCheckBox);
@@ -158,6 +162,9 @@ const PorderComponets2 = () => {
         setItemCode("");
         setSelectedDateTime("");
         setPOrderItemPrice("");
+        setPOrderPrice("");
+        setPOrderCount("");
+        setItemName("")
         setPOrderCode(pOrderCode);
         dispatch(seletedPOrderList(pOrderCode));
       })
@@ -235,7 +242,7 @@ const PorderComponets2 = () => {
 
   const handleEdit = (productId) => {
     setEditMode((prevState) => ({ ...prevState, [productId]: !prevState[productId] }));
-    if (editMode[productId]) { // 이 부분을 수정하여 "Save" 버튼을 눌렀을 때만 axios 통신이 일어나도록 함
+    if (editMode[productId]) {
       const index = tempProducts.findIndex((product) => product.id === productId);
       const updatedProducts = [...tempProducts];
 
@@ -274,6 +281,9 @@ const PorderComponets2 = () => {
           setItemCode("");
           setSelectedDateTime("");
           setPOrderItemPrice("");
+          setPOrderCount("");
+          setPOrderPrice("");
+          setItemName("");
           setPOrderCode(pOrderCode);
         })
     } catch (error) {
@@ -347,13 +357,14 @@ const PorderComponets2 = () => {
                     textAlign: 'center',
                   }}
                   contentEditable={true}
+                  value={itemName}
                   onInput={(e) => setItemName(e.target.textContent)}
                 >
                   {itemName}
                 </div>
               </TableCell>
               <TableCell style={{ textAlign: 'Right' }}><TextField type="number" value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
-              <TableCell style={{ textAlign: 'Right' }}><TextField type="number" onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
+              <TableCell style={{ textAlign: 'Right' }}><TextField type="number" value={pOrderCount} onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
               <TableCell style={{ textAlign: 'Right' }}><Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{pOrderPrice * pOrderCount}</Typography></TableCell>
               <TableCell style={{ textAlign: 'center' }}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -385,7 +396,7 @@ const PorderComponets2 = () => {
                     '&:hover': {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
                     }
-                  }}ㄴ
+                  }} 
                 >
                   <TableCell sx={{ padding: 2 }}>
                     <Checkbox
@@ -418,24 +429,31 @@ const PorderComponets2 = () => {
                   </TableCell>
                   <TableCell sx={{ padding: 2, textAlign: 'right' }}>
                     {editMode[product.porderItemNo] ? (
-                      <TextField
-                        value={editItemName}
-                        onChange={(e) => {
-                          handleChange(product.itemName, 'itemName', e.target.value);
-                          setEditItemName(e.target.value)
-                          setItemName(product.itemName)
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        component="div"
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          handleChange(product.itemName, 'itemName', e.currentTarget.textContent);
+                          setEditItemName(e.currentTarget.textContent);
+                          setItemName(product.itemName);
                         }}
-                      />
+                      >
+                        {editItemName}
+                      </Typography>
                     ) : (
                       <Typography variant="subtitle2" fontWeight={600}>
                         {product.itemName}
                       </Typography>
                     )}
                   </TableCell>
+
                   <TableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                         type="number"
+                        type="number"
                         value={editPOrderItemPrice}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderPrice', e.target.value)
@@ -451,12 +469,12 @@ const PorderComponets2 = () => {
                   <TableCell style={{ textAlign: 'right', padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                         type="number"
+                        type="number"
                         value={editPOrderCount}
                         onChange={(e) => {
                           handleChange(product.porderItemNo, 'porderCount', e.target.value)
                           setEditPOrderCount(e.target.value)
-    
+
                         }}
                       />
                     ) : (
@@ -548,7 +566,7 @@ const PorderComponets2 = () => {
         PaperProps={{
           style: {
             width: '70%',
-            height: '57%',
+            height: '67%',
             overflowY: 'auto', // 필요한 경우 스크롤을 허용
           },
         }}>

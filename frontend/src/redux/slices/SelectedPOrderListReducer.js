@@ -12,8 +12,11 @@ const SelectedPOrderListReducer = createSlice({
       state.selectedPOrderList = action.payload;
 
     },
+    REMOVE_ALL_SELECTED_PORDER_LIST: (state, action) => {
+      state.selectedPOrderList = action.payload;
+    }
   }
 });
 
-export const { selectedPOrderList } = SelectedPOrderListReducer.actions;
+export const { selectedPOrderList, REMOVE_ALL_SELECTED_PORDER_LIST } = SelectedPOrderListReducer.actions;
 export default SelectedPOrderListReducer.reducer;

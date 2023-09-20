@@ -4,7 +4,7 @@ import {
 } from '@tabler/icons';
 import { uniqueId } from 'lodash';
 import { useMemo } from 'react';
-
+import AssignmentIcon from '@mui/icons-material/Assignment';
 const subheaderStyle = {
   fontSize: '14px',
   fontWeight: 'bold',
@@ -56,7 +56,7 @@ const MenuItems = () => {
     {
       id: uniqueId(),
       title: '발주 관리시스템',
-      icon: IconCopy,
+      icon: AssignmentIcon,
       href: '/Logistic/POrder',
     },
     {

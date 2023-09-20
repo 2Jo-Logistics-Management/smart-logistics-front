@@ -16,7 +16,7 @@ const pOrderItemsDeleteAxios = (pOrderCodes,pOrderItemList) => {
     .catch((error) => {
       swal.fire({
         title: "삭제 실패",
-        text: `Error: ${error.message}`,
+        text: `발품품목 삭제 실패`,
         icon: "error",
       });
     });
