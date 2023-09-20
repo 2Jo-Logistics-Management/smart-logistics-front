@@ -96,8 +96,7 @@ const Account = () => {
     const handlePhoneNumberValidation = (input, setFunction) => {
         const formattedInput = input.replace(/[^0-9-]/g, ''); // 숫자와 "-" 이외의 문자 제거
         if (formattedInput.length === 11) {
-            const formattedNumber = `${formattedInput.slice(0, 3)}-${formattedInput.slice(3, 7)}-${formattedInput.slice(7)}`;
-            setFunction(formattedNumber);
+            setFunction(formattedInput);
             return false; // 형식이 맞을 경우 false 반환
         } else {
             setFunction(formattedInput);
@@ -109,8 +108,7 @@ const Account = () => {
     const handleCompanyNumberValidation = (input, setFunction) => {
       const formattedInput = input.replace(/[^0-9-]/g, ''); // 숫자와 "-" 이외의 문자 제거
       if (formattedInput.length === 10) {
-          const formattedNumber = `${formattedInput.slice(0, 3)}-${formattedInput.slice(3, 5)}-${formattedInput.slice(5, 10)}`;
-          setFunction(formattedNumber);
+          setFunction(formattedInput);
           return false; // 형식이 맞을 경우 false 반환
       } else {
           setFunction(formattedInput);
@@ -130,7 +128,6 @@ const Account = () => {
     const handleCloseModal = () => {
       setIsModalOpen(false);
       setSelectedAccount([]); // 선택된 거래처들을 모두 해제
-      window.location.reload();
       };
   
       // MODIFY 취소버튼시 함수
@@ -163,6 +160,8 @@ const Account = () => {
     // INSERT axios
     const handleSaveNewAccount = () => {
       let timerInterval = null;
+      let error = false; // 에러 여부를 나타내는 변수 추가
+    
       // 필수 입력 값 확인
       if (
         !newAccount.accountName ||
@@ -172,47 +171,70 @@ const Account = () => {
       ) {
         // 필수 입력 값이 하나라도 누락된 경우
         console.log("모든 필수 항목을 입력하세요.");
-        return;
+        error = true; // 에러 발생
       }
     
       if (newAccount.accountName.length > 20) {
         setAccountNameError(true);
-        return;
+        error = true; // 거래처명이 20글자를 초과하면 에러 발생
       } else {
         setAccountNameError(false); // 에러 상태 초기화
       }
+    
+      if (newAccount.representative.length > 10) {
+        setRepresentativeError(true);
+        error = true; // 대표자명이 10글자를 초과하면 에러 발생
+      } else {
+        setRepresentativeError(false); // 에러 상태 초기화
+      }
+    
+      if (error) {
+        setIsModalOpen(false);
+        swal.fire({
+          title: "입력 오류",
+          text: "입력값이 올바르지 않습니다.",
+          icon: "error",
+        });
+    
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      }
+    
+      // 나머지 코드는 에러가 없는 경우에만 실행됩니다.
     
       axios
         .post('http://localhost:8888/api/account/insert', newAccount)
         .then((response) => {
           swal
-              .fire({
-                title: "회원 추가 완료",
-                text: "회원이 추가되었습니다.",
-                icon: "success",
-                timer: 1000,
-                timerProgressBar: true,
+            .fire({
+              title: "거래처 추가 완료",
+              text: "거래처가 추가되었습니다.",
+              icon: "success",
+              timer: 1000,
+              timerProgressBar: true,
     
-                didOpen: () => {
-                  swal.showLoading();
-                  const b = swal.getHtmlContainer().querySelector("b");
-                  timerInterval = setInterval(() => {
-                    b.textContent = swal.getTimerLeft();
-                  }, 1000);
-                },
-                willClose: () => {
-                  clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
-                },
-              });
-
+              didOpen: () => {
+                swal.showLoading();
+                const b = swal.getHtmlContainer().querySelector("b");
+                timerInterval = setInterval(() => {
+                  b.textContent = swal.getTimerLeft();
+                }, 1000);
+              },
+              willClose: () => {
+                clearInterval(timerInterval); // 타이머가 끝날 때 clearInterval 호출
+              },
+            });
+    
           axios.get('http://localhost:8888/api/account/list').then(updateAccountList);
           setIsModalOpen(false);
-          
         })
         .catch((error) => {
           console.error(error);
         });
     };
+    
 
     // DELETE axios
     const confirmDeleteAccount = async () => {
@@ -523,6 +545,18 @@ const Account = () => {
                     });
                     setContactNumberError(isError);
                 }}
+                onBlur={(e) => {
+                  // 이 부분은 포커스가 빠져나갈 때의 로직
+                  const value = e.target.value;
+                  if (value.length === 11) {
+                      // 입력값이 11자리일 때만 하이픈(-) 추가
+                      const formattedNumber = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7)}`;
+                      setNewAccount((prevAccount) => ({
+                          ...prevAccount,
+                          contactNumber: formattedNumber
+                      }));
+                  }
+                }}
                 fullWidth
                 margin="normal"
                 required
@@ -544,7 +578,19 @@ const Account = () => {
                       setBusinessNumberError(false);
                   });
                   setBusinessNumberError(isError);
-              }}
+                }}
+                onBlur={(e) => {
+                  // 이 부분은 포커스가 빠져나갈 때의 로직
+                  const value = e.target.value;
+                  if (value.length === 10) {
+                      // 입력값이 10자리일 때만 하이픈(-) 추가
+                      const formattedNumber = `${value.slice(0, 3)}-${value.slice(3, 5)}-${value.slice(5, 10)}`;
+                      setNewAccount((prevAccount) => ({
+                          ...prevAccount,
+                          businessNumber: formattedNumber // businessNumber로 수정
+                      }));
+                  }
+                }}
                 fullWidth
                 margin="normal"
                 required
