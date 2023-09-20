@@ -17,6 +17,5 @@ const loginResponseReducer = createSlice({
   }
 });
 
-export const { success } = loginResponseReducer.actions;
-export const { close } = loginResponseReducer.actions;
+export const { success, close } = loginResponseReducer.actions;
 export default loginResponseReducer.reducer;
