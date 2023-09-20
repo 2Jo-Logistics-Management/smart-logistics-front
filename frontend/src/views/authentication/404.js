@@ -22,7 +22,7 @@ const Error = () => (
       <Typography align="center" variant="h1" mb={4}>
       </Typography>
       <Typography align="center" variant="h4" mb={4}>
-        This page you are looking for could not be found.
+        해당 페이지는 없는 페이지입니다.
       </Typography>
       <Button color="primary" variant="contained" component={Link} to="/auth/login" disableElevation>
         Go Back to page
