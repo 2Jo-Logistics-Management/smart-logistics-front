@@ -15,6 +15,7 @@ import {
   MenuItem,
   FormControl,
   styled,
+  Chip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Edit, Done, GifBox } from "@mui/icons-material";
@@ -127,7 +128,7 @@ const ReceiveComponents2 = (props) => {
     }
   }, [props.modalSelectedProducts]);
 
-  const handleEdit = (receiveCode, receiveItemNo) => {
+  const handleEdit = (receiveCode, receiveItemNo, porderCode, porderItemNo) => {
     setEditMode((prevState) => ({
       ...prevState,
       [`${receiveCode}-${receiveItemNo}`]: !prevState[`${receiveCode}-${receiveItemNo}`],
@@ -152,7 +153,14 @@ const ReceiveComponents2 = (props) => {
           icon: "warning",
         });
       } else if (receiveCounts !== "" || selectWarehouse !== "") {
-        receiveItemUpdateAxios(receiveCode, receiveItemNo, receiveCounts, selectWarehouse);
+        receiveItemUpdateAxios(
+          receiveCode,
+          receiveItemNo,
+          receiveCounts,
+          selectWarehouse,
+          porderCode,
+          porderItemNo
+        );
         setModifyCode(receiveCode);
       }
       setModifyReceiveItemData(null);
@@ -278,6 +286,7 @@ const ReceiveComponents2 = (props) => {
           alignItems: "center",
           mb: 2,
           padding: "10px",
+          height: "calc(auto)",
         }}
       >
         {addPOrderProducts.length !== 0 && (
@@ -565,6 +574,8 @@ const ReceiveComponents2 = (props) => {
                           발주순번: {product.porderItemNo}
                           <br />
                           발주상태: {product.porderState}
+                          <br />
+                          발주수량: {product.porderCount}
                         </div>
                       }
                     >
@@ -574,26 +585,45 @@ const ReceiveComponents2 = (props) => {
                     </Tooltip>
                   </StyledTableCell>
                   <StyledTableCell align="center">
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={
-                        editMode[`${product.receiveCode}-${product.receiveItemNo}`] ? (
-                          <Done />
-                        ) : (
-                          <Edit />
-                        )
-                      }
-                      onClick={() => handleEdit(product.receiveCode, product.receiveItemNo)}
-                      disabled={
-                        product.porderState === "완료" ||
-                        String(modifyReceiveItemData) !== String(product.receiveCode)
-                      }
-                    >
-                      {editMode[`${product.receiveCode}-${product.receiveItemNo}`]
-                        ? "Save"
-                        : "Edit"}
-                    </Button>
+                    {product.porderState === "완료" ? (
+                      <Tooltip title="발주적용이 완료되어 수정 및 삭제가 불가합니다">
+                        <Chip
+                          size="small"
+                          label="완료"
+                          sx={{
+                            px: "4px",
+                            color: "white", // 텍스트 색상
+                            backgroundColor: (theme) => {
+                              return theme.palette.error.main;
+                            },
+                          }}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={
+                          editMode[`${product.receiveCode}-${product.receiveItemNo}`] ? (
+                            <Done />
+                          ) : (
+                            <Edit />
+                          )
+                        }
+                        onClick={() =>
+                          handleEdit(
+                            product.receiveCode,
+                            product.receiveItemNo,
+                            product.porderCode,
+                            product.porderItemNo
+                          )
+                        }
+                      >
+                        {editMode[`${product.receiveCode}-${product.receiveItemNo}`]
+                          ? "저장"
+                          : "수정"}
+                      </Button>
+                    )}
                   </StyledTableCell>
                 </StyledTableRow>
               ))}

@@ -12,11 +12,12 @@ import {
   Checkbox,
   Pagination,
   styled,
+  Tooltip,
+  Chip,
 } from "@mui/material";
 import { IconHammer } from "@tabler/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import { tableCellClasses } from "@mui/material/TableCell";
 import DashboardCard from "../../../components/shared/DashboardCard";
@@ -39,6 +40,7 @@ import ReceiveModal from "./modal/ReceiveModal";
 import pOrderWaitIngAxios from "src/axios/pOrderWaitIngAxios";
 import receiveItemDeleteAxios from "src/axios/receiveItemDeleteAxios";
 import receiveUpdateAxios from "src/axios/receiveUpdateAxios";
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: "#505e82",
@@ -61,6 +63,7 @@ const StyledTableRow = styled(TableRow)(({ theme, receiveCode, modifyReceive }) 
     border: 0,
   },
 }));
+
 axios.defaults.withCredentials = true;
 
 const ReceiveComponents = () => {
@@ -89,8 +92,10 @@ const ReceiveComponents = () => {
   const [childReceiveItem, setChildReceiveItem] = useState([]);
   const products = JSON.parse(JSON.stringify(productsData));
   const realProducts = products?.data || [];
-  const [selectedStartDate, setSelectedStartDate] = useState(null);
-  const [selectedEndDate, setSelectedEndDate] = useState(null);
+  const [selectedStartDate, setSelectedStartDate] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
   const receiveModalState = useSelector((state) => state.receiveModal);
   const [editMode, setEditMode] = useState({});
   const [searchManager, setSearchManager] = useState("");
@@ -162,15 +167,6 @@ const ReceiveComponents = () => {
     }
   }, [selectedProducts]);
 
-  useEffect(() => {
-    if (selectedStartDate === null) {
-      setSelectedStartDate(new Date());
-    }
-    if (selectedEndDate === null) {
-      setSelectedEndDate(new Date());
-    }
-  }, []);
-
   const handleClick = () => {
     let timerInterval;
     const findDateStart = new Date(selectedStartDate);
@@ -218,40 +214,6 @@ const ReceiveComponents = () => {
     }
   };
 
-  const handleModify = () => {
-    if (selectedProducts.length === 0) {
-      swal.fire({
-        title: "선택 사항 없음",
-        text: "수정할 입고를 선택해주세요",
-        icon: "warning",
-      });
-    } else if (selectedProducts.length >= 2) {
-      swal.fire({
-        title: "선택 사항 초과",
-        text: "수정할 입고를 하나씩 선택해주세요",
-        icon: "warning",
-      });
-    } else if (selectedProducts.length === 1) {
-      swal
-        .fire({
-          title: "정말로 수정하시겠습니까?",
-          text: "해당하는 데이터의 창고재고도 함께 수정됩니다.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085",
-          confirmButtonText: "수정",
-          cancelButtonText: "취소",
-        })
-        .then((result) => {
-          if (result.isConfirmed) {
-            setModifyReceiveCode(selectedProducts);
-          }
-        });
-    }
-    setModifyReceiveCode("null");
-  };
-
   const handleDelete = () => {
     swal
       .fire({
@@ -268,8 +230,10 @@ const ReceiveComponents = () => {
         if (result.isConfirmed) {
           if (selectedProducts.length > 0) {
             receiveDeleteAxios(selectedProducts);
-            dispatch(receiveListAll());
             setReceiveItemData([]);
+            // dispatch(receiveListAll());
+            console.log("삭제프로세스완료");
+            window.location.reload();
           }
           if (childReceiveItem.length > 0) {
             receiveItemDeleteAxios(childReceiveItem);
@@ -475,6 +439,8 @@ const ReceiveComponents = () => {
                 renderInput={(props) => <TextField {...props} />}
                 slotProps={{ textField: { size: "small" } }}
                 sx={{ mr: 2 }}
+                minDate={new Date("2000-01-01")}
+                maxDate={new Date("2100-12-31")}
               />
               <DatePicker
                 label="조회 종료일을 입력해주세요"
@@ -482,6 +448,8 @@ const ReceiveComponents = () => {
                 onChange={(newDate) => setSelectedEndDate(newDate)}
                 renderInput={(props) => <TextField {...props} />}
                 slotProps={{ textField: { size: "small" } }}
+                minDate={new Date("2000-01-01")}
+                maxDate={new Date("2100-12-31")}
               />
             </LocalizationProvider>
           </Box>
@@ -509,16 +477,6 @@ const ReceiveComponents = () => {
             </Button>
             <Button
               variant="contained"
-              color="info"
-              size="large"
-              startIcon={<AutoFixHighOutlinedIcon />}
-              onClick={handleModify}
-              sx={{ mr: 2 }}
-            >
-              수정
-            </Button>
-            <Button
-              variant="contained"
               color="error"
               size="large"
               startIcon={<DeleteIcon />}
@@ -535,6 +493,7 @@ const ReceiveComponents = () => {
           sx={{
             overflow: "auto",
             maxHeight: "550px",
+            height: "calc(40vh)",
           }}
         >
           <Table
@@ -545,8 +504,15 @@ const ReceiveComponents = () => {
               mb: 0,
             }}
           >
-            <TableHead>
-              <StyledTableRow>
+            <TableHead sx={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "#fff" }}>
+              <StyledTableRow
+                sx={{
+                  height: "10px",
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  },
+                }}
+              >
                 <StyledTableCell style={{ width: "10%" }}></StyledTableCell>
                 <StyledTableCell style={{ width: "30%" }}>
                   <Typography variant="h6" fontWeight={600}>
@@ -568,24 +534,26 @@ const ReceiveComponents = () => {
             </TableHead>
             <TableBody
               sx={{
-                mt: 0.5,
-                mb: 0.5,
+                mt: 0,
+                mb: 0,
               }}
             >
-              {currentItems.map((realProduct) => (
+              {currentItems.map((realProduct, index) => (
                 <StyledTableRow
                   sx={{
                     "&:hover": {
-                      backgroundColor: "#f5f5f5",
+                      backgroundColor: "#c7d4e8",
                       cursor: "pointer",
                     },
                     backgroundColor:
                       selectedRow === realProduct.receiveCode
-                        ? "rgba(0, 0, 0, 0.04)"
+                        ? "#c7d4e8"
                         : newReceive === realProduct.receiveCode ||
                           modifyReceive === realProduct.receiveCode
-                        ? "rgba(255, 255, 204, 0.6)"
-                        : "transparent",
+                        ? "#e7edd1"
+                        : index % 2 !== 0
+                        ? "#f3f3f3"
+                        : "white",
                   }}
                   key={realProduct.receiveCode}
                   receiveCode={realProduct.receiveCode}
@@ -595,21 +563,37 @@ const ReceiveComponents = () => {
                   <StyledTableCell
                     align="center"
                     sx={{
-                      padding: "3px",
+                      padding: "0px",
                     }}
                   >
-                    <Checkbox
-                      checked={selectedProducts.includes(realProduct.receiveCode)}
-                      onChange={(event) => handleCheckboxChange(event, realProduct.receiveCode)}
-                    />
+                    <div key={realProduct.receiveCode}>
+                      <Tooltip
+                        title={
+                          realProduct.cmpCount !== 0
+                            ? "발주완료된 항목이 있어 삭제가 불가합니다."
+                            : ""
+                        }
+                      >
+                        <Checkbox
+                          checked={selectedProducts.includes(realProduct.receiveCode)}
+                          onChange={(event) => handleCheckboxChange(event, realProduct.receiveCode)}
+                          disabled={realProduct.cmpCount !== 0}
+                          sx={{
+                            "&.Mui-disabled": {
+                              pointerEvents: "auto",
+                            },
+                          }}
+                        />
+                      </Tooltip>
+                    </div>
                   </StyledTableCell>
                   <StyledTableCell align="left">
-                    <Typography variant="subtitle2" fontWeight={400}>
+                    <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
                       {realProduct.receiveCode}
                     </Typography>
                   </StyledTableCell>
                   <StyledTableCell align="left">
-                    <Typography variant="subtitle2" fontWeight={400}>
+                    <Typography variant="subtitle2" fontWeight={600}>
                       {editMode[`${realProduct.receiveCode}`] ? (
                         <TextField
                           size="small"
@@ -631,38 +615,57 @@ const ReceiveComponents = () => {
                   </StyledTableCell>
 
                   <StyledTableCell align="left">
-                    <Typography variant="subtitle2" fontWeight={400}>
+                    <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
                       {editMode[`${realProduct.receiveCode}`] ? (
                         <LocalizationProvider dateAdapter={AdapterDateFns}>
                           <DatePicker
                             label="수정날짜"
                             value={
                               editedDates[`${realProduct.receiveCode}`] ||
-                              new Date(realProduct.receiveDate.split(" ")[0])
+                              new Date((realProduct.receiveDate?.split(" ") || [])[0])
                             }
                             slotProps={{ textField: { size: "small" } }}
                             onChange={(newDate) => {
                               setEditedDates(newDate);
                             }}
                             renderInput={(params) => <TextField {...params} />}
+                            minDate={new Date("2000-01-01")}
+                            maxDate={new Date("2100-12-31")}
                           />
                         </LocalizationProvider>
                       ) : (
-                        realProduct.receiveDate.split(" ")[0]
+                        (realProduct.receiveDate?.split(" ") || [])[0]
                       )}
                     </Typography>
                   </StyledTableCell>
 
                   <StyledTableCell align="center">
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={editMode[`${realProduct.receiveCode}`] ? <Done /> : <Edit />}
-                      onClick={() => handleEdit(realProduct.receiveCode)}
-                      disabled={String(modifyReceiveCode) !== String(realProduct.receiveCode)}
-                    >
-                      {editMode[`${realProduct.receiveCode}`] ? "Save" : "Edit"}
-                    </Button>
+                    {realProduct.cmpCount !== 0 &&
+                    realProduct.ingCount === 0 &&
+                    realProduct.waitCount === 0 ? (
+                      <Tooltip title="발주적용이 완료되어 수정 및 삭제가 불가합니다">
+                        <Chip
+                          size="small"
+                          label="완료"
+                          sx={{
+                            px: "4px",
+                            color: "white", // 텍스트 색상
+                            backgroundColor: (theme) => {
+                              return theme.palette.error.main;
+                            },
+                          }}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={editMode[`${realProduct.receiveCode}`] ? <Done /> : <Edit />}
+                        onClick={() => handleEdit(realProduct.receiveCode)}
+                      >
+                        {editMode[`${realProduct.receiveCode}`] ? "저장" : "수정"}
+                      </Button>
+                    )}
                   </StyledTableCell>
                 </StyledTableRow>
               ))}
