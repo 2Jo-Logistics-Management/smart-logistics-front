@@ -566,11 +566,11 @@ const PorderComponets2 = () => {
         PaperProps={{
           style: {
             width: '70%',
-            height: '67%',
+            height: '52%',
             overflowY: 'auto', // 필요한 경우 스크롤을 허용
+            
           },
         }}>
-        <DialogTitle>품목추가</DialogTitle>
         <DialogContent>
           <h2>품목선택리스트</h2>
           <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
