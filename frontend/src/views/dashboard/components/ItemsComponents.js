@@ -389,7 +389,7 @@ const Item = () => {
             </Button>
           </Box>
         </Box>
-        <Box sx={{ overflow: "auto", maxHeight: "650px" }}>
+        <Box sx={{ overflow: "auto", maxHeight: "650px" ,height: 'calc(45vh)' }}>
           <TableContainer component={Paper}>
             <Table
               aria-label="customized table"

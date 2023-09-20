@@ -277,7 +277,7 @@ const PorderModal = () => {
                     }}
                   >
                     <TableCell>{accountList.accountName}</TableCell>
-                    <TableCell>{accountList.accountNo}</TableCell>
+                    <TableCell align="right">{accountList.accountNo}</TableCell>
                     <TableCell >{accountList.representative}</TableCell>
                     <TableCell >{accountList.contactNumber}</TableCell>
                     <TableCell >{accountList.businessNumber}</TableCell>
@@ -335,11 +335,11 @@ const PorderModal = () => {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
                     }
                   }}>
-                    <TableCell >{item.itemCode}</TableCell>
+                    <TableCell align="right">{item.itemCode}</TableCell>
                     <TableCell >{item.itemName}</TableCell>
                     <TableCell >{item.spec}</TableCell>
                     <TableCell >{item.unit}</TableCell>
-                    <TableCell >{item.itemPrice}</TableCell>
+                    <TableCell align="right">{item.itemPrice}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -414,10 +414,10 @@ const PorderModal = () => {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
                     }
                   }}>
-                    <TableCell sx={{ padding: 1 }}>{item.itemCode}</TableCell>
+                    <TableCell sx={{ padding: 1 }} align="right">{item.itemCode}</TableCell>
                     <TableCell sx={{ padding: 1 }}>{item.itemName}</TableCell>
                     <TableCell sx={{ padding: 1 }}>{item.spec}</TableCell>
-                    <TableCell>
+                    <TableCell align="right">
                       {editedData.itemCode === item.itemCode ? (
                         <input
                           type="itemCode"
@@ -430,7 +430,7 @@ const PorderModal = () => {
                         item.pOrderPrice
                       )}
                     </TableCell>
-                    <TableCell sx={{ padding: 1 }}>
+                    <TableCell sx={{ padding: 1 }} align="right">
                       {editedData.itemCode === item.itemCode ? ( // 현재 행이 수정 중인 행이라면
                         <input
                           type="itemCode"
@@ -443,7 +443,7 @@ const PorderModal = () => {
                         item.pOrderCount
                       )}
                     </TableCell>
-                    <TableCell sx={{ padding: 1 }}>{editedData.itemCode === item.itemCode ? (
+                    <TableCell sx={{ padding: 1 }} align="right">{editedData.itemCode === item.itemCode ? (
                       <span>
                       {editedData.pOrderPrice * editedData.pOrderCount}
                     </span>

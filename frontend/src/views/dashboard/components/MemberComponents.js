@@ -24,7 +24,7 @@
   import { useSelector } from 'react-redux';
   import swal from "sweetalert2";
   import DashboardCard from '../../../components/shared/DashboardCard';
-  import { IconCopy, IconSearch } from '@tabler/icons';
+  import { IconCopy, IconUsers, IconSearch } from '@tabler/icons';
   import styled from 'styled-components';
   import DeleteIcon from "@mui/icons-material/Delete";
   import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
@@ -511,17 +511,16 @@
               onChange={(e) => setEditingMember({ ...editingMember, memberId: e.target.value })}
               fullWidth
               margin="normal"
-              required
-              
+              disabled
             />
             <TextField
               label="비밀번호"
               variant="outlined"
-              type='text'
               value={editingMember?.password || ''}
               onChange={(e) => setEditingMember({ ...editingMember, password: e.target.value })}
               fullWidth
               margin="normal"
+              type="password"
               required
             />
 
@@ -719,7 +718,7 @@
         <>
           <DashboardCard>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2, padding: "10px",}}>
-                  <IconCopy />
+                  <IconUsers />
                   <Typography variant="h4" component="div" sx={{ ml: 1 }}>
                       사원 관리
                   </Typography>
@@ -795,7 +794,7 @@
                   </Button>
                 </Box>
               </Box>
-              <Box sx={{ overflow: 'auto', maxHeight: '650px'}}>
+              <Box sx={{ overflow: 'auto', height:"calc(40vh)", maxHeight: '650px'}}>
                 <TableContainer component={Paper}>
                   <Table
                   aria-label="customized table"

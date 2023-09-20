@@ -405,7 +405,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Typography variant="subtitle2" fontWeight={400} align="left">
+                        <Typography variant="subtitle2" fontWeight={400} align="center">
                           <Chip
                             size="small"
                             label={state}
@@ -563,7 +563,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                           {product.porderItemPrice}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell align="left">
+                      <StyledTableCell align="center">
                         <Chip
                           size="small"
                           label={product.porderState}

@@ -169,7 +169,7 @@ const ItemModifyModal = (props) => {
             required
           />
           <TextField
-            label="가격"
+            label="단가"
             variant="outlined"
             type="text"
             onInput={(e) => {

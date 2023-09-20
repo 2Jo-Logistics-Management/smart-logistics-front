@@ -15,7 +15,7 @@ import {
   Tooltip,
   Chip,
 } from "@mui/material";
-import { IconHammer } from "@tabler/icons";
+import { IconReceipt } from "@tabler/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
@@ -390,7 +390,7 @@ const ReceiveComponents = () => {
             padding: "10px",
           }}
         >
-          <IconHammer />
+          <IconReceipt />
           <Typography variant="h4" component="div" sx={{ ml: 1 }}>
             입고 관리
           </Typography>

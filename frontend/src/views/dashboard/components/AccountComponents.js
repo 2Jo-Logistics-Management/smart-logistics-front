@@ -20,7 +20,7 @@ import {
 import { tableCellClasses } from "@mui/material/TableCell";
 import swal from "sweetalert2";
 import DashboardCard from '../../../components/shared/DashboardCard';
-import { IconCopy, IconSearch } from '@tabler/icons';
+import { IconTypography, IconSearch } from '@tabler/icons';
 import styled from 'styled-components';
 import PageviewOutlinedIcon from "@mui/icons-material/PageviewOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -613,9 +613,9 @@ const Account = () => {
         <>
         <DashboardCard>
             <Box sx={{ display: "flex", alignItems: "center", mb: 2, padding: "10px",}}>
-              <IconCopy />
+              <IconTypography />
               <Typography variant="h4" component="div" sx={{ ml: 1 }}>
-                  거래처관리
+                  거래처 관리
               </Typography>
               </Box>
               <Box
@@ -689,7 +689,7 @@ const Account = () => {
                   </Button>
               </Box>
             </Box>
-            <Box sx={{ overflow: 'auto', maxHeight: '650px'}}>
+            <Box sx={{ overflow: 'auto', maxHeight: '650px', height: 'calc(45vh)'}}>
               <TableContainer component={Paper}>
                 <Table
                 aria-label="customized table"

@@ -565,7 +565,7 @@ const ReceiveComponents2 = (props) => {
                       </FormControl>
                     </Typography>
                   </StyledTableCell>
-                  <StyledTableCell align="center">
+                  <StyledTableCell align="left">
                     <Tooltip
                       title={
                         <div>

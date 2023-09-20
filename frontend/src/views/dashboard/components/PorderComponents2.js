@@ -394,7 +394,8 @@ const PorderComponets2 = () => {
                   sx={{
                     backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
                     '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
+                      backgroundColor: "#c7d4e8",
+                      cursor: "pointer",
                     }
                   }} 
                 >

@@ -141,6 +141,7 @@ const Profile = () => {
                 variant="outlined"
                 fullWidth
                 margin="normal"
+                type='password'
                 value={memberData.password}
               />
             </div>

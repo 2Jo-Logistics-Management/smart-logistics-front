@@ -431,7 +431,8 @@ const PorderComponets = () => {
                 <StyledTableRow sx={{
                   height: '10px'
                   , '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                    backgroundColor: "#c7d4e8",
+                        cursor: "pointer",
                   }
                 }} >
                   <StyledTableCell>
@@ -478,7 +479,8 @@ const PorderComponets = () => {
                       ? 'lightyellow'
                       : (index % 2 !== 0 ? "#f3f3f3" : "white"),
                     '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      backgroundColor: "#c7d4e8",
+                      cursor: "pointer",
                     }
                   }}
                     onClick={() => { setTableRowClickValue(realProduct.porderCode) }}
