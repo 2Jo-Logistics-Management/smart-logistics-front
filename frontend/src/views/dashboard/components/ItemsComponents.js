@@ -214,6 +214,7 @@ const Item = () => {
     dispatch(
       fetchSearchItemsFromApi(searchItemCode, searchItemName, searchItemPrice)
     );
+    dispatch(changeCurrentPage(0))
     swal.fire({
       title: "입고물품 조회중",
       html: "잠시만 기다려주세요",

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Typography,
   Box,
@@ -11,29 +11,34 @@ import {
   TextField,
   Button,
   Checkbox,
-  Dialog, DialogContent, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   TableFooter,
   styled,
-} from '@mui/material';
-import { Edit, Done } from '@mui/icons-material';
-import DashboardCard from '../../../components/shared/DashboardCard';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import axios from 'axios';
-import { Pagination } from '@mui/material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import swal from 'sweetalert2'
-import { toggleCheckbox } from 'src/redux/slices/pOrderInfoCheckboxReducer';
-import { REMOVE_ALL_SELECTED_PRODUCTS } from 'src/redux/slices/selectedProductsReducer';
+  Chip,
+} from "@mui/material";
+import { Edit, Done } from "@mui/icons-material";
+import DashboardCard from "../../../components/shared/DashboardCard";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import axios from "axios";
+import { Pagination } from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import swal from "sweetalert2";
+import { toggleCheckbox } from "src/redux/slices/pOrderInfoCheckboxReducer";
+import { REMOVE_ALL_SELECTED_PRODUCTS } from "src/redux/slices/selectedProductsReducer";
 import { tableCellClasses } from "@mui/material/TableCell";
-import { reload } from 'src/redux/slices/pOrderListReducer';
-import { seletedPOrderList } from '../../../redux/thunks/SelectedPOrderList';
+import { reload } from "src/redux/slices/pOrderListReducer";
+import { seletedPOrderList } from "../../../redux/thunks/SelectedPOrderList";
 const PorderComponets2 = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [visibleProducts, setVisibleProducts] = useState([]);
   const [editMode, setEditMode] = useState({});
   const [tempProducts, setTempProducts] = useState([]);
   const [selectedDateTime, setSelectedDateTime] = useState(null);
-  const products = useSelector((state) => state.selectedPOrderList.selectedPOrderList)
+  const products = useSelector(
+    (state) => state.selectedPOrderList.selectedPOrderList
+  );
   const [selectedItemName, setSeletedItemName] = useState("");
   const [pOrderCode, setPOrderCode] = useState("");
   const [lastPorderItemNo, setLastPorderItemNo] = useState(null);
@@ -44,43 +49,52 @@ const PorderComponets2 = () => {
   axios.defaults.withCredentials = true;
   const dispatch = useDispatch();
 
-
   useEffect(() => {
     if (products.data) {
       const newVisibleProducts = products.data.slice(0, visibleCount);
-      if (JSON.stringify(newVisibleProducts) !== JSON.stringify(visibleProducts)) {
+      if (
+        JSON.stringify(newVisibleProducts) !== JSON.stringify(visibleProducts)
+      ) {
         setVisibleProducts(newVisibleProducts);
         setDataUpdated(true);
       }
     } else {
       setVisibleProducts([]);
     }
-  }, [products.data, visibleCount, visibleProducts, dispatch, visibleProducts, isDataUpdated]);
+  }, [
+    products.data,
+    visibleCount,
+    visibleProducts,
+    dispatch,
+    visibleProducts,
+    isDataUpdated,
+  ]);
 
   useEffect(() => {
     if (visibleProducts && visibleProducts.length > 0) {
       const realPOrderCode = visibleProducts[0].porderCode;
       setPOrderCode(realPOrderCode);
     }
-  }, [visibleProducts, dispatch])
+  }, [visibleProducts, dispatch]);
 
   useEffect(() => {
     if (reloadFlag === true) {
-      dispatch(reload(false))
-      dispatch(seletedPOrderList(pOrderCode))
+      dispatch(reload(false));
+      dispatch(seletedPOrderList(pOrderCode));
     }
-  }, [reloadFlag])
+  }, [reloadFlag]);
 
-
-
-
-  const selectedProducts = useSelector((state) => state.pOrderInfoCheckbox.selectedCheckBox);
-  const removeCheckboxPOrder = useSelector((state) => state.selectedProduct.selectedProduct);
+  const selectedProducts = useSelector(
+    (state) => state.pOrderInfoCheckbox.selectedCheckBox
+  );
+  const removeCheckboxPOrder = useSelector(
+    (state) => state.selectedProduct.selectedProduct
+  );
 
   const handleCheckboxChange = (selectedPOrder) => {
     if (removeCheckboxPOrder) {
       dispatch(REMOVE_ALL_SELECTED_PRODUCTS());
-      dispatch(toggleCheckbox(selectedPOrder))
+      dispatch(toggleCheckbox(selectedPOrder));
     }
   };
 
@@ -99,12 +113,12 @@ const PorderComponets2 = () => {
     [`&.${tableCellClasses.head}`]: {
       backgroundColor: "#505e82",
       color: theme.palette.common.white,
-      textAlign: 'center',
+      textAlign: "center",
     },
     [`&.${tableCellClasses.body}`]: {
       fontSize: 10,
       minWidth: 10,
-      textAlign: 'center'
+      textAlign: "center",
     },
   }));
 
@@ -115,18 +129,17 @@ const PorderComponets2 = () => {
     },
   }));
 
-
   function formatDate(receiveDeadline) {
-    const { format } = require('date-fns');
-    const formattedDate = format(receiveDeadline, 'yyyy-MM-dd');
-    return formattedDate
+    const { format } = require("date-fns");
+    const formattedDate = format(receiveDeadline, "yyyy-MM-dd");
+    return formattedDate;
   }
   const pOrderitemInsert = () => {
     if (noAddState === true) {
       swal.fire({
-        title: '발주추가 실패',
-        text: '발주가 완료되어 추가할 수 없습니다',
-        icon: 'error',
+        title: "발주추가 실패",
+        text: "발주가 완료되어 추가할 수 없습니다",
+        icon: "error",
         showConfirmButton: false,
       });
       return;
@@ -141,7 +154,8 @@ const PorderComponets2 = () => {
       pOrderCount: pOrderCount,
     };
 
-    axios.post('http://localhost:8888/api/porder-item/insert', newProduct)
+    axios
+      .post("http://localhost:8888/api/porder-item/insert", newProduct)
       .then((response) => {
         // 서버 응답에서 할당된 porderItemNo를 가져옵니다.
 
@@ -154,9 +168,9 @@ const PorderComponets2 = () => {
         // 나머지 초기화 및 알림 처리
         setDataUpdated(true);
         swal.fire({
-          title: '발주추가 성공',
-          text: '데이터를 모두 입력해주시기 바랍니다',
-          icon: 'success',
+          title: "발주추가 성공",
+          text: "데이터를 모두 입력해주시기 바랍니다",
+          icon: "success",
           showConfirmButton: false,
         });
         setItemCode("");
@@ -164,7 +178,7 @@ const PorderComponets2 = () => {
         setPOrderItemPrice("");
         setPOrderPrice("");
         setPOrderCount("");
-        setItemName("")
+        setItemName("");
         setPOrderCode(pOrderCode);
         dispatch(seletedPOrderList(pOrderCode));
       })
@@ -172,9 +186,6 @@ const PorderComponets2 = () => {
         console.error(error);
       });
   };
-
-
-
 
   // 모달창으로 품목 가져오기
 
@@ -198,36 +209,40 @@ const PorderComponets2 = () => {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:8888/api/item/list')
-      .then(response => {
+    axios
+      .get("http://localhost:8888/api/item/list")
+      .then((response) => {
         const fetchedItems = response.data.data;
         setItems(fetchedItems);
       })
-      .catch(error => {
-        console.error('첫번째 options에서 에러 발생', error);
+      .catch((error) => {
+        console.error("첫번째 options에서 에러 발생", error);
       });
   }, []);
   const handleItemSearchClick = (searchData) => {
-    axios.get(`http://localhost:8888/api/item/list?itemName=${searchData}`)
-      .then(response => {
-        const itemSearchData = response.data.data
+    axios
+      .get(`http://localhost:8888/api/item/list?itemName=${searchData}`)
+      .then((response) => {
+        const itemSearchData = response.data.data;
         setItems(itemSearchData);
-      })
-  }
+      });
+  };
 
   // visibleProducts 배열의 마지막 항목의 product.porderItemNo 값을 갱신
   useEffect(() => {
     if (visibleProducts.length > 0) {
-      setLastPorderItemNo((visibleProducts[visibleProducts.length - 1].porderItemNo) + 1);
+      setLastPorderItemNo(
+        visibleProducts[visibleProducts.length - 1].porderItemNo + 1
+      );
     }
   }, [visibleProducts]);
 
-  const [editItemCode, setEditItemCode] = useState('');
-  const [editReceiveDeadLine, setEditReceiveDeadLine] = useState('');
-  const [editPOrderCount, setEditPOrderCount] = useState('');
-  const [editPOrderItemPrice, setEditPOrderItemPrice] = useState('');
-  const [editItemName, setEditItemName] = useState('')
-  const [pOrderItemNo, setPOrderItemNo] = useState('');
+  const [editItemCode, setEditItemCode] = useState("");
+  const [editReceiveDeadLine, setEditReceiveDeadLine] = useState("");
+  const [editPOrderCount, setEditPOrderCount] = useState("");
+  const [editPOrderItemPrice, setEditPOrderItemPrice] = useState("");
+  const [editItemName, setEditItemName] = useState("");
+  const [pOrderItemNo, setPOrderItemNo] = useState("");
 
   const handleRowClick = (item) => {
     setPOrderPrice(item.itemPrice);
@@ -238,22 +253,27 @@ const PorderComponets2 = () => {
     setEditItemCode(item.itemCode);
     setEditPOrderItemPrice(item.itemPrice);
     setIsModalOpen(false);
-  }
+  };
 
   const handleEdit = (productId) => {
-    setEditMode((prevState) => ({ ...prevState, [productId]: !prevState[productId] }));
+    setEditMode((prevState) => ({
+      ...prevState,
+      [productId]: !prevState[productId],
+    }));
     if (editMode[productId]) {
-      const index = tempProducts.findIndex((product) => product.id === productId);
+      const index = tempProducts.findIndex(
+        (product) => product.id === productId
+      );
       const updatedProducts = [...tempProducts];
 
       setTempProducts(updatedProducts);
-
     }
   };
 
-
   const handleChange = (productId, property, value) => {
-    const index = tempProducts.findIndex((product) => product.porderItemNo === productId);
+    const index = tempProducts.findIndex(
+      (product) => product.porderItemNo === productId
+    );
 
     if (index !== -1) {
       const updatedProducts = [...tempProducts];
@@ -272,10 +292,14 @@ const PorderComponets2 = () => {
         pOrderItemPrice: editPOrderItemPrice,
         pOrderCode: pOrderCode,
         receiveDeadline: formatDate(editReceiveDeadLine),
-        pOrderPrice: editPOrderItemPrice
-      }
+        pOrderPrice: editPOrderItemPrice,
+      };
 
-      axios.patch(`http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`, pOrderItemStateModifyDto)
+      axios
+        .patch(
+          `http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`,
+          pOrderItemStateModifyDto
+        )
         .then(() => {
           dispatch(seletedPOrderList(pOrderCode));
           setItemCode("");
@@ -285,23 +309,21 @@ const PorderComponets2 = () => {
           setPOrderPrice("");
           setItemName("");
           setPOrderCode(pOrderCode);
-        })
+        });
     } catch (error) {
       swal.fire({
-        title: '발주수정 실패',
-        text: '데이터를 모두 입력해주시기 바랍니다',
-        icon: 'error',
+        title: "발주수정 실패",
+        text: "데이터를 모두 입력해주시기 바랍니다",
+        icon: "error",
         showConfirmButton: false,
       });
     }
-
-
-  }
+  };
   const [noAddState, setNoAddState] = useState("");
 
   const areAllCompleted = () => {
-    return visibleProducts.every(product => product.porderState === '완료');
-  }
+    return visibleProducts.every((product) => product.porderState === "완료");
+  };
   useEffect(() => {
     const allCompleted = areAllCompleted();
     if (allCompleted) {
@@ -314,18 +336,20 @@ const PorderComponets2 = () => {
   }, [visibleProducts]);
 
   const today = new Date();
-  const formattedToday = today.toISOString().split('T')[0];
+  const formattedToday = today.toISOString().split("T")[0];
   return (
-
     <DashboardCard title="발주내역">
-      <Box sx={{ overflow: 'auto', maxHeight: '400px' }} onScroll={handleScroll}>
-        <Table aria-label="simple table" sx={{ whiteSpace: 'nowrap', mt: 2 }}>
+      <Box
+        sx={{ overflow: "auto", maxHeight: "400px" }}
+        onScroll={handleScroll}
+      >
+        <Table aria-label="simple table" sx={{ whiteSpace: "nowrap", mt: 2 }}>
           <TableHead
             sx={{
-              position: 'sticky',
+              position: "sticky",
               top: 0,
               zIndex: 1,
-              backgroundColor: '#fff',
+              backgroundColor: "#fff",
             }}
           >
             <StyledTableRow>
@@ -343,18 +367,38 @@ const PorderComponets2 = () => {
           <TableBody>
             <TableRow>
               <TableCell></TableCell>
-              <TableCell sx={{ display: "none", textAlign: 'center' }}><TextField value={lastPorderItemNo} /></TableCell>
-              <TableCell style={{ textAlign: 'center' }}><Typography sx={{ fontSize: '15px', fontWeight: '500' }} >준비</Typography></TableCell>
-              <TableCell style={{ textAlign: 'center' }}><TextField value={itemCode} onClick={handleTextFieldClick} /></TableCell>
-              <TableCell style={{ textAlign: 'center' }}>
+              <TableCell sx={{ display: "none", textAlign: "center" }}>
+                <TextField value={lastPorderItemNo} />
+              </TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  label="준비"
+                  sx={{
+                    px: "4px",
+                    color: "white", // 텍스트 색상
+                    backgroundColor: (theme) => {
+                      return theme.palette.primary.main;
+                    } 
+                  }}
+                />
+              </TableCell>
+              <TableCell style={{ textAlign: "right" }}>
+                <TextField
+                  value={itemCode}
+                  onClick={handleTextFieldClick}
+                  size="small"
+                />
+              </TableCell>
+              <TableCell style={{ textAlign: "center" }}>
                 <div
                   sx={{
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    borderBottom: '1px solid #ccc',
-                    padding: '4px 8px',
-                    border: 'none',
-                    textAlign: 'center',
+                    fontSize: "15px",
+                    fontWeight: "500",
+                    borderBottom: "1px solid #ccc",
+                    padding: "4px 8px",
+                    border: "none",
+                    textAlign: "center",
                   }}
                   contentEditable={true}
                   value={itemName}
@@ -363,64 +407,119 @@ const PorderComponets2 = () => {
                   {itemName}
                 </div>
               </TableCell>
-              <TableCell style={{ textAlign: 'Right' }}><TextField type="number" value={pOrderPrice} onChange={(e) => setPOrderPrice(e.target.value)} /></TableCell>
-              <TableCell style={{ textAlign: 'Right' }}><TextField type="number" value={pOrderCount} onChange={(e) => setPOrderCount(e.target.value)} /></TableCell>
-              <TableCell style={{ textAlign: 'Right' }}><Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{pOrderPrice * pOrderCount}</Typography></TableCell>
-              <TableCell style={{ textAlign: 'center' }}>
+              <TableCell style={{ textAlign: "right" }}>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={pOrderPrice}
+                  onChange={(e) => setPOrderPrice(e.target.value)}
+                />
+              </TableCell>
+              <TableCell style={{ textAlign: "right" }}>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={pOrderCount}
+                  onChange={(e) => setPOrderCount(e.target.value)}
+                />
+              </TableCell>
+              <TableCell style={{ textAlign: "right" }}>
+                <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
+                  {pOrderPrice * pOrderCount}
+                </Typography>
+              </TableCell>
+              <TableCell style={{ textAlign: "right" }}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
                     label={`금일 (${formattedToday})`}
                     value={selectedDateTime}
                     onChange={(newDate) => setSelectedDateTime(newDate)}
-                    views={['year', 'month', 'day']}
-                    format='yyyy-MM-dd'
-                    slotProps={{ textField: { variant: 'outlined', size: "small" } }}
+                    views={["year", "month", "day"]}
+                    format="yyyy-MM-dd"
+                    slotProps={{
+                      textField: { variant: "outlined", size: "small" },
+                    }}
                     minDate={new Date()}
-                    maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                    maxDate={new Date("2100-12-31")} // Optional: Restrict selection up to the end date
                   />
                 </LocalizationProvider>
               </TableCell>
-              <TableCell style={{ textAlign: 'center' }}>
-                <Button variant="contained" size="small" onClick={() => pOrderitemInsert()}><Done /></Button>
+              <TableCell style={{ textAlign: "left" }}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => pOrderitemInsert()}
+                >
+                  <Done />
+                </Button>
               </TableCell>
             </TableRow>
             {visibleProducts.length === 0 ? (
               <StyledTableRow>
-                <StyledTableCell colSpan={4} align="center">데이터가 없습니다.</StyledTableCell>
+                <StyledTableCell colSpan={4} align="center">
+                  데이터가 없습니다.
+                </StyledTableCell>
               </StyledTableRow>
             ) : (
               visibleProducts.map((product, index) => (
-                <TableRow key={index}
+                <TableRow
+                  key={index}
                   sx={{
                     backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
-                    '&:hover': {
+                    "&:hover": {
                       backgroundColor: "#c7d4e8",
                       cursor: "pointer",
-                    }
-                  }} 
+                    },
+                  }}
                 >
                   <TableCell sx={{ padding: 2 }}>
                     <Checkbox
                       checked={selectedProducts.includes(product.porderItemNo)}
                       onChange={() => {
-                        handleCheckboxChange(product.porderItemNo)
-                        setPOrderItemState(product.porderState)
+                        handleCheckboxChange(product.porderItemNo);
+                        setPOrderItemState(product.porderState);
                       }}
                     />
                   </TableCell>
                   <TableCell sx={{ padding: 2 }}>
-                    <Typography sx={{ fontSize: '15px', fontWeight: '500' }} >{product.porderState}</Typography>
+                    <Chip
+                      size="small"
+                      label={product.porderState}
+                      sx={{
+                        px: "4px",
+                        color: "white", // 텍스트 색상
+                        backgroundColor: (theme) => {
+                          switch (product.porderState) {
+                            case "준비":
+                              return theme.palette.primary.main;
+                            case "진행 중":
+                              return theme.palette.warning.main;
+                            case "완료":
+                              return theme.palette.error.main;
+                            default:
+                              return "defaultColor"; // 기본 색상
+                          }
+                        },
+                      }}
+                    />
                   </TableCell>
-                  <TableCell sx={{ padding: 2, textAlign: 'right' }}>
+                  <TableCell sx={{ padding: 2, textAlign: "right" }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemCode}
-                        onClick={() => { setIsModalOpen(true) }}
-                        onChange={(e) => {
-                          handleChange(product.porderItemNo, 'itemCode', e.target.value);
-                          setEditItemCode(e.target.value)
-                          setPOrderCode(product.porderCode)
+                        onClick={() => {
+                          setIsModalOpen(true);
                         }}
+                        onChange={(e) => {
+                          handleChange(
+                            product.porderItemNo,
+                            "itemCode",
+                            e.target.value
+                          );
+                          setEditItemCode(e.target.value);
+                          setPOrderCode(product.porderCode);
+                        }}
+                        size="small"
                       />
                     ) : (
                       <Typography variant="subtitle2" fontWeight={600}>
@@ -428,7 +527,7 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell sx={{ padding: 2, textAlign: 'right' }}>
+                  <TableCell sx={{ padding: 2, textAlign: "right" }}>
                     {editMode[product.porderItemNo] ? (
                       <Typography
                         variant="subtitle2"
@@ -437,7 +536,11 @@ const PorderComponets2 = () => {
                         contentEditable
                         suppressContentEditableWarning
                         onBlur={(e) => {
-                          handleChange(product.itemName, 'itemName', e.currentTarget.textContent);
+                          handleChange(
+                            product.itemName,
+                            "itemName",
+                            e.currentTarget.textContent
+                          );
                           setEditItemName(e.currentTarget.textContent);
                           setItemName(product.itemName);
                         }}
@@ -451,15 +554,20 @@ const PorderComponets2 = () => {
                     )}
                   </TableCell>
 
-                  <TableCell style={{ textAlign: 'right', padding: 2 }}>
+                  <TableCell style={{ textAlign: "right", padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         type="number"
                         value={editPOrderItemPrice}
                         onChange={(e) => {
-                          handleChange(product.porderItemNo, 'porderPrice', e.target.value)
-                          setEditPOrderItemPrice(e.target.value)
+                          handleChange(
+                            product.porderItemNo,
+                            "porderPrice",
+                            e.target.value
+                          );
+                          setEditPOrderItemPrice(e.target.value);
                         }}
+                        size="small"
                       />
                     ) : (
                       <Typography variant="subtitle2" fontWeight={600}>
@@ -467,16 +575,20 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell style={{ textAlign: 'right', padding: 2 }}>
+                  <TableCell style={{ textAlign: "right", padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         type="number"
                         value={editPOrderCount}
                         onChange={(e) => {
-                          handleChange(product.porderItemNo, 'porderCount', e.target.value)
-                          setEditPOrderCount(e.target.value)
-
+                          handleChange(
+                            product.porderItemNo,
+                            "porderCount",
+                            e.target.value
+                          );
+                          setEditPOrderCount(e.target.value);
                         }}
+                        size="small"
                       />
                     ) : (
                       <Typography variant="subtitle2" fontWeight={600}>
@@ -484,72 +596,70 @@ const PorderComponets2 = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell style={{ textAlign: 'right', padding: 2 }}>
+                  <TableCell style={{ textAlign: "right" }}>
                     {editMode[product.porderItemNo] ? (
                       <Typography variant="subtitle2" fontWeight={600}>
-                        {editPOrderItemPrice * editPOrderCount}</Typography>
+                        {editPOrderItemPrice * editPOrderCount}
+                      </Typography>
                     ) : (
                       <Typography variant="subtitle2" fontWeight={600}>
-                        {(+product.porderCount) * (+product.porderPrice)}
+                        {+product.porderCount * +product.porderPrice}
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell sx={{ padding: 2 }}>
+                  <TableCell style={{ textAlign: "right" }}>
                     {editMode[product.porderItemNo] ? (
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
                         <DatePicker
                           label={`금일 (${formattedToday})`}
                           value={selectedDateTime}
-                          onChange={(newDate) => setEditReceiveDeadLine(newDate)}
-                          views={['year', 'month', 'day']}
-                          format='yyyy-MM-dd'
-                          slotProps={{ textField: { variant: 'outlined', size: "small" } }}
+                          onChange={(newDate) =>
+                            setEditReceiveDeadLine(newDate)
+                          }
+                          views={["year", "month", "day"]}
+                          format="yyyy-MM-dd"
+                          slotProps={{
+                            textField: { variant: "outlined", size: "small" },
+                          }}
                           renderInput={(props) => <TextField {...props} />}
                           minDate={new Date()}
-                          maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                          maxDate={new Date("2100-12-31")} // Optional: Restrict selection up to the end date
                         />
                       </LocalizationProvider>
-                    )
-                      : (
-                        <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{product.receiveDeadline}</Typography>
-                      )
-                    }
+                    ) : (
+                      <Typography sx={{ fontSize: "15px", fontWeight: "500" }}>
+                        {product.receiveDeadline}
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell sx={{ padding: 2 }}>
-                    {product.porderState !== "준비" ?
-                      (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<Done />}
-                        />
-                      )
-                      : (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={
-                            editMode[product.porderItemNo] ? (
-                              <Done />
-                            ) : (
-                              <Edit />
-                            )
+                    {product.porderState !== "준비" ? (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<Done />}
+                      />
+                    ) : (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={
+                          editMode[product.porderItemNo] ? <Done /> : <Edit />
+                        }
+                        onClick={() => {
+                          if (editMode[product.porderItemNo]) {
+                            pOrderItemEdit(); // Save 버튼을 누를 때만 수정이 되어야 하므로 이벤트 호출 위치를 조정
                           }
-                          onClick={() => {
-                            if (editMode[product.porderItemNo]) {
-                              pOrderItemEdit();  // Save 버튼을 누를 때만 수정이 되어야 하므로 이벤트 호출 위치를 조정
-                            }
-                            handleEdit(product.porderItemNo);
-                            setPOrderItemNo(product.porderItemNo)
-                          }}
-                        >
-                          {editMode[product.porderItemNo] ? 'Save' : '수정'}
-                        </Button>
-                      )
-                    }
+                          handleEdit(product.porderItemNo);
+                          setPOrderItemNo(product.porderItemNo);
+                        }}
+                      >
+                        {editMode[product.porderItemNo] ? "Save" : "수정"}
+                      </Button>
+                    )}
                   </TableCell>
 
-                  <TableCell sx={{ display: "none", padding: 2 }} >
+                  <TableCell sx={{ display: "none", padding: 2 }}>
                     <Typography
                       value={product.porderCode}
                       onChange={(e) => setPOrderCode(e.target.value)}
@@ -559,28 +669,43 @@ const PorderComponets2 = () => {
               ))
             )}
           </TableBody>
-
         </Table>
-
       </Box>
-      <Dialog open={isModalOpen} onClose={handleCloseModal}
+      <Dialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
         PaperProps={{
           style: {
-            width: '70%',
-            height: '52%',
-            overflowY: 'auto', // 필요한 경우 스크롤을 허용
-            
+            width: "70%",
+            height: "52%",
+            overflowY: "auto", // 필요한 경우 스크롤을 허용
           },
-        }}>
+        }}
+      >
         <DialogContent>
           <h2>품목선택리스트</h2>
-          <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
-            <p style={{ marginRight: '8px' }}>품목명:</p>
-            <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
-              value={selectedItemName} onChange={(e) => setSeletedItemName(e.target.value)} />
-            <Button onClick={() => handleItemSearchClick(selectedItemName)}>품목명 조회</Button>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: "16px",
+              justifyContent: "flex-end",
+            }}
+          >
+            <p style={{ marginRight: "8px" }}>품목명:</p>
+            <TextField
+              sx={{ width: "150px", marginRight: "16px" }}
+              variant="outlined"
+              size="small"
+              value={selectedItemName}
+              onChange={(e) => setSeletedItemName(e.target.value)}
+            />
+            <Button onClick={() => handleItemSearchClick(selectedItemName)}>
+              품목명 조회
+            </Button>
           </Box>
-          <Table style={{ textAlign: 'center' }}>
+          <Table style={{ textAlign: "center" }}>
             <TableHead>
               <StyledTableRow>
                 <StyledTableCell>품목코드</StyledTableCell>
@@ -592,19 +717,32 @@ const PorderComponets2 = () => {
             </TableHead>
             <TableBody>
               {currentItems.map((item, index) => (
-                <StyledTableRow key={index} onClick={() => handleRowClick(item)} sx={{
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                  }
-                }}>
-                  <StyledTableCell sx={{ height: '10px !important' }}>{item.itemCode}</StyledTableCell>
-                  <StyledTableCell sx={{ height: '10px !important' }}>{item.itemName}</StyledTableCell>
-                  <StyledTableCell sx={{ height: '10px !important' }}>{item.spec}</StyledTableCell>
-                  <StyledTableCell sx={{ height: '10px !important' }}>{item.unit}</StyledTableCell>
-                  <StyledTableCell sx={{ height: '10px !important' }}>{item.itemPrice}</StyledTableCell>
+                <StyledTableRow
+                  key={index}
+                  onClick={() => handleRowClick(item)}
+                  sx={{
+                    "&:hover": {
+                      backgroundColor: "rgba(0, 0, 0, 0.04)",
+                    },
+                  }}
+                >
+                  <StyledTableCell sx={{ height: "10px !important" }}>
+                    {item.itemCode}
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ height: "10px !important" }}>
+                    {item.itemName}
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ height: "10px !important" }}>
+                    {item.spec}
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ height: "10px !important" }}>
+                    {item.unit}
+                  </StyledTableCell>
+                  <StyledTableCell sx={{ height: "10px !important" }}>
+                    {item.itemPrice}
+                  </StyledTableCell>
                 </StyledTableRow>
               ))}
-
             </TableBody>
 
             <TableFooter>
@@ -622,7 +760,6 @@ const PorderComponets2 = () => {
                 </StyledTableCell>
               </StyledTableRow>
             </TableFooter>
-
           </Table>
         </DialogContent>
       </Dialog>

@@ -598,7 +598,9 @@ const ReceiveComponents = () => {
                         <TextField
                           size="small"
                           value={
-                            editedManagers[`${realProduct.receiveCode}`] || realProduct.manager
+                            editedManagers[`${realProduct.receiveCode}`] !== undefined
+                              ? editedManagers[`${realProduct.receiveCode}`]
+                              : realProduct.manager
                           }
                           onChange={(e) => {
                             const value = e.target.value;

@@ -474,7 +474,7 @@ const PorderComponets = () => {
               </TableHead>
               <TableBody>
                 {realProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map((realProduct, index) => (
-                  <StyledTableRow key={realProduct.porderCode} sx={{
+                  <TableRow key={realProduct.porderCode} sx={{
                     backgroundColor: realProduct.porderCode === porderCodeState
                       ? 'lightyellow'
                       : (index % 2 !== 0 ? "#f3f3f3" : "white"),
@@ -485,17 +485,17 @@ const PorderComponets = () => {
                   }}
                     onClick={() => { setTableRowClickValue(realProduct.porderCode) }}
                   >
-                    <StyledTableCell sx={{ padding: 0 }}>
+                    <TableCell sx={{ padding: 0 }}>
                       <Checkbox
                         checked={selectedProducts.includes(realProduct.porderCode)}
                         onChange={(event) => handleCheckboxChange(event, realProduct.porderCode)}
 
                       />
-                    </StyledTableCell>
-                    <StyledTableCell sx={{ padding: 0 }}>
+                    </TableCell>
+                    <TableCell sx={{ padding: 0 }}>
                       <Typography sx={{ fontSize: '15px', fontWeight: '500' }}>{realProduct.porderCode}</Typography>
-                    </StyledTableCell>
-                    <StyledTableCell sx={{ padding: 0 }}>
+                    </TableCell>
+                    <TableCell sx={{ padding: 0 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Box>
                           {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
@@ -503,24 +503,22 @@ const PorderComponets = () => {
                               value={editingProduct.accountNo}
                               onClick={() => setAccountModal(true)}
                               onChange={(e) => handleFieldChange('accountNo', e.target.value)}
+                              size='small'
                             />
                           ) : (
                             <Typography variant="subtitle2" fontWeight={600}>
                               {realProduct.accountNo}
                             </Typography>
                           )}
-                          <Typography color="textSecondary" sx={{ fontSize: '13px' }}>
-                            물류관리자
-                          </Typography>
                         </Box>
                       </Box>
-                    </StyledTableCell>
-                    <StyledTableCell sx={{ padding: 0 }}>
+                    </TableCell>
+                    <TableCell sx={{ padding: 0 }}>
                       <Typography color="textSecondary" variant="subtitle2" fontWeight={400}>
                         {formattedDate(realProduct.createDate)}
                       </Typography>
-                    </StyledTableCell>
-                    <StyledTableCell>
+                    </TableCell>
+                    <TableCell>
                       <Chip
                         size="small"
                         label={realProduct.state}
@@ -532,7 +530,7 @@ const PorderComponets = () => {
                               case '준비':
                                 return theme.palette.primary.main;
                               case '진행 중':
-                                return theme.palette.info.main;
+                                return theme.palette.warning.main;
                               case '완료':
                                 return theme.palette.error.main;
                               default:
@@ -541,19 +539,20 @@ const PorderComponets = () => {
                           },
                         }}
                       />
-                    </StyledTableCell>
-                    <StyledTableCell align="right" sx={{ padding: 0 }}>
+                    </TableCell>
+                    <TableCell align="right" sx={{ padding: 0 }}>
                       {editingProduct && editingProduct.porderCode === realProduct.porderCode ? (
                         <TextField
                           value={editingProduct.manager}
                           onChange={(e) => { handleFieldChange('manager', e.target.value); }}
+                          size='small'
                         />
                       ) : (
                         <Typography variant="h6">{realProduct.manager}</Typography>
                       )}
-                    </StyledTableCell>
+                    </TableCell>
 
-                    <StyledTableCell align="right" sx={{ padding: 0 }}>
+                    <TableCell align="right" sx={{ padding: 0 }}>
                       {realProduct.state === "준비" ? (
                         <Button
                           variant="outlined"
@@ -581,8 +580,8 @@ const PorderComponets = () => {
                           수정
                         </Button>
                       )}
-                    </StyledTableCell>
-                  </StyledTableRow>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>

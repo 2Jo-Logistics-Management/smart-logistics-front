@@ -417,7 +417,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                                   case "준비":
                                     return theme.palette.primary.main;
                                   case "진행 중":
-                                    return theme.palette.info.main;
+                                    return theme.palette.warning.main;
                                   case "완료":
                                     return theme.palette.error.main;
                                   default:

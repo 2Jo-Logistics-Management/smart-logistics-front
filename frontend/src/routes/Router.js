@@ -16,7 +16,6 @@ const Receieve = Loadable(lazy(() => import('../views/dashboard/components/Recei
 const Account = Loadable(lazy(() => import('../views/dashboard/components/AccountComponents')))
 const Member = Loadable(lazy(() => import("../views/dashboard/components/MemberComponents")))
 const Warehouse = Loadable(lazy(() => import("../views/dashboard/components/WarehouseComponents")))
-const WarehouseSection = Loadable(lazy(() => import("../views/dashboard/components/WarehouseSection")))
 const Item = Loadable(lazy(() => import('../views/dashboard/components/ItemsComponents')));
 const Forbidden = Loadable(lazy(() => import('../views/authentication/403')));
 
@@ -60,7 +59,6 @@ const Router = [
       { path: '/Logistic/Account', exact: true, element: <Account /> },
       { path: "/member/list", exact: true, element: <Member /> },
       { path: "/warehouse/list", exact: true, element: <Warehouse /> },
-      { path: "/WarehouseSection/list", exact: true, element: <WarehouseSection /> },
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },
