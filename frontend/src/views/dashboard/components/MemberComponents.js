@@ -152,7 +152,6 @@ const Member = () => {
       } else if (errorStatus === 403) {
         setAlertMessage('허가되지 않는 이용자입니다.');
         setIsAlertOpen(true);
-        close();
       }
     } else {
       console.error('오류 발생:', error);

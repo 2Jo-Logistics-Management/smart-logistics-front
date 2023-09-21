@@ -1,5 +1,6 @@
 import axios from "axios";
 import { fetchItemsFromApiSuccess } from "../slices/ItemsReducer";
+import swal from "sweetalert2";
 
 export const fetchItemsFromApi = () => async (dispatch) => {
   try {
@@ -8,6 +9,10 @@ export const fetchItemsFromApi = () => async (dispatch) => {
 
     dispatch(fetchItemsFromApiSuccess(items));
   } catch (error) {
-    alert(error.message);
+    swal.fire({
+      title: "에러 발생",
+      text: "물품 리스트 조회 에러 발생",
+      icon: "error",
+    })
   }
 };
