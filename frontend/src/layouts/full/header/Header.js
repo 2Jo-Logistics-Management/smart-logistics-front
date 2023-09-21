@@ -35,9 +35,8 @@ const Header = (props) => {
       axios.post('http://localhost:8888/api/member/logout')
       .then((response) => {
         if(response.data.success) {
-          dispatch(close())
-          navigate("/auth/login");  
           localStorage.clear();
+          window.location.reload();
         }
       })
     } catch (error) {

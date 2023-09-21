@@ -12,6 +12,7 @@ const loginResponseReducer = createSlice({
       state.memberData = action.payload;
     }, 
     close: (state) => {
+        alert('hello');
         state.memberData = [];
     }
   }

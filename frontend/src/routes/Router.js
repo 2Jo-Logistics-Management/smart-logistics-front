@@ -28,15 +28,15 @@ const ProtectedRoute = ({ children }) => {
   const memberRole = useMemberRole();
   const location = useLocation();
 
+  if (!memberRole && location.pathname !== '/auth/login') {
+    return <Navigate to="/auth/login" replace />;
+  }
+
   // 정규 표현식을 사용하여 pathname이 "/member/"로 시작하는지 확인
   const isMemberPath = /^\/member\//.test(location.pathname);
 
   if (memberRole !== 'ADMIN' && isMemberPath) {
     return <Navigate to="/auth/403" replace />
-  }
-
-  if (!memberRole && location.pathname !== '/auth/login') {
-    return <Navigate to="/auth/login" replace />;
   }
 
   return children;
