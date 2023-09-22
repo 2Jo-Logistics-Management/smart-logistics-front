@@ -216,7 +216,7 @@ const Item = () => {
     );
     dispatch(changeCurrentPage(0))
     swal.fire({
-      title: "입고물품 조회중",
+      title: "물품 조회중",
       html: "잠시만 기다려주세요",
       timer: 1000,
       timerProgressBar: true,

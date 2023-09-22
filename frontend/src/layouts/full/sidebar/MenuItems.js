@@ -38,14 +38,6 @@ const MenuItems = () => {
       icon: IconTypography,
       href: '/Logistic/Account',
     },
-
-    {
-      id: uniqueId(),
-      title: '창고관리시스템',
-      icon: IconBuildingWarehouse,
-      href: '/warehouse/list',
-    },
-
     {
       navlabel: true,
       subheader: <div style={subheaderStyle}>물류관리시스템</div>,
@@ -62,6 +54,12 @@ const MenuItems = () => {
       title: '입고 관리시스템',
       icon: IconReceipt,
       href: '/Logistic/Receive',
+    },
+    {
+      id: uniqueId(),
+      title: '창고관리시스템',
+      icon: IconBuildingWarehouse,
+      href: '/warehouse/list',
     },
     
     ...(memberRole === 'ADMIN' ? [

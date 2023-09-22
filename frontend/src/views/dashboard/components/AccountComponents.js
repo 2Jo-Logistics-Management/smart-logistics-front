@@ -361,7 +361,7 @@ const Account = () => {
       axios.get(`http://localhost:8888/api/account/list?${queryString}`)
           .then(response => {
               swal.fire({
-                title: "입고물품 조회중",
+                title: "거래처 조회중",
                 html: "잠시만 기다려주세요",
                 timer: 700,
                 timerProgressBar: true,
