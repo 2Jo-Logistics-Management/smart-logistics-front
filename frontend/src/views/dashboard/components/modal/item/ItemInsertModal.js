@@ -33,6 +33,12 @@ const ItemInsertModal = (props) => {
 
   const handleSaveNewItem = () => {
     ItemInsertAxios(itemInsertDto, closeModal, isSuccessCallback);
+    setItemInsertDto({
+      itemName: "",
+    spec: "",
+    unit: "",
+    itemPrice: "",
+    })
   };
 
   return (

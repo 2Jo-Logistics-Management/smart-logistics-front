@@ -1,19 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import swal from 'sweetalert2';
-import { Box, Table, styled, TableBody, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, TableFooter, TextField, Typography, TableCell } from '@mui/material';
-import { close_Modal } from '../../../../redux/slices/porderModalDuck';
-import { Delete } from '@mui/icons-material';
-import SearchIcon from '@mui/icons-material/Search';
-import itemAddAxios from '../../../../axios/ItemAddAxios'
-import axios from 'axios';
-import { Pagination } from '@mui/material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { searchRecentPK } from '../../../../redux/thunks/searchRecentPK'
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import swal from "sweetalert2";
+import {
+  Box,
+  Table,
+  styled,
+  TableBody,
+  TableHead,
+  TableRow,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TableFooter,
+  TextField,
+  Typography,
+  TableCell,
+} from "@mui/material";
+import {
+  close_Modal,
+  open_Modal,
+} from "../../../../redux/slices/porderModalDuck";
+import { Delete } from "@mui/icons-material";
+import SearchIcon from "@mui/icons-material/Search";
+import itemAddAxios from "../../../../axios/ItemAddAxios";
+import axios from "axios";
+import { Pagination } from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { searchRecentPK } from "../../../../redux/thunks/searchRecentPK";
 import { tableCellClasses } from "@mui/material/TableCell";
 axios.defaults.withCredentials = true;
-
 
 const PorderModal = () => {
   const dispatch = useDispatch();
@@ -34,7 +52,7 @@ const PorderModal = () => {
     [`&.${tableCellClasses.body}`]: {
       fontSize: 40,
       minWidth: 100,
-      textAlign: 'right', // 이 부분에서 textAlign를 설정
+      textAlign: "right", // 이 부분에서 textAlign를 설정
     },
   }));
 
@@ -50,62 +68,78 @@ const PorderModal = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
   const [accountList, setAccountList] = useState([]);
-  const [selectedCompanyName, setSelectedCompanyName] = useState("")
+  const [selectedCompanyName, setSelectedCompanyName] = useState("");
   //거래처 페이징처리
   const [currentAccountPage, setCurrentAccountPage] = useState(1);
   const [accountsPerPage] = useState(6);
   const indexOfLastAccount = currentAccountPage * accountsPerPage;
   const indexOfFirstAccount = indexOfLastAccount - accountsPerPage;
-  const currentAccountList = accountList.slice(indexOfFirstAccount, indexOfLastAccount);
-  const [selectedAccountContactNumber, setSelectedAccountContactNumber] = useState("");
+  const currentAccountList = accountList.slice(
+    indexOfFirstAccount,
+    indexOfLastAccount
+  );
+  const [selectedAccountContactNumber, setSelectedAccountContactNumber] =
+    useState("");
   const [selectedItemName, setSeletedItemName] = useState("");
   const [selectedDateTime, setSelectedDateTime] = useState("");
 
-
-
   useEffect(() => {
-    axios.get('http://localhost:8888/api/item/list')
-      .then(response => {
+    axios
+      .get("http://localhost:8888/api/item/list")
+      .then((response) => {
         const fetchedItems = response.data.data;
         setItems(fetchedItems);
-
       })
-      .catch(error => {
-        console.error('첫번째 options에서 에러 발생', error);
+      .catch((error) => {
+        console.error("첫번째 options에서 에러 발생", error);
       });
   }, []);
 
   useEffect(() => {
-    axios.get('http://localhost:8888/api/account/list')
-      .then(response => {
+    axios
+      .get("http://localhost:8888/api/account/list")
+      .then((response) => {
         const accountList = response.data.data;
         setAccountList(accountList);
       })
-      .catch(error => {
-        console.error('에러발생', error);
+      .catch((error) => {
+        console.error("에러발생", error);
       });
   }, []);
   const handleAccountRowClick = (clickedItem) => {
-
     setSelectedAccountContactNumber(clickedItem.accountNo);
-
   };
-
 
   const handleCancel = () => {
     dispatch(close_Modal());
   };
   function formatDate(pOrderDate) {
-    const { format } = require('date-fns');
-    const formattedDate = format(pOrderDate, 'yyyy-MM-dd HH:mm:ss')
-    return formattedDate
+    const { format } = require("date-fns");
+    const formattedDate = format(pOrderDate, "yyyy-MM-dd HH:mm:ss");
+    return formattedDate;
   }
   const handleSave = async () => {
     try {
-      const itemsWithManageName = selectedItems.map(item => {
+      const itemsWithManageName = selectedItems.map((item) => {
         const { spec, ...rest } = item;
         return { ...rest };
       });
+
+      if (manageName === "" || manageName === null) {
+        dispatch(close_Modal());
+
+        await swal
+          .fire({
+            title: "발주추가 실패",
+            text: "데이터를 모두 입력해주시기 바랍니다",
+            icon: "error",
+          })
+          .then(() => {
+            dispatch(open_Modal());
+          });
+
+        return;
+      }
 
       const saveData = {
         pOrderItems: itemsWithManageName,
@@ -113,60 +147,81 @@ const PorderModal = () => {
         pOrderCode: null,
         pOrderDate: formatDate(new Date()),
         manager: manageName,
-      }
+      };
 
       dispatch(close_Modal());
       await itemAddAxios(saveData);
 
-
       dispatch(searchRecentPK());
       setSelectedItems([]);
+      setManageName("");
+      setSelectedAccountContactNumber("");
 
       swal.fire({
-        title: '발주상품 등록 완료.',
-        text: '상품이 등록 되었습니다.',
-        icon: 'success',
+        title: "발주상품 등록 완료.",
+        text: "상품이 등록 되었습니다.",
+        icon: "success",
         showConfirmButton: false,
       });
-
-
-
     } catch (error) {
-      swal.fire({
-        title: '발주추가 실패',
-        text: '데이터를 모두 입력해주시기 바랍니다',
-        icon: 'error',
-        showConfirmButton: false,
-      });
+      swal
+        .fire({
+          title: "발주추가 실패",
+          text: "데이터를 모두 입력해주시기 바랍니다",
+          icon: "error",
+          showConfirmButton: false,
+        })
+        .then(() => {
+          dispatch(open_Modal());
+        });
     }
   };
 
   const handleRowClick = (clickedItem) => {
     // 이미 선택된 로우는 중복 추가하지 않습니다.
-    if (!selectedItems.some(item => item.itemCode === clickedItem.itemCode)) {
+    if (!selectedItems.some((item) => item.itemCode === clickedItem.itemCode)) {
       const newItem = {
         itemCode: clickedItem.itemCode,
-        pOrderCount: '0', // 초기에는 수량을 0으로 설정합니다.
+        pOrderCount: "1", // 초기에는 수량을 0으로 설정합니다.
         pOrderPrice: clickedItem.itemPrice,
         pOrderItemPrice: clickedItem.itemPrice,
         pOrderCode: null,
         spec: clickedItem.spec,
-        itemName: clickedItem.itemName
-
+        itemName: clickedItem.itemName,
       };
-      setSelectedItems(prevItems => [...prevItems, newItem]);
+      setSelectedItems((prevItems) => [...prevItems, newItem]);
     }
   };
 
-
-
   const handleConfirmEdit = () => {
+    if (editedData.pOrderCount <= 0) {
+      dispatch(close_Modal());
+
+      swal
+        .fire({
+          title: "발주수정 에러",
+          text: "발주수정 갯수는 0개 이상 입력되어야 합니다.",
+          icon: "error",
+          showConfirmButton: false,
+        })
+        .then(() => {
+          dispatch(open_Modal());
+        });
+
+      return;
+    }
+
     // editedData에 저장된 변경된 행을 selectedItems에 반영
     setSelectedItems((prevData) => {
       const newData = prevData.map((item) =>
-        item.itemCode === editedData.itemCode ? { ...item, pOrderCount: editedData.pOrderCount, pOrderPrice: editedData.pOrderPrice } : item
+        item.itemCode === editedData.itemCode
+          ? {
+              ...item,
+              pOrderCount: editedData.pOrderCount,
+              pOrderPrice: editedData.pOrderPrice,
+            }
+          : item
       );
-
 
       return newData;
     });
@@ -175,34 +230,32 @@ const PorderModal = () => {
   };
 
   const handleDelete = (itemCode) => {
-    setSelectedItems((prevData) => prevData.filter((item) => item.itemCode !== itemCode));
+    setSelectedItems((prevData) =>
+      prevData.filter((item) => item.itemCode !== itemCode)
+    );
   };
 
-
-
   const handleAccountSearchClick = (searchData) => {
-
-    axios.get(`http://localhost:8888/api/account/list?accountName=${searchData}`)
-      .then(response => {
+    axios
+      .get(`http://localhost:8888/api/account/list?accountName=${searchData}`)
+      .then((response) => {
         const AccountSearchData = response.data.data;
         setAccountList(AccountSearchData);
-      })
-  }
+      });
+  };
   const handleItemSearchClick = (searchData) => {
-    axios.get(`http://localhost:8888/api/item/list?itemName=${searchData}`)
-      .then(response => {
-        const itemSearchData = response.data.data
+    axios
+      .get(`http://localhost:8888/api/item/list?itemName=${searchData}`)
+      .then((response) => {
+        const itemSearchData = response.data.data;
         setItems(itemSearchData);
-      })
-  }
-
-
-
+      });
+  };
 
   const handleDateChange = (index, receiveDeadline) => {
-    const { format } = require('date-fns');
-    const formattedDate = format(receiveDeadline, 'yyyy-MM-dd HH:mm:ss'); // "yyyy-MM-dd HH:mm:ss" 형식으로 변환
-    setSelectedItems(prevItems => {
+    const { format } = require("date-fns");
+    const formattedDate = format(receiveDeadline, "yyyy-MM-dd HH:mm:ss"); // "yyyy-MM-dd HH:mm:ss" 형식으로 변환
+    setSelectedItems((prevItems) => {
       const updatedItems = [...prevItems];
       updatedItems[index].receiveDeadline = formattedDate;
       return updatedItems;
@@ -215,45 +268,65 @@ const PorderModal = () => {
   const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
-    const newTotalAmount = selectedItems.reduce((acc, item) => acc + (item.pOrderPrice * item.pOrderCount), 0);
+    const newTotalAmount = selectedItems.reduce(
+      (acc, item) => acc + item.pOrderPrice * item.pOrderCount,
+      0
+    );
     setTotalAmount(newTotalAmount);
   }, [selectedItems]);
-
 
   return (
     <Dialog
       open={porderModalState}
       PaperProps={{
         sx: {
-          width: '100%',
-          maxWidth: 'xl',
-          height: '80%',
-          display: 'flex',
+          width: "100%",
+          maxWidth: "xl",
+          height: "80%",
+          display: "flex",
         },
       }}
     >
-
       <DialogTitle>발주 추가</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex' }}>
-
-          <Dialog open={accountModal}
+        <Box sx={{ display: "flex" }}>
+          <Dialog
+            open={accountModal}
             PaperProps={{
               style: {
-                width: '70%',
-                height: '50%',
-                overflowY: 'auto', // 필요한 경우 스크롤을 허용
+                width: "70%",
+                height: "50%",
+                overflowY: "auto", // 필요한 경우 스크롤을 허용
               },
-            }}>
+            }}
+          >
             <DialogTitle>거래처 찾기</DialogTitle>
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
-              <p style={{ marginRight: '8px' }}>거래처명:</p>
-              <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
-                value={selectedCompanyName} onChange={(e) => setSelectedCompanyName(e.target.value)} />
-              <Button Icon={<SearchIcon />} onClick={() => handleAccountSearchClick(selectedCompanyName)}>거래처 조회</Button>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "16px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <p style={{ marginRight: "8px" }}>거래처명:</p>
+              <TextField
+                sx={{ width: "150px", marginRight: "16px" }}
+                variant="outlined"
+                size="small"
+                value={selectedCompanyName}
+                onChange={(e) => setSelectedCompanyName(e.target.value)}
+              />
+              <Button
+                Icon={<SearchIcon />}
+                onClick={() => handleAccountSearchClick(selectedCompanyName)}
+              >
+                거래처 조회
+              </Button>
             </Box>
 
-            <Table title="거래처선택" style={{ textAlign: 'center' }}>
+            <Table title="거래처선택" style={{ textAlign: "center" }}>
               <TableHead>
                 <StyledTableRow>
                   <StyledTableCell>거래처명</StyledTableCell>
@@ -265,12 +338,14 @@ const PorderModal = () => {
               </TableHead>
               <TableBody>
                 {currentAccountList.map((accountList, index) => (
-                  <TableRow key={index} sx={{
-                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
-                    }
-                  }}
+                  <TableRow
+                    key={index}
+                    sx={{
+                      backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
+                      "&:hover": {
+                        backgroundColor: "rgba(0, 0, 0, 0.04)", // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
+                      },
+                    }}
                     onClick={() => {
                       handleAccountRowClick(accountList);
                       setAccountModal(false);
@@ -278,12 +353,11 @@ const PorderModal = () => {
                   >
                     <TableCell>{accountList.accountName}</TableCell>
                     <TableCell align="right">{accountList.accountNo}</TableCell>
-                    <TableCell >{accountList.representative}</TableCell>
-                    <TableCell >{accountList.contactNumber}</TableCell>
-                    <TableCell >{accountList.businessNumber}</TableCell>
+                    <TableCell>{accountList.representative}</TableCell>
+                    <TableCell>{accountList.contactNumber}</TableCell>
+                    <TableCell>{accountList.businessNumber}</TableCell>
                   </TableRow>
                 ))}
-
               </TableBody>
               <TableFooter>
                 <TableRow>
@@ -302,22 +376,43 @@ const PorderModal = () => {
             </Table>
           </Dialog>
 
-          <Dialog open={itemModal}
+          <Dialog
+            open={itemModal}
             PaperProps={{
               style: {
-                width: '70%',
-                height: '50%',
-                overflowY: 'auto', // 필요한 경우 스크롤을 허용
+                width: "70%",
+                height: "50%",
+                overflowY: "auto", // 필요한 경우 스크롤을 허용
               },
-            }}  onClose={() => setItemModal(false)}>
+            }}
+            onClose={() => setItemModal(false)}
+          >
             <DialogTitle>신규 발주품목 추가</DialogTitle>
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'flex-end' }}>
-              <p style={{ marginRight: '8px' }}>품목명:</p>
-              <TextField sx={{ width: '150px', marginRight: '16px' }} variant="outlined" size="small"
-                value={selectedItemName} onChange={(e) => setSeletedItemName(e.target.value)} />
-              <Button Icon={<SearchIcon />} onClick={() => handleItemSearchClick(selectedItemName)}>품목명 조회</Button>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "16px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <p style={{ marginRight: "8px" }}>품목명:</p>
+              <TextField
+                sx={{ width: "150px", marginRight: "16px" }}
+                variant="outlined"
+                size="small"
+                value={selectedItemName}
+                onChange={(e) => setSeletedItemName(e.target.value)}
+              />
+              <Button
+                Icon={<SearchIcon />}
+                onClick={() => handleItemSearchClick(selectedItemName)}
+              >
+                품목명 조회
+              </Button>
             </Box>
-            <Table style={{ textAlign: 'center' }}>
+            <Table style={{ textAlign: "center" }}>
               <TableHead>
                 <StyledTableRow>
                   <StyledTableCell>품목코드</StyledTableCell>
@@ -329,16 +424,20 @@ const PorderModal = () => {
               </TableHead>
               <TableBody>
                 {currentItems.map((item, index) => (
-                  <TableRow key={index} onClick={() => handleRowClick(item)} sx={{
-                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
-                    }
-                  }}>
+                  <TableRow
+                    key={index}
+                    onClick={() => handleRowClick(item)}
+                    sx={{
+                      backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
+                      "&:hover": {
+                        backgroundColor: "rgba(0, 0, 0, 0.04)", // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
+                      },
+                    }}
+                  >
                     <TableCell align="right">{item.itemCode}</TableCell>
-                    <TableCell >{item.itemName}</TableCell>
-                    <TableCell >{item.spec}</TableCell>
-                    <TableCell >{item.unit}</TableCell>
+                    <TableCell>{item.itemName}</TableCell>
+                    <TableCell>{item.spec}</TableCell>
+                    <TableCell>{item.unit}</TableCell>
                     <TableCell align="right">{item.itemPrice}</TableCell>
                   </TableRow>
                 ))}
@@ -357,34 +456,68 @@ const PorderModal = () => {
                   </TableCell>
                 </TableRow>
               </TableFooter>
-
             </Table>
             <DialogActions>
-              <Button color="primary" variant="contained" onClick={() => { setItemModal(false) }}>완료</Button>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={() => {
+                  setItemModal(false);
+                }}
+              >
+                완료
+              </Button>
             </DialogActions>
           </Dialog>
 
-          <Box sx={{ flex: 1, padding: '16px' }}>
-
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '16px', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                <Button onClick={() => setItemModal(true)} color="primary" variant="contained">품목추가</Button>
+          <Box sx={{ flex: 1, padding: "16px" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "16px",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <Button
+                  onClick={() => setItemModal(true)}
+                  color="primary"
+                  variant="contained"
+                >
+                  품목추가
+                </Button>
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                <p style={{ marginRight: '8px' }}>거래처코드:</p>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <p style={{ marginRight: "8px" }}>거래처코드:</p>
                 <TextField
-                  sx={{ width: '150px', marginRight: '16px' }}
+                  sx={{ width: "150px", marginRight: "16px" }}
                   variant="outlined"
                   size="small"
                   value={selectedAccountContactNumber}
                   onClick={() => setAccountModal(true)}
-                  onChange={(e) => setSelectedAccountContactNumber(e.target.value)}
-                  type='number'
+                  onChange={(e) =>
+                    setSelectedAccountContactNumber(e.target.value)
+                  }
+                  type="number"
                 />
-                <p style={{ marginRight: '8px' }}>담당자:</p>
+                <p style={{ marginRight: "8px" }}>담당자:</p>
                 <TextField
-                  sx={{ width: '150px' }}
+                  sx={{ width: "150px" }}
                   variant="outlined"
                   size="small"
                   onChange={(e) => setManageName(e.target.value)}
@@ -395,26 +528,46 @@ const PorderModal = () => {
             <Table>
               <TableHead>
                 <StyledTableRow>
-                  <StyledTableCell style={{ minWidth: '80px' }}>품번</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '80px' }}>품명</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '120px' }}>규격</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '100px' }}>단가</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '100px' }}>수량</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '100px' }}>금액</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '200px' }}>납기일</StyledTableCell>
-                  <StyledTableCell style={{ minWidth: '150px' }}>확인/삭제</StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "80px" }}>
+                    품번
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "80px" }}>
+                    품명
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "120px" }}>
+                    규격
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "100px" }}>
+                    단가
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "100px" }}>
+                    수량
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "100px" }}>
+                    금액
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "200px" }}>
+                    납기일
+                  </StyledTableCell>
+                  <StyledTableCell style={{ minWidth: "150px" }}>
+                    확인/삭제
+                  </StyledTableCell>
                 </StyledTableRow>
               </TableHead>
               <TableBody>
                 {selectedItems.map((item, index) => (
-                  <TableRow key={`selected-${index}`}
-                  sx={{
-                    backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)', // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
-                    }
-                  }}>
-                    <TableCell sx={{ padding: 1 }} align="right">{item.itemCode}</TableCell>
+                  <TableRow
+                    key={`selected-${index}`}
+                    sx={{
+                      backgroundColor: index % 2 !== 0 ? "#f3f3f3" : "white",
+                      "&:hover": {
+                        backgroundColor: "rgba(0, 0, 0, 0.04)", // 이 부분은 hover 시 배경색을 설정하며, 필요에 따라 조정할 수 있습니다.
+                      },
+                    }}
+                  >
+                    <TableCell sx={{ padding: 1 }} align="right">
+                      {item.itemCode}
+                    </TableCell>
                     <TableCell sx={{ padding: 1 }}>{item.itemName}</TableCell>
                     <TableCell sx={{ padding: 1 }}>{item.spec}</TableCell>
                     <TableCell align="right">
@@ -423,7 +576,10 @@ const PorderModal = () => {
                           type="itemCode"
                           value={editedData.pOrderPrice}
                           onChange={(e) =>
-                            setEditedData((prevData) => ({ ...prevData, pOrderPrice: e.target.value }))
+                            setEditedData((prevData) => ({
+                              ...prevData,
+                              pOrderPrice: e.target.value,
+                            }))
                           }
                         />
                       ) : (
@@ -435,42 +591,60 @@ const PorderModal = () => {
                         <input
                           type="itemCode"
                           value={editedData.pOrderCount}
-                          onChange={(e) =>
-                            setEditedData((prevData) => ({ ...prevData, pOrderCount: e.target.value }))
-                          }
+                          onInput={(e) => {
+                            const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                            if (!re.test(e.target.value)) {
+                              // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                              alert("숫자만 입력해주세요.");
+                              e.target.value = "";
+                            } 
+                          }}
+                          onChange={(e) => {
+                            setEditedData((prevData) => ({
+                              ...prevData,
+                              pOrderCount: e.target.value,
+                            }));
+                          }}
                         />
                       ) : (
                         item.pOrderCount
                       )}
                     </TableCell>
-                    <TableCell sx={{ padding: 1 }} align="right">{editedData.itemCode === item.itemCode ? (
-                      <span>
-                      {editedData.pOrderPrice * editedData.pOrderCount}
-                    </span>
-                    ) : (
-                      item.pOrderPrice * item.pOrderCount // 두 값을 곱한 결과를 표시
-                    )}</TableCell>
+                    <TableCell sx={{ padding: 1 }} align="right">
+                      {editedData.itemCode === item.itemCode ? (
+                        <span>
+                          {editedData.pOrderPrice * editedData.pOrderCount}
+                        </span>
+                      ) : (
+                        item.pOrderPrice * item.pOrderCount // 두 값을 곱한 결과를 표시
+                      )}
+                    </TableCell>
                     <TableCell sx={{ padding: 1 }}>
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
-
                         <DatePicker
                           label="조회 기간"
                           value={selectedDateTime}
-                          onChange={(newDate) => handleDateChange(index, newDate)}
-                          views={['year', 'month', 'day']}
-                          format='yyyy-MM-dd'
-                          slotProps={{ textField: { variant: 'outlined', size: "small" } }}
+                          onChange={(newDate) =>
+                            handleDateChange(index, newDate)
+                          }
+                          views={["year", "month", "day"]}
+                          format="yyyy-MM-dd"
+                          slotProps={{
+                            textField: { variant: "outlined", size: "small" },
+                          }}
                           minDate={new Date()}
-                          maxDate={new Date('2100-12-31')} // Optional: Restrict selection up to the end date
+                          maxDate={new Date("2100-12-31")} // Optional: Restrict selection up to the end date
                         />
-
                       </LocalizationProvider>
-
                     </TableCell>
                     <TableCell sx={{ padding: 1 }}>
                       {editedData.itemCode === item.itemCode ? ( // 현재 행이 수정 중인 행이라면
                         <>
-                          <Button variant="outlined" color="primary" onClick={handleConfirmEdit}>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            onClick={handleConfirmEdit}
+                          >
                             확인
                           </Button>
                           &nbsp;&nbsp;
@@ -486,15 +660,15 @@ const PorderModal = () => {
                         <>
                           <Button
                             variant="outlined"
-                            color='primary'
+                            color="primary"
                             onClick={() => setEditedData({ ...item })} // 행을 수정하기 위해 editedData에 복사
                           >
                             수정
                           </Button>
                           &nbsp;&nbsp;
                           <Button
-                             variant="contained"
-                             color="error"
+                            variant="contained"
+                            color="error"
                             onClick={() => handleDelete(item.itemCode)}
                             startIcon={<Delete />}
                           >
@@ -502,7 +676,6 @@ const PorderModal = () => {
                           </Button>
                         </>
                       )}
-
                     </TableCell>
                   </TableRow>
                 ))}
@@ -511,9 +684,24 @@ const PorderModal = () => {
           </Box>
         </Box>
       </DialogContent>
-      <Box display="flex" justifyContent="flex-end" style={{ margin: '10px' }}>
-        <Typography variant="subtitle1" fontWeight={600} style={{ color: '#0000ff', border: '2px solid #0000ff', padding: '10px', borderRadius: '5px', background: '#f0f8ff', textAlign: 'center' }}>
-          총 금액: {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(totalAmount)}
+      <Box display="flex" justifyContent="flex-end" style={{ margin: "10px" }}>
+        <Typography
+          variant="subtitle1"
+          fontWeight={600}
+          style={{
+            color: "#0000ff",
+            border: "2px solid #0000ff",
+            padding: "10px",
+            borderRadius: "5px",
+            background: "#f0f8ff",
+            textAlign: "center",
+          }}
+        >
+          총 금액:{" "}
+          {new Intl.NumberFormat("ko-KR", {
+            style: "currency",
+            currency: "KRW",
+          }).format(totalAmount)}
         </Typography>
       </Box>
       <DialogActions>

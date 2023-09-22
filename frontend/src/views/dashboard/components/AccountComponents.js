@@ -250,7 +250,7 @@ const Account = () => {
         // Show a success message
         await swal.fire({
           title: "삭제 완료",
-          text: "계정이 삭제되었습니다.",
+          text: "거래처가 삭제되었습니다.",
           icon: "success",
         }); 
     

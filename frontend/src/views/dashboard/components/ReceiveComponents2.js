@@ -129,13 +129,26 @@ const ReceiveComponents2 = (props) => {
   }, [props.modalSelectedProducts]);
 
   const handleEdit = (receiveCode, receiveItemNo, porderCode, porderItemNo) => {
+    if (parseInt(receiveCounts) <= 0) {
+      swal.fire({
+        title: "발주수정 실패",
+        text: "발주 수량은 0 이하로 입력될 수 없습니다.",
+        icon: "error",
+        showConfirmButton: false,
+      });
+
+      return;
+    }
     setEditMode((prevState) => ({
       ...prevState,
-      [`${receiveCode}-${receiveItemNo}`]: !prevState[`${receiveCode}-${receiveItemNo}`],
+      [`${receiveCode}-${receiveItemNo}`]:
+        !prevState[`${receiveCode}-${receiveItemNo}`],
     }));
 
     const index = receiveProducts.findIndex(
-      (product) => product.receiveCode === receiveCode && product.receiveItemNo === receiveItemNo
+      (product) =>
+        product.receiveCode === receiveCode &&
+        product.receiveItemNo === receiveItemNo
     );
 
     if (editMode[`${receiveCode}-${receiveItemNo}`] && index !== -1) {
@@ -173,14 +186,17 @@ const ReceiveComponents2 = (props) => {
   const handleCheckboxChange = (receiveCode, receiveItemNo) => {
     const selectedProduct = { receiveCode, receiveItemNo };
     const isProductSelected = selectedProducts.some(
-      (product) => product.receiveCode === receiveCode && product.receiveItemNo === receiveItemNo
+      (product) =>
+        product.receiveCode === receiveCode &&
+        product.receiveItemNo === receiveItemNo
     );
 
     if (isProductSelected) {
       setSelectedProducts((prevSelected) =>
         prevSelected.filter(
           (product) =>
-            product.receiveCode !== receiveCode || product.receiveItemNo !== receiveItemNo
+            product.receiveCode !== receiveCode ||
+            product.receiveItemNo !== receiveItemNo
         )
       );
     } else {
@@ -193,6 +209,17 @@ const ReceiveComponents2 = (props) => {
     value = parseFloat(String(value).replace(/,/g, "")) || 0;
     const updatedReceiveCounts = [...receiveCounts];
     updatedReceiveCounts[index] = value;
+
+    // if (parseInt(updatedReceiveCounts[index]) <= 0) {
+    //   swal.fire({
+    //     title: "발주수정 실패",
+    //     text: "발주 수정 수량은 0 이하로 입력될 수 없습니다.",
+    //     icon: "error",
+    //   });
+
+    //   return;
+    // }
+
     setReceiveCounts(updatedReceiveCounts);
   };
 
@@ -203,7 +230,9 @@ const ReceiveComponents2 = (props) => {
     setSelectWarehouse(updatedSelectWarehouse);
     if (
       editMode[productId] &&
-      (property === "receiveCount" || property === "warehouseNo" || property === "warehouseName")
+      (property === "receiveCount" ||
+        property === "warehouseNo" ||
+        property === "warehouseName")
     ) {
       const updatedProducts = [...receiveProducts];
       const productIndex = updatedProducts.findIndex(
@@ -233,7 +262,9 @@ const ReceiveComponents2 = (props) => {
     setSelectedWarehouses((prevWarehouses) =>
       prevWarehouses.filter((_, index) => index !== indexToRemove)
     );
-    setReceiveItemCounts((prevCounts) => prevCounts.filter((_, index) => index !== indexToRemove));
+    setReceiveItemCounts((prevCounts) =>
+      prevCounts.filter((_, index) => index !== indexToRemove)
+    );
   };
   const handleSave = async () => {
     try {
@@ -253,6 +284,18 @@ const ReceiveComponents2 = (props) => {
         receiveCount: receiveItemCounts[index],
         warehouseNo: selectedWarehouses[index],
       }));
+
+      if (insertData.some((i) => parseInt(i.receiveCount) <= 0)) {
+        swal.fire({
+          title: "발주추가 실패",
+          text: "발주 수량은 0이 될 수 없습니다.",
+          icon: "error",
+          showConfirmButton: false,
+        });
+
+        return;
+      }
+
       const response = await receiveInsertAxios([
         addReceiveManager,
         finalReceiveDateTime,
@@ -269,6 +312,7 @@ const ReceiveComponents2 = (props) => {
     setReceiveItemCounts([]);
     setSelectedWarehouses([]);
     setAddSelectedDateTime("");
+    // dispatch 시점
   };
   const handleCancel = () => {
     setAddPOrderProducts([]);
@@ -291,13 +335,22 @@ const ReceiveComponents2 = (props) => {
       >
         {addPOrderProducts.length !== 0 && (
           <Table>
-            <TableRow sx={{ backgroundColor: "rgba(200, 200, 200, 0.5)", textAlign: "center" }}>
-              <StyledTableCell sx={{ paddingLeft: 30, textAlign: "right", paddingRight: 0 }}>
+            <TableRow
+              sx={{
+                backgroundColor: "rgba(200, 200, 200, 0.5)",
+                textAlign: "center",
+              }}
+            >
+              <StyledTableCell
+                sx={{ paddingLeft: 30, textAlign: "right", paddingRight: 0 }}
+              >
                 <Typography variant="h6" fontWeight={600}>
                   입고담당자
                 </Typography>
               </StyledTableCell>
-              <StyledTableCell sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 4 }}>
+              <StyledTableCell
+                sx={{ fontSize: "13px", textAlign: "left", paddingLeft: 4 }}
+              >
                 <TextField
                   label="입고담당자를 입력해주세요"
                   size="small"
@@ -320,6 +373,8 @@ const ReceiveComponents2 = (props) => {
                       onChange={(newDate) => setAddSelectedDateTime(newDate)}
                       renderInput={(props) => <TextField {...props} />}
                       views={["year", "month", "day"]}
+                      minDate={new Date()}
+                      maxDate={new Date("2100-12-31")}
                       format="yyyy.MM.dd"
                       defaultValue={new Date()}
                       slotProps={{ textField: { size: "small" } }}
@@ -328,7 +383,11 @@ const ReceiveComponents2 = (props) => {
                 </Typography>
               </StyledTableCell>
               <StyledTableCell sx={{ textAlign: "right" }}>
-                <Button onClick={handleCancel} variant="contained" color="error">
+                <Button
+                  onClick={handleCancel}
+                  variant="contained"
+                  color="error"
+                >
                   등록취소
                 </Button>
               </StyledTableCell>
@@ -347,6 +406,8 @@ const ReceiveComponents2 = (props) => {
                         text: "담당자, 수량, 창고 위치를 정확히 입력하세요",
                         icon: "warning",
                       });
+
+                      return;
                     }
                     if (
                       addReceiveManager !== null &&
@@ -452,21 +513,44 @@ const ReceiveComponents2 = (props) => {
                       label={`잔량: ${product.availableCount}`}
                       value={receiveItemCounts[index]}
                       onInput={(e) => {
-                        e.target.value = Math.max(0, parseInt(e.target.value) || 0);
+                        e.target.value = Math.max(
+                          0,
+                          parseInt(e.target.value) || 0
+                        );
                       }}
-                      onChange={(e) => handleReceiveItemCountChange(e.target.value, index)}
+                      // onInput={(e) => {
+                      //   const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                      //   if (!re.test(e.target.value)) {
+                      //     // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                      //     alert("숫자만 입력해주세요.");
+                      //     e.target.value = "";
+                      //   }
+                      // }}
+                      onChange={(e) => {
+                        handleReceiveItemCountChange(e.target.value, index);
+
+                        if (receiveItemCounts[index] === 0) {
+                          alert("hello");
+                          return;
+                        }
+                      }}
                     />
                   </StyledTableCell>
                   <StyledTableCell>
                     <FormControl sx={{ width: 80 }} size="small">
                       <Select
                         value={selectedWarehouses[index] || ""}
-                        onChange={(event) => handleSelectedWarehouse(event, index)}
+                        onChange={(event) =>
+                          handleSelectedWarehouse(event, index)
+                        }
                         displayEmpty
                         inputProps={{ "aria-label": "Select warehouse" }}
                       >
                         {warehouseOptions.map((warehouse) => (
-                          <MenuItem key={warehouse.warehouseNo} value={warehouse.warehouseNo}>
+                          <MenuItem
+                            key={warehouse.warehouseNo}
+                            value={warehouse.warehouseNo}
+                          >
                             {warehouse.warehouseName}
                           </MenuItem>
                         ))}
@@ -479,7 +563,11 @@ const ReceiveComponents2 = (props) => {
                       color="error"
                       size="small"
                       onClick={() => handleRemoveRow(index)}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
                     >
                       <DeleteIcon />
                     </Button>
@@ -492,16 +580,23 @@ const ReceiveComponents2 = (props) => {
           {addPOrderProducts.length === 0 && (
             <TableBody sx={{ padding: "3px" }} disabled={false}>
               {visibleProducts.map((product, index) => (
-                <StyledTableRow key={index} receiveCode={visibleProducts.receiveCode}>
+                <StyledTableRow
+                  key={index}
+                  receiveCode={visibleProducts.receiveCode}
+                >
                   <StyledTableCell align="center" sx={{ padding: "3px" }}>
                     <Checkbox
                       checked={selectedProducts.some(
                         (selectedProduct) =>
                           selectedProduct.receiveCode === product.receiveCode &&
-                          selectedProduct.receiveItemNo === product.receiveItemNo
+                          selectedProduct.receiveItemNo ===
+                            product.receiveItemNo
                       )}
                       onChange={() =>
-                        handleCheckboxChange(product.receiveCode, product.receiveItemNo)
+                        handleCheckboxChange(
+                          product.receiveCode,
+                          product.receiveItemNo
+                        )
                       }
                       disabled={product.porderState === "완료"}
                     />
@@ -523,11 +618,20 @@ const ReceiveComponents2 = (props) => {
                   </StyledTableCell>
                   <StyledTableCell align="right">
                     <Typography variant="subtitle2" fontWeight={400}>
-                      {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                      (product.receiveCount !== null || product.warehouseNo !== null) ? (
+                      {editMode[
+                        `${product.receiveCode}-${product.receiveItemNo}`
+                      ] &&
+                      (product.receiveCount !== null ||
+                        product.warehouseNo !== null) ? (
                         <TextField
-                          value={receiveCounts[index] || product.receiveCount}
-                          onChange={(e) => handleReceiveCountChange(e.target.value, index)}
+                          value={
+                            receiveCounts[index] !== undefined
+                              ? receiveCounts[index]
+                              : product.receiveCount
+                          }
+                          onChange={(e) =>
+                            handleReceiveCountChange(e.target.value, index)
+                          }
                           size="small"
                           sx={{ width: "80px" }}
                         />
@@ -539,10 +643,15 @@ const ReceiveComponents2 = (props) => {
                   <StyledTableCell align="left">
                     <Typography variant="subtitle2" fontWeight={400}>
                       <FormControl sx={{ width: 80 }} size="small">
-                        {editMode[`${product.receiveCode}-${product.receiveItemNo}`] &&
-                        (product.receiveCount !== null || product.warehouseNo !== null) ? (
+                        {editMode[
+                          `${product.receiveCode}-${product.receiveItemNo}`
+                        ] &&
+                        (product.receiveCount !== null ||
+                          product.warehouseNo !== null) ? (
                           <Select
-                            value={selectWarehouse[index] || product.warehouseName}
+                            value={
+                              selectWarehouse[index] || product.warehouseName
+                            }
                             onChange={(e) =>
                               handleChange(
                                 `${product.receiveCode}-${product.receiveItemNo}`,
@@ -554,7 +663,10 @@ const ReceiveComponents2 = (props) => {
                             sx={{ width: "80px" }}
                           >
                             {warehouseOptions.map((option) => (
-                              <MenuItem key={option.warehouseNo} value={option.warehouseNo}>
+                              <MenuItem
+                                key={option.warehouseNo}
+                                value={option.warehouseNo}
+                              >
                                 {option.warehouseName}
                               </MenuItem>
                             ))}
@@ -604,22 +716,27 @@ const ReceiveComponents2 = (props) => {
                         variant="contained"
                         size="small"
                         startIcon={
-                          editMode[`${product.receiveCode}-${product.receiveItemNo}`] ? (
+                          editMode[
+                            `${product.receiveCode}-${product.receiveItemNo}`
+                          ] ? (
                             <Done />
                           ) : (
                             <Edit />
                           )
                         }
-                        onClick={() =>
+                        //작업위치
+                        onClick={() => {
                           handleEdit(
                             product.receiveCode,
                             product.receiveItemNo,
                             product.porderCode,
                             product.porderItemNo
-                          )
-                        }
+                          );
+                        }}
                       >
-                        {editMode[`${product.receiveCode}-${product.receiveItemNo}`]
+                        {editMode[
+                          `${product.receiveCode}-${product.receiveItemNo}`
+                        ]
                           ? "저장"
                           : "수정"}
                       </Button>

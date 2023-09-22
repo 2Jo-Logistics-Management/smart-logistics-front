@@ -114,7 +114,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
       .catch((error) => {
         console.error(error);
       });
-  }, [selectedItems]);
+  }, [selectedItems, dispatch]);
 
   useEffect(() => {
     axios
@@ -487,11 +487,11 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                         품목코드
                       </Typography>
                     </StyledTableCell>
-                    <StyledTableCell style={{ width: "10%" }}>
+                    {/* <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         수량
                       </Typography>
-                    </StyledTableCell>
+                    </StyledTableCell> */}
                     <StyledTableCell style={{ width: "10%" }}>
                       <Typography variant="h6" fontWeight={600}>
                         단가
@@ -548,11 +548,11 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                           {product.itemCode}
                         </Typography>
                       </StyledTableCell>
-                      <StyledTableCell align="right">
+                      {/* <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderCount}
                         </Typography>
-                      </StyledTableCell>
+                      </StyledTableCell> */}
                       <StyledTableCell align="right">
                         <Typography variant="subtitle2" fontWeight={400}>
                           {product.porderPrice}
@@ -575,7 +575,7 @@ const ReceiveModal = ({ onSave, modalUpdateSelectedProducts }) => {
                                 case "준비":
                                   return theme.palette.primary.main;
                                 case "진행 중":
-                                  return theme.palette.info.main;
+                                  return theme.palette.warning.main;
                                 case "완료":
                                   return theme.palette.error.main;
                                 default:

@@ -35,7 +35,7 @@ const PorderComponets2 = () => {
   const [visibleProducts, setVisibleProducts] = useState([]);
   const [editMode, setEditMode] = useState({});
   const [tempProducts, setTempProducts] = useState([]);
-  const [selectedDateTime, setSelectedDateTime] = useState(null);
+  const [selectedDateTime, setSelectedDateTime] = useState("");
   const products = useSelector(
     (state) => state.selectedPOrderList.selectedPOrderList
   );
@@ -145,6 +145,16 @@ const PorderComponets2 = () => {
       return;
     }
 
+    if (!selectedDateTime || pOrderPrice <= 0 || pOrderCount <= 0) {
+      swal.fire({
+        title: "발주추가 실패",
+        text: "입력정보를 확인 해주세요",
+        icon: "error",
+        showConfirmButton: false,
+      });
+      return;
+    }
+
     const newProduct = {
       itemCode: itemCode,
       receiveDeadline: formatDate(selectedDateTime),
@@ -168,8 +178,8 @@ const PorderComponets2 = () => {
         // 나머지 초기화 및 알림 처리
         setDataUpdated(true);
         swal.fire({
-          title: "발주추가 성공",
-          text: "데이터를 모두 입력해주시기 바랍니다",
+          title: "성공",
+          text: "발주물품이 등록되었습니다.",
           icon: "success",
           showConfirmButton: false,
         });
@@ -183,7 +193,11 @@ const PorderComponets2 = () => {
         dispatch(seletedPOrderList(pOrderCode));
       })
       .catch((error) => {
-        console.error(error);
+        swal.fire({
+          title: "삽입 실패",
+          text: "발주물품 삽입에 실패했습니다",
+          icon: "error",
+        });
       });
   };
 
@@ -202,10 +216,12 @@ const PorderComponets2 = () => {
   const [itemName, setItemName] = useState("");
   const handleTextFieldClick = () => {
     setIsModalOpen(true); // 모달 열기
+    setFlag(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false); // 모달 닫기
+    setFlag(false);
   };
 
   useEffect(() => {
@@ -243,16 +259,22 @@ const PorderComponets2 = () => {
   const [editPOrderItemPrice, setEditPOrderItemPrice] = useState("");
   const [editItemName, setEditItemName] = useState("");
   const [pOrderItemNo, setPOrderItemNo] = useState("");
+  const [flag, setFlag] = useState(false);
 
   const handleRowClick = (item) => {
-    setPOrderPrice(item.itemPrice);
-    setPOrderItemPrice(item.itemPrice);
-    setItemName(item.itemName);
-    setItemCode(item.itemCode);
-    setEditItemName(item.itemName);
-    setEditItemCode(item.itemCode);
-    setEditPOrderItemPrice(item.itemPrice);
+    if (flag) {
+      setPOrderPrice(item.itemPrice);
+      setPOrderItemPrice(item.itemPrice);
+      setItemName(item.itemName);
+      setItemCode(item.itemCode);
+    } else {
+      setEditItemName(item.itemName);
+      setEditItemCode(item.itemCode);
+      setEditPOrderItemPrice(item.itemPrice);
+    }
+
     setIsModalOpen(false);
+    setFlag(false);
   };
 
   const handleEdit = (productId) => {
@@ -285,39 +307,71 @@ const PorderComponets2 = () => {
     }
   };
   const pOrderItemEdit = () => {
-    try {
-      const pOrderItemStateModifyDto = {
-        itemCode: editItemCode,
-        pOrderCount: editPOrderCount,
-        pOrderItemPrice: editPOrderItemPrice,
-        pOrderCode: pOrderCode,
-        receiveDeadline: formatDate(editReceiveDeadLine),
-        pOrderPrice: editPOrderItemPrice,
-      };
 
-      axios
-        .patch(
-          `http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`,
-          pOrderItemStateModifyDto
-        )
-        .then(() => {
-          dispatch(seletedPOrderList(pOrderCode));
-          setItemCode("");
-          setSelectedDateTime("");
-          setPOrderItemPrice("");
-          setPOrderCount("");
-          setPOrderPrice("");
-          setItemName("");
-          setPOrderCode(pOrderCode);
-        });
-    } catch (error) {
+    if (editReceiveDeadLine === null || editReceiveDeadLine === '') {
       swal.fire({
-        title: "발주수정 실패",
-        text: "데이터를 모두 입력해주시기 바랍니다",
-        icon: "error",
+        title: "날짜 입력",
+        text: "날짜 입력은 필수입니다.",
+        icon: "warning",
         showConfirmButton: false,
       });
+      return;
     }
+
+    if (editPOrderCount <= 0 || editPOrderCount === '' || editPOrderCount === null || editPOrderItemPrice <= 0 || editPOrderItemPrice === '' || editPOrderItemPrice === null) {
+      swal.fire({
+        title: "수량과 금액을 확인해주세요.",
+        text: "수량과 금액은 0이 될 수 없습니다.",
+        icon: "warning",
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    if (editItemCode <= 0 || editItemCode === '' || editItemCode === null) {
+      swal.fire({
+        title: "물품 선택",
+        text: "물품을 선택해주세요.",
+        icon: "warning",
+        showConfirmButton: false,
+      });
+
+      return;
+    }
+
+    const pOrderItemStateModifyDto = {
+      itemCode: editItemCode,
+      pOrderCount: editPOrderCount,
+      pOrderItemPrice: editPOrderItemPrice,
+      pOrderCode: pOrderCode,
+      receiveDeadline: formatDate(editReceiveDeadLine),
+      pOrderPrice: editPOrderItemPrice,
+    };
+
+    axios
+      .patch(
+        `http://localhost:8888/api/porder-item/modify?pOrderItemNo=${pOrderItemNo}`,
+        pOrderItemStateModifyDto
+      )
+      .then(() => {
+        dispatch(seletedPOrderList(pOrderCode));
+        setItemCode("");
+        setSelectedDateTime("");
+        setPOrderItemPrice("");
+        setPOrderCount("");
+        setPOrderPrice("");
+        setItemName("");
+        setPOrderCode(pOrderCode);
+        setEditReceiveDeadLine("")
+      })
+      .catch(() => {
+        swal.fire({
+          title: "발주수정 실패",
+          text: "데이터를 모두 입력해주시기 바랍니다",
+          icon: "error",
+          showConfirmButton: false,
+        });
+      });
   };
   const [noAddState, setNoAddState] = useState("");
 
@@ -379,13 +433,22 @@ const PorderComponets2 = () => {
                     color: "white", // 텍스트 색상
                     backgroundColor: (theme) => {
                       return theme.palette.primary.main;
-                    } 
+                    },
                   }}
                 />
               </TableCell>
+              {/* TODO 작업내역 1 */}
               <TableCell style={{ textAlign: "right" }}>
                 <TextField
                   value={itemCode}
+                  onInput={(e) => {
+                    const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                    if (!re.test(e.target.value)) {
+                      // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                      alert("숫자만 입력해주세요.");
+                      e.target.value = "";
+                    } 
+                  }}
                   onClick={handleTextFieldClick}
                   size="small"
                 />
@@ -410,16 +473,30 @@ const PorderComponets2 = () => {
               <TableCell style={{ textAlign: "right" }}>
                 <TextField
                   size="small"
-                  type="number"
                   value={pOrderPrice}
+                  onInput={(e) => {
+                    const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                    if (!re.test(e.target.value)) {
+                      // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                      alert("숫자만 입력해주세요.");
+                      e.target.value = "";
+                    }
+                  }}
                   onChange={(e) => setPOrderPrice(e.target.value)}
                 />
               </TableCell>
               <TableCell style={{ textAlign: "right" }}>
                 <TextField
                   size="small"
-                  type="number"
                   value={pOrderCount}
+                  onInput={(e) => {
+                    const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                    if (!re.test(e.target.value)) {
+                      // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                      alert("숫자만 입력해주세요.");
+                      e.target.value = "";
+                    }
+                  }}
                   onChange={(e) => setPOrderCount(e.target.value)}
                 />
               </TableCell>
@@ -507,6 +584,14 @@ const PorderComponets2 = () => {
                     {editMode[product.porderItemNo] ? (
                       <TextField
                         value={editItemCode}
+                        onInput={(e) => {
+                          const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                          if (!re.test(e.target.value)) {
+                            // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                            alert("숫자만 입력해주세요.");
+                            e.target.value = "";
+                          } 
+                        }}
                         onClick={() => {
                           setIsModalOpen(true);
                         }}
@@ -557,8 +642,15 @@ const PorderComponets2 = () => {
                   <TableCell style={{ textAlign: "right", padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        type="number"
                         value={editPOrderItemPrice}
+                        onInput={(e) => {
+                          const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                          if (!re.test(e.target.value)) {
+                            // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                            alert("숫자만 입력해주세요.");
+                            e.target.value = "";
+                          }
+                        }}
                         onChange={(e) => {
                           handleChange(
                             product.porderItemNo,
@@ -578,8 +670,15 @@ const PorderComponets2 = () => {
                   <TableCell style={{ textAlign: "right", padding: 2 }}>
                     {editMode[product.porderItemNo] ? (
                       <TextField
-                        type="number"
                         value={editPOrderCount}
+                        onInput={(e) => {
+                          const re = /^[0-9\b]*$/; // 숫자만 허용하는 정규 표현식
+                          if (!re.test(e.target.value)) {
+                            // 숫자가 아닌 값이 입력되었을 때, 입력 값을 지웁니다.
+                            alert("숫자만 입력해주세요.");
+                            e.target.value = "";
+                          }
+                        }}
                         onChange={(e) => {
                           handleChange(
                             product.porderItemNo,
@@ -719,7 +818,7 @@ const PorderComponets2 = () => {
               {currentItems.map((item, index) => (
                 <StyledTableRow
                   key={index}
-                  onClick={() => handleRowClick(item)}
+                  onClick={() => handleRowClick(item, "modify")}
                   sx={{
                     "&:hover": {
                       backgroundColor: "rgba(0, 0, 0, 0.04)",
